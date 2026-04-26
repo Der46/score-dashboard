@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>每週排行榜</title>
+    <style>
+        :root {
+            --bg: #070b14;
+            --bg2: #0b1220;
+            --card: #0f172a;
+            --line: #1e293b;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+
+            --gold: #facc15;
+            --silver: #cbd5e1;
+            --bronze: #fdba74;
+
+            --neon-red: #ff2d55;
+            /* 淘汰 */
+            --neon-green: #39ff14;
+            /* PASS */
+            --neon-yellow: #ffe600;
+            /* 長老 */
+            --neon-orange: #ff9f1a;
+            /* 降級 */
+            --neon-purple: #b026ff;
+            /* 隊長 */
+            --neon-blue: #00d4ff;
+            /* 副隊長 */
+            --neon-lime: #39ff14;
+            /* 回歸 => 固定綠色 */
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0
+        }
+
+        body {
+            min-height: 100vh;
+            color: var(--text);
+            font-family: Inter, system-ui, -apple-system, "Noto Sans TC", sans-serif;
+            background:
+                radial-gradient(1000px 400px at 10% -10%, #1d4ed833, transparent 60%),
+                radial-gradient(900px 380px at 90% -20%, #7e22ce33, transparent 60%),
+                linear-gradient(135deg, var(--bg), var(--bg2));
+        }
+
+        .wrap {
+            max-width: 1200px;
+            margin: 18px auto;
+            padding: 0 12px 18px;
+        }
+
+        .panel {
+            background: linear-gradient(180deg, rgba(15, 23, 42, .86), rgba(15, 23, 42, .7));
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            backdrop-filter: blur(6px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+        }
+
+        .hero {
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .title {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: .5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .controls select {
+            background: #0b1220;
+            color: #e5e7eb;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 8px 10px;
+            font-size: 13px;
+            min-width: 170px;
+        }
+
+        /* Top3 卡片 */
+        .top3 {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .top-card {
+            border-radius: 16px;
+            padding: 14px;
+            border: 1px solid var(--line);
+            background: linear-gradient(160deg, rgba(15, 23, 42, .9), rgba(2, 6, 23, .92));
+            position: relative;
+            overflow: hidden;
+        }
+
+        .top-card::after {
+            content: "";
+            position: absolute;
+            inset: -40% auto auto -20%;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            filter: blur(28px);
+            opacity: .18;
+            pointer-events: none;
+        }
+
+        .top1 {
+            border-color: #facc1566
+        }
+
+        .top2 {
+            border-color: #cbd5e166
+        }
+
+        .top3c {
+            border-color: #fdba7466
+        }
+
+        .top1::after {
+            background: var(--gold)
+        }
+
+        .top2::after {
+            background: var(--silver)
+        }
+
+        .top3c::after {
+            background: var(--bronze)
+        }
+
+        .medal {
+            font-size: 20px;
+            font-weight: 900
+        }
+
+        .rank-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px
+        }
+
+        .name {
+            font-size: 18px;
+            font-weight: 800;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        .cm {
+            font-size: 12px;
+            color: var(--muted)
+        }
+
+        .score {
+            font-size: 28px;
+            font-weight: 900;
+            line-height: 1
+        }
+
+        .delta {
+            font-size: 13px;
+            font-weight: 700;
+            margin-top: 6px
+        }
+
+        .up {
+            color: #22c55e
+        }
+
+        .down {
+            color: #f43f5e
+        }
+
+        .flat {
+            color: #94a3b8
+        }
+
+        .badge {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-weight: 800;
+            font-size: 12px;
+            border: 1px solid transparent;
+            text-shadow: 0 0 6px rgba(255, 255, 255, .2);
+        }
+
+        .隊長 {
+            color: var(--neon-purple);
+            border-color: #b026ff88;
+            box-shadow: 0 0 10px #b026ff44 inset
+        }
+
+        .副隊長 {
+            color: var(--neon-blue);
+            border-color: #00d4ff88;
+            box-shadow: 0 0 10px #00d4ff44 inset
+        }
+
+        .長老 {
+            color: var(--neon-yellow);
+            border-color: #ffe60088;
+            box-shadow: 0 0 10px #ffe60044 inset
+        }
+
+        .PASS {
+            color: var(--neon-green);
+            border-color: #39ff1488;
+            box-shadow: 0 0 10px #39ff1444 inset
+        }
+
+        .降級 {
+            color: var(--neon-orange);
+            border-color: #ff9f1a88;
+            box-shadow: 0 0 10px #ff9f1a44 inset
+        }
+
+        .淘汰 {
+            color: var(--neon-red);
+            border-color: #ff2d5588;
+            box-shadow: 0 0 12px #ff2d5555 inset, 0 0 10px #ff2d5533
+        }
+
+        .回歸 {
+            color: var(--neon-lime);
+            border-color: #39ff1488;
+            box-shadow: 0 0 10px #39ff1444 inset
+        }
+
+        /* 列表 */
+        .list.panel {
+            padding: 8px;
+        }
+
+        .row-item {
+            display: grid;
+            gap: 8px;
+            align-items: center;
+            padding: 10px 8px;
+            border-bottom: 1px solid #1f2b40;
+            font-size: 13px;
+        }
+
+        .row-item.head {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            background: #0b1220;
+            border: 1px solid #1f2b40;
+            border-radius: 10px;
+            margin-bottom: 6px;
+            font-weight: 800;
+            color: #cbd5e1;
+        }
+
+        .row-item:last-child {
+            border-bottom: none
+        }
+
+        .rank {
+            font-weight: 900
+        }
+
+        .line-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        .num {
+            font-weight: 800
+        }
+
+        .total {
+            font-size: 15px
+        }
+
+        .delta-chip {
+            font-weight: 800;
+            border-radius: 999px;
+            padding: 4px 8px;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+
+        .delta-chip.up {
+            color: #22c55e;
+            border-color: #22c55e55;
+            background: #22c55e11
+        }
+
+        .delta-chip.down {
+            color: #f43f5e;
+            border-color: #f43f5e55;
+            background: #f43f5e11
+        }
+
+        .delta-chip.flat {
+            color: #94a3b8;
+            background: #94a3b811
+        }
+
+        .empty {
+            padding: 24px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        @media (max-width: 980px) {
+            .top3 {
+                grid-template-columns: 1fr
+            }
+
+            .title {
+                font-size: 24px
+            }
+
+            .row-item {
+                font-size: 12px
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <div class="panel hero">
+            <div>
+                <h1 class="title">🏆 每週排行榜</h1>
+            </div>
+            <div class="controls">
+                <label style="font-size:13px;color:var(--muted)">週次</label>
+                <select id="weekSelect"></select>
+            </div>
+        </div>
+
+        <div id="top3" class="top3"></div>
+
+        <div class="list panel">
+            <div class="row-item head" id="listHead"></div>
+            <div id="listBody"></div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const el = id => document.getElementById(id);
+            const fmt = n => Number(n || 0).toLocaleString("zh-Hant-TW");
+            let weeks = [];
+
+            function weekTotal(w, m) {
+                const c = Number(w.activityCount || 3);
+                return (m.activities || []).slice(0, c).reduce((s, a) => s + Number(a.score || 0) + Number(a.missed || 0), 0);
+            }
+
+            function sortMembers(w) {
+                return [...(w.members || [])].sort((a, b) => weekTotal(w, b) - weekTotal(w, a));
+            }
+
+            function buildPrevMap(prev) {
+                const map = new Map();
+                if (!prev) return map;
+                const sorted = sortMembers(prev);
+                sorted.forEach((m, i) => map.set(m.cm, { total: weekTotal(prev, m), rank: i + 1 }));
+                return map;
+            }
+
+            function deltaInfo(total, prevMap, cm) {
+                if (!prevMap.has(cm)) return { text: "—", cls: "flat" };
+                const p = prevMap.get(cm);
+                const d = total - p.total;
+                if (d > 0) return { text: `▲ ${fmt(d)}`, cls: "up" };
+                if (d < 0) return { text: `▼ ${fmt(Math.abs(d))}`, cls: "down" };
+                return { text: "— 0", cls: "flat" };
+            }
+
+            function displayStatus(m) {
+                if ((m.type || "") === "回歸") return "回歸"; // 強制綠色回歸
+                return m.status || "-";
+            }
+
+            function setGridByActivityCount(c) {
+                const head = el("listHead");
+                const rows = document.querySelectorAll("#listBody .row-item");
+
+                // 欄位：排名 CM LINE + 活動欄位(c個) + 週總 + 較上週 + 狀態
+                const baseLeft = "56px 110px minmax(120px,1.2fr)";
+                const actCols = c === 2
+                    ? "minmax(78px,1fr) minmax(78px,1fr)"
+                    : "minmax(78px,1fr) minmax(78px,1fr) minmax(78px,1fr)";
+                const tail = "100px 120px 90px";
+                const grid = `${baseLeft} ${actCols} ${tail}`;
+
+                head.style.gridTemplateColumns = grid;
+                rows.forEach(r => r.style.gridTemplateColumns = grid);
+            }
+
+            function renderHead(c, names) {
+                const head = el("listHead");
+                const cols = [
+                    "<div>排名</div>",
+                    "<div>CM</div>",
+                    "<div>LINE名稱</div>",
+                    `<div>${names[0] || "活動1"}總</div>`,
+                    `<div>${names[1] || "活動2"}總</div>`
+                ];
+
+                if (c === 3) cols.push(`<div>${names[2] || "活動3"}總</div>`);
+
+                cols.push("<div>週總</div>", "<div>較上週</div>", "<div>狀態</div>");
+                head.innerHTML = cols.join("");
+            }
+
+            function render(weekIndex) {
+                const curr = weeks[weekIndex];
+                const prev = weekIndex > 0 ? weeks[weekIndex - 1] : null;
+                const prevMap = buildPrevMap(prev);
+
+                const c = Number(curr.activityCount || 3);
+                const names = curr.activityNames || ["活動1", "活動2", "活動3"];
+                const sorted = sortMembers(curr);
+
+                renderHead(c, names);
+
+                // Top3
+                const top3 = sorted.slice(0, 3);
+                el("top3").innerHTML = top3.map((m, idx) => {
+                    const rank = idx + 1;
+                    const total = weekTotal(curr, m);
+                    const d = deltaInfo(total, prevMap, m.cm);
+                    const medal = rank === 1 ? "🥇" : rank === 2 ? "🥈" : "🥉";
+                    const cls = rank === 1 ? "top1" : rank === 2 ? "top2" : "top3c";
+                    const status = displayStatus(m);
+
+                    return `
+            <div class="top-card ${cls}">
+              <div class="rank-line">
+                <div class="medal">${medal} #${rank}</div>
+                <div class="cm">${m.cm || ""}</div>
+              </div>
+              <div class="name">${m.cm || "-"}</div>
+              <div class="cm">${m.lineName || ""}</div>
+              <div class="score">${fmt(total)}</div>
+              <div class="delta ${d.cls}">${d.text}</div>
+              <span class="badge ${status}">${status}</span>
+            </div>
+          `;
+                }).join("");
+
+                // 其他名次
+                const rest = sorted.slice(3);
+                el("listBody").innerHTML = rest.length ? rest.map((m, idx) => {
+                    const rank = idx + 4;
+                    const acts = (m.activities || []).slice(0, c);
+                    while (acts.length < c) acts.push({ score: 0, missed: 0 });
+
+                    const aTotals = acts.map(a => Number(a.score || 0) + Number(a.missed || 0));
+                    const total = aTotals.reduce((a, b) => a + b, 0);
+                    const d = deltaInfo(total, prevMap, m.cm);
+                    const status = displayStatus(m);
+
+                    const actHtml = c === 2
+                        ? `
+              <div class="num">${fmt(aTotals[0] || 0)}</div>
+              <div class="num">${fmt(aTotals[1] || 0)}</div>
+            `
+                        : `
+              <div class="num">${fmt(aTotals[0] || 0)}</div>
+              <div class="num">${fmt(aTotals[1] || 0)}</div>
+              <div class="num">${fmt(aTotals[2] || 0)}</div>
+            `;
+
+                    return `
+            <div class="row-item">
+              <div class="rank">#${rank}</div>
+              <div>${m.cm || ""}</div>
+              <div class="line-name">${m.lineName || "-"}</div>
+              ${actHtml}
+              <div class="num total">${fmt(total)}</div>
+              <div class="delta-chip ${d.cls}">${d.text}</div>
+              <div><span class="badge ${status}">${status}</span></div>
+            </div>
+          `;
+                }).join("") : `<div class="empty">沒有其他名次資料</div>`;
+
+                setGridByActivityCount(c);
+            }
+
+            fetch(`./data.json?v=${Date.now()}`)
+                .then(r => {
+                    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                    return r.json();
+                })
+                .then(data => {
+                    if (Array.isArray(data.history) && data.history.length) {
+                        weeks = [...data.history].sort((a, b) => String(a.weekKey || "").localeCompare(String(b.weekKey || "")));
+                    } else {
+                        weeks = [data];
+                    }
+
+                    const sel = el("weekSelect");
+                    sel.innerHTML = weeks.map((w, i) => {
+                        const label = w.week || w.weekKey || `第${i + 1}週`;
+                        return `<option value="${i}">${label}</option>`;
+                    }).join("");
+
+                    let idx = weeks.length - 1;
+                    if (data.currentWeekKey) {
+                        const found = weeks.findIndex(w => w.weekKey === data.currentWeekKey);
+                        if (found >= 0) idx = found;
+                    }
+
+                    sel.value = String(idx);
+                    render(idx);
+
+                    sel.addEventListener("change", () => render(Number(sel.value)));
+                })
+                .catch(err => {
+                    console.error(err);
+                    el("top3").innerHTML = `<div class="empty">讀取 data.json 失敗</div>`;
+                    el("listHead").innerHTML = "";
+                    el("listBody").innerHTML = "";
+                });
+        })();
+    </script>
+</body>
+
+</html>
