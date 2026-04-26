@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>管理後台｜每週積分</title>
+    <style>
+        :root {
+            --bg: #020617;
+            --card: #111827;
+            --line: #1f2937;
+            --text: #e5e7eb;
+            --muted: #94a3b8;
+            --ok: #16a34a;
+            --pri: #3b82f6;
+            --warn: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, #020617, #0f172a);
+            font-family: system-ui, -apple-system, "Noto Sans TC", sans-serif;
+            color: var(--text);
+            overflow: hidden;
+        }
+
+        .wrap {
+            width: 100vw;
+            height: 100vh;
+            padding: 6px;
+            display: grid;
+            grid-template-rows: auto auto 1fr;
+            gap: 6px;
+        }
+
+        .card {
+            background: rgba(17, 24, 39, .96);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 6px 8px;
+            min-width: 0;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.2;
+        }
+
+        .sub {
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        label {
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        input,
+        select,
+        button {
+            background: #0b1220;
+            color: #e5e7eb;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 2px 6px;
+            height: 22px;
+            font-size: 11px;
+        }
+
+        button {
+            cursor: pointer
+        }
+
+        .ok {
+            background: var(--ok);
+            border-color: #15803d
+        }
+
+        .pri {
+            background: var(--pri);
+            border-color: #2563eb
+        }
+
+        .warn {
+            background: var(--warn);
+            border-color: #d97706;
+            color: #111827;
+            font-weight: 700
+        }
+
+        .table-wrap {
+            min-height: 0;
+            overflow: auto;
+            border-radius: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            min-width: 1180px;
+        }
+
+        th,
+        td {
+            border-bottom: 1px solid var(--line);
+            padding: 1px 3px;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 11px;
+            line-height: 1.1;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            background: #0f172a;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        tbody tr {
+            height: 22px
+        }
+
+        td.name {
+            text-align: left
+        }
+
+        .score-input {
+            width: 100%;
+            min-width: 0;
+            height: 18px;
+            padding: 0 4px;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        .editing {
+            border-color: #f59e0b !important;
+            box-shadow: 0 0 0 1px #f59e0b66;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <div class="card">
+            <div class="row" style="justify-content:space-between">
+                <h1>🛠️ 管理後台</h1>
+                <span id="saveState" class="sub">狀態：載入中</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="row">
+                <label>年份 <input id="yearInput" type="number" min="2020" max="2100" style="width:76px"></label>
+                <label>月份 <input id="monthInput" type="number" min="1" max="12" style="width:60px"></label>
+                <label>第幾週 <input id="weekNoInput" type="number" min="1" max="6" style="width:60px"></label>
+                <label>週別文字 <input id="weekInput" style="width:150px" readonly></label>
+
+                <label>更新者 <input id="updatedByInput"></label>
+                <label>活動數
+                    <select id="activityCountInput">
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                    </select>
+                </label>
+
+                <label>活動1名 <input id="actName1Input" placeholder="活動1"></label>
+                <label>活動2名 <input id="actName2Input" placeholder="活動2"></label>
+                <label id="actName3Wrap">活動3名 <input id="actName3Input" placeholder="活動3"></label>
+
+                <label>合格 <input id="passInput" type="number"></label>
+                <label>長老 <input id="elderInput" type="number"></label>
+                <label>低標1 <input id="min1Input" type="number"></label>
+                <label>低標2 <input id="min2Input" type="number"></label>
+                <label id="min3Wrap">低標3 <input id="min3Input" type="number"></label>
+
+                <button id="sortBtn" class="pri">排序</button>
+                <button id="downloadBtn" class="ok">下載 data.json</button>
+                <button id="clearDraftBtn" class="warn">清草稿</button>
+            </div>
+        </div>
+
+        <div class="card table-wrap">
+            <table>
+                <thead id="thead"></thead>
+                <tbody id="tbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const DRAFT_KEY = "team_scoreboard_admin_draft_v6_history";
+            let rootData = null; // 整份 data.json（包含 history）
+            let data = null;     // 目前編輯中的當週資料快照
+
+            const el = id => document.getElementById(id);
+            const fmt = n => Number(n || 0).toLocaleString("zh-Hant-TW");
+
+            function nowStr() {
+                const d = new Date();
+                const p = v => String(v).padStart(2, "0");
+                return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+            }
+
+            function makeWeekLabel(y, m, w) {
+                return `${y}年${m}月第${w}週`;
+            }
+
+            function updateWeekLabel() {
+                const y = Number(el("yearInput").value || new Date().getFullYear());
+                const m = Number(el("monthInput").value || (new Date().getMonth() + 1));
+                const w = Number(el("weekNoInput").value || 1);
+                el("weekInput").value = makeWeekLabel(y, m, w);
+            }
+
+            function setSaveState(msg) {
+                el("saveState").textContent = "狀態：" + msg;
+            }
+
+            function autoSaveDraft() {
+                localStorage.setItem(DRAFT_KEY, JSON.stringify({ rootData, data }));
+                setSaveState(`已暫存 ${nowStr()}`);
+            }
+
+            function ensureWeekShape(obj) {
+                if (!obj.settings) obj.settings = { passThreshold: 200000, elderThreshold: 300000, defaultStatus: "淘汰" };
+                if (!Array.isArray(obj.activityNames)) obj.activityNames = ["活動1", "活動2", "活動3"];
+                if (!Array.isArray(obj.activityMins)) obj.activityMins = [0, 0, 0];
+                if (!obj.roles) obj.roles = { captain: ["Polly"], viceCaptain: ["氏饒", "彩鳳", "Yu", "Chan", "傳勝", "威諺"] };
+                if (!Array.isArray(obj.members)) obj.members = [];
+                if (!obj.weekMeta) obj.weekMeta = { year: new Date().getFullYear(), month: new Date().getMonth() + 1, weekNo: 1 };
+
+                obj.members.forEach(m => {
+                    if (!Array.isArray(m.activities)) m.activities = [];
+                    while (m.activities.length < 3) m.activities.push({ score: 0, missed: 0 });
+                    if (!m.type) m.type = obj.defaultType || "一般";
+                });
+            }
+
+            function ensureRootShape(rd) {
+                if (!rd.version) rd.version = 2;
+                if (!Array.isArray(rd.history)) rd.history = [];
+            }
+
+            function calcStatus(member) {
+                const cm = member.cm || "";
+                if ((data.roles?.captain || []).includes(cm)) return "隊長";
+                if ((data.roles?.viceCaptain || []).includes(cm)) return "副隊長";
+                if ((member.type || "") === "回歸") return "回歸";
+
+                const c = Number(data.activityCount || 3);
+                const acts = member.activities.slice(0, c);
+                const mins = data.activityMins || [0, 0, 0];
+
+                const week = acts.reduce((s, a) => s + Number(a.score || 0) + Number(a.missed || 0), 0);
+                const passMin = acts.every((a, i) => Number(a.score || 0) >= Number(mins[i] || 0));
+
+                const passT = Number(data.settings.passThreshold || 200000);
+                const elderT = Number(data.settings.elderThreshold || 300000);
+
+                if (week >= elderT && passMin) return "長老";
+                if (week >= passT && passMin) return "PASS";
+                if (week < passT) return "淘汰";
+                return "降級";
+            }
+
+            function weekTotal(member) {
+                const c = Number(data.activityCount || 3);
+                return member.activities.slice(0, c).reduce((s, a) => s + Number(a.score || 0) + Number(a.missed || 0), 0);
+            }
+
+            function applyTopToData() {
+                updateWeekLabel();
+                data.week = el("weekInput").value.trim();
+                data.weekMeta = {
+                    year: Number(el("yearInput").value || new Date().getFullYear()),
+                    month: Number(el("monthInput").value || (new Date().getMonth() + 1)),
+                    weekNo: Number(el("weekNoInput").value || 1)
+                };
+                data.updatedBy = el("updatedByInput").value.trim() || "Admin";
+                data.activityCount = Number(el("activityCountInput").value);
+
+                data.activityNames[0] = el("actName1Input").value.trim() || "活動1";
+                data.activityNames[1] = el("actName2Input").value.trim() || "活動2";
+                data.activityNames[2] = el("actName3Input").value.trim() || "活動3";
+
+                data.settings.passThreshold = Number(el("passInput").value || 0);
+                data.settings.elderThreshold = Number(el("elderInput").value || 0);
+                data.activityMins[0] = Number(el("min1Input").value || 0);
+                data.activityMins[1] = Number(el("min2Input").value || 0);
+                data.activityMins[2] = Number(el("min3Input").value || 0);
+            }
+
+            function refreshTop() {
+                el("yearInput").value = data.weekMeta?.year || new Date().getFullYear();
+                el("monthInput").value = data.weekMeta?.month || (new Date().getMonth() + 1);
+                el("weekNoInput").value = data.weekMeta?.weekNo || 1;
+                updateWeekLabel();
+
+                el("updatedByInput").value = data.updatedBy || "Admin";
+                el("activityCountInput").value = String(data.activityCount || 3);
+
+                el("actName1Input").value = data.activityNames[0] || "活動1";
+                el("actName2Input").value = data.activityNames[1] || "活動2";
+                el("actName3Input").value = data.activityNames[2] || "活動3";
+
+                el("passInput").value = Number(data.settings.passThreshold || 200000);
+                el("elderInput").value = Number(data.settings.elderThreshold || 300000);
+                el("min1Input").value = Number(data.activityMins[0] || 0);
+                el("min2Input").value = Number(data.activityMins[1] || 0);
+                el("min3Input").value = Number(data.activityMins[2] || 0);
+
+                const is3 = Number(data.activityCount) === 3;
+                el("min3Wrap").style.display = is3 ? "inline-flex" : "none";
+                el("actName3Wrap").style.display = is3 ? "inline-flex" : "none";
+            }
+
+            function render() {
+                ensureWeekShape(data);
+                refreshTop();
+
+                const c = Number(data.activityCount || 3);
+                const an = data.activityNames || ["活動1", "活動2", "活動3"];
+
+                const headers = ["CM", "LINE", "類型"];
+                for (let i = 0; i < c; i++) headers.push(`${an[i]}投`, `${an[i]}未`, `${an[i]}總`);
+                headers.push("週總", "狀態");
+                el("thead").innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join("")}</tr>`;
+
+                el("tbody").innerHTML = data.members.map((m, idx) => {
+                    const acts = m.activities.slice(0, c);
+                    const totals = acts.map(a => Number(a.score || 0) + Number(a.missed || 0));
+                    const week = totals.reduce((a, b) => a + b, 0);
+                    m.status = calcStatus(m);
+
+                    const inputCell = (val, path) =>
+                        `<input class="score-input" type="text" inputmode="numeric" data-path="${path}" value="${Number(val || 0)}">`;
+
+                    let tds = `<td>${m.cm || ""}</td><td class="name">${m.lineName || ""}</td><td>${m.type || "一般"}</td>`;
+                    for (let i = 0; i < c; i++) {
+                        tds += `<td>${inputCell(acts[i].score, `${idx}.activities.${i}.score`)}</td>`;
+                        tds += `<td>${inputCell(acts[i].missed, `${idx}.activities.${i}.missed`)}</td>`;
+                        tds += `<td><b>${fmt(totals[i])}</b></td>`;
+                    }
+                    tds += `<td><b>${fmt(week)}</b></td><td>${m.status}</td>`;
+                    return `<tr>${tds}</tr>`;
+                }).join("");
+
+                bindEnterCommit();
+            }
+
+            function bindEnterCommit() {
+                document.querySelectorAll(".score-input").forEach(inp => {
+                    inp.dataset.draft = inp.value;
+                    inp.addEventListener("focus", () => inp.classList.add("editing"));
+                    inp.addEventListener("input", () => inp.dataset.draft = inp.value);
+
+                    inp.addEventListener("keydown", (e) => {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            commitInput(inp);
+                        }
+                    });
+
+                    inp.addEventListener("blur", () => {
+                        const [mi, , ai, key] = inp.dataset.path.split(".");
+                        const saved = Number(data.members[Number(mi)].activities[Number(ai)][key] || 0);
+                        inp.value = saved;
+                        inp.classList.remove("editing");
+                    });
+                });
+            }
+
+            function commitInput(inp) {
+                const raw = (inp.dataset.draft ?? inp.value).trim();
+                const cleaned = raw.replace(/,/g, "");
+                const n = cleaned === "" ? 0 : Number(cleaned);
+
+                if (!Number.isFinite(n) || n < 0) {
+                    alert("請輸入有效的非負數字。");
+                    inp.focus(); inp.select(); return;
+                }
+
+                const [mi, , ai, key] = inp.dataset.path.split(".");
+                data.members[Number(mi)].activities[Number(ai)][key] = Math.floor(n);
+
+                render();
+                autoSaveDraft();
+                setSaveState(`已記錄 ${nowStr()}`);
+            }
+
+            function sortMembers() {
+                data.members.sort((a, b) => weekTotal(b) - weekTotal(a));
+            }
+
+            function upsertCurrentWeekToHistory() {
+                ensureRootShape(rootData);
+
+                data.updatedAt = nowStr();
+                data.members.forEach(m => m.status = calcStatus(m));
+                sortMembers();
+
+                const key = `${data.weekMeta.year}-${String(data.weekMeta.month).padStart(2, "0")}-W${data.weekMeta.weekNo}`;
+                data.weekKey = key;
+
+                const snapshot = JSON.parse(JSON.stringify(data));
+                const idx = rootData.history.findIndex(w => w.weekKey === key);
+                if (idx >= 0) rootData.history[idx] = snapshot;
+                else rootData.history.push(snapshot);
+
+                rootData.history.sort((a, b) => String(a.weekKey).localeCompare(String(b.weekKey)));
+                rootData.currentWeekKey = key;
+                rootData.updatedAt = nowStr();
+
+                // 相容舊版（保留一份最新週在 root）
+                Object.assign(rootData, snapshot);
+            }
+
+            function downloadJson() {
+                applyTopToData();
+                upsertCurrentWeekToHistory();
+
+                const blob = new Blob([JSON.stringify(rootData, null, 2)], { type: "application/json" });
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = "data.json";
+                a.click();
+                URL.revokeObjectURL(a.href);
+
+                setSaveState("已下載 data.json（含歷史週）");
+            }
+
+            [
+                "yearInput", "monthInput", "weekNoInput",
+                "updatedByInput", "activityCountInput",
+                "actName1Input", "actName2Input", "actName3Input",
+                "passInput", "elderInput", "min1Input", "min2Input", "min3Input"
+            ].forEach(id => {
+                el(id).addEventListener("change", () => {
+                    applyTopToData();
+                    render();
+                    autoSaveDraft();
+                });
+            });
+
+            el("sortBtn").addEventListener("click", () => {
+                applyTopToData();
+                sortMembers();
+                render();
+                autoSaveDraft();
+            });
+
+            el("downloadBtn").addEventListener("click", downloadJson);
+
+            el("clearDraftBtn").addEventListener("click", () => {
+                localStorage.removeItem(DRAFT_KEY);
+                setSaveState("已清除草稿");
+            });
+
+            fetch(`./data.json?v=${Date.now()}`)
+                .then(r => {
+                    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                    return r.json();
+                })
+                .then(serverData => {
+                    ensureRootShape(serverData);
+
+                    const draftRaw = localStorage.getItem(DRAFT_KEY);
+                    if (draftRaw) {
+                        const draftObj = JSON.parse(draftRaw);
+                        rootData = draftObj.rootData || serverData;
+                        data = draftObj.data || JSON.parse(JSON.stringify(serverData));
+                    } else {
+                        rootData = serverData;
+                        // 以 currentWeek 或最新 history 當編輯起點
+                        if (Array.isArray(serverData.history) && serverData.history.length) {
+                            const picked = serverData.history.find(w => w.weekKey === serverData.currentWeekKey) || serverData.history[serverData.history.length - 1];
+                            data = JSON.parse(JSON.stringify(picked));
+                        } else {
+                            data = JSON.parse(JSON.stringify(serverData));
+                        }
+                    }
+
+                    ensureRootShape(rootData);
+                    ensureWeekShape(data);
+                    render();
+                    setSaveState("已載入 data.json");
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("讀取 data.json 失敗，請確認使用 http://localhost 開啟。");
+                });
+        })();
+    </script>
+</body>
+
+</html>
