@@ -1,561 +1,1874 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>每週排行榜</title>
+    <title>每週成績總覽｜Cyber Dashboard</title>
+
     <style>
         :root {
-            --bg: #070b14;
-            --bg2: #0b1220;
-            --card: #0f172a;
-            --line: #1e293b;
-            --text: #e2e8f0;
-            --muted: #94a3b8;
-
-            --gold: #facc15;
-            --silver: #cbd5e1;
-            --bronze: #fdba74;
-
-            --neon-red: #ff2d55;
-            /* 淘汰 */
-            --neon-green: #39ff14;
-            /* PASS */
-            --neon-yellow: #ffe600;
-            /* 長老 */
-            --neon-orange: #ff9f1a;
-            /* 降級 */
-            --neon-purple: #b026ff;
-            /* 隊長 */
-            --neon-blue: #00d4ff;
-            /* 副隊長 */
-            --neon-lime: #39ff14;
-            /* 回歸 => 固定綠色 */
+            --bg: #050816;
+            --bg-2: #08111f;
+            --card: rgba(15, 23, 42, 0.72);
+            --card-strong: rgba(15, 23, 42, 0.92);
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-2: rgba(255, 255, 255, 0.12);
+            --text: #e5f0ff;
+            --muted: #8ea3bd;
+            --line: rgba(148, 163, 184, 0.18);
+            --primary: #38bdf8;
+            --primary-2: #2563eb;
+            --cyan: #22d3ee;
+            --green: #22c55e;
+            --red: #fb7185;
+            --orange: #fb923c;
+            --purple: #a78bfa;
+            --yellow: #facc15;
+            --dark: #020617;
+            --shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+            --shadow-cyan: 0 0 35px rgba(34, 211, 238, 0.18);
+            --radius: 22px;
         }
 
         * {
-            box-sizing: border-box
+            box-sizing: border-box;
         }
 
-        html,
+        html {
+            min-height: 100%;
+            background: var(--bg);
+            -webkit-text-size-adjust: 100%;
+        }
+
         body {
             margin: 0;
-            padding: 0
-        }
-
-        body {
             min-height: 100vh;
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                "Noto Sans TC",
+                "Microsoft JhengHei",
+                Arial,
+                sans-serif;
             color: var(--text);
-            font-family: Inter, system-ui, -apple-system, "Noto Sans TC", sans-serif;
             background:
-                radial-gradient(1000px 400px at 10% -10%, #1d4ed833, transparent 60%),
-                radial-gradient(900px 380px at 90% -20%, #7e22ce33, transparent 60%),
-                linear-gradient(135deg, var(--bg), var(--bg2));
+                radial-gradient(circle at 10% 8%, rgba(56, 189, 248, 0.24), transparent 30%),
+                radial-gradient(circle at 90% 12%, rgba(167, 139, 250, 0.22), transparent 28%),
+                radial-gradient(circle at 50% 100%, rgba(34, 197, 94, 0.12), transparent 34%),
+                linear-gradient(180deg, #050816 0%, #08111f 52%, #050816 100%);
+            overflow-x: hidden;
         }
 
-        .wrap {
-            max-width: 1200px;
-            margin: 18px auto;
-            padding: 0 12px 18px;
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -4;
+            background-image:
+                linear-gradient(rgba(56, 189, 248, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56, 189, 248, 0.08) 1px, transparent 1px);
+            background-size: 42px 42px;
+            mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), transparent 88%);
+            animation: gridMove 18s linear infinite;
         }
 
-        .panel {
-            background: linear-gradient(180deg, rgba(15, 23, 42, .86), rgba(15, 23, 42, .7));
-            border: 1px solid var(--line);
-            border-radius: 18px;
-            backdrop-filter: blur(6px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: -1;
+            background:
+                linear-gradient(to bottom,
+                    transparent 0%,
+                    rgba(255, 255, 255, 0.035) 50%,
+                    transparent 100%);
+            background-size: 100% 8px;
+            opacity: 0.25;
+            mix-blend-mode: screen;
+        }
+
+        @keyframes gridMove {
+            from {
+                background-position: 0 0;
+            }
+
+            to {
+                background-position: 42px 42px;
+            }
+        }
+
+        @keyframes floatOrb {
+
+            0%,
+            100% {
+                transform: translate3d(0, 0, 0) scale(1);
+            }
+
+            50% {
+                transform: translate3d(24px, -28px, 0) scale(1.08);
+            }
+        }
+
+        @keyframes pulseGlow {
+
+            0%,
+            100% {
+                opacity: 0.55;
+                filter: blur(22px);
+            }
+
+            50% {
+                opacity: 0.95;
+                filter: blur(28px);
+            }
+        }
+
+        @keyframes shimmer {
+            from {
+                transform: translateX(-120%);
+            }
+
+            to {
+                transform: translateX(120%);
+            }
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes borderSpin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes loaderPulse {
+            from {
+                opacity: 0.35;
+                transform: translateY(0);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(-5px);
+            }
+        }
+
+        .ambient {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: -3;
+        }
+
+        .orb {
+            position: absolute;
+            width: 360px;
+            height: 360px;
+            border-radius: 999px;
+            filter: blur(18px);
+            opacity: 0.5;
+            animation: floatOrb 9s ease-in-out infinite;
+        }
+
+        .orb.one {
+            left: -120px;
+            top: 80px;
+            background: radial-gradient(circle, rgba(34, 211, 238, 0.42), transparent 64%);
+        }
+
+        .orb.two {
+            right: -120px;
+            top: 160px;
+            background: radial-gradient(circle, rgba(167, 139, 250, 0.38), transparent 65%);
+            animation-delay: -3s;
+        }
+
+        .orb.three {
+            left: 42%;
+            bottom: -160px;
+            background: radial-gradient(circle, rgba(34, 197, 94, 0.22), transparent 66%);
+            animation-delay: -5s;
+        }
+
+        .page {
+            width: min(1540px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 28px 0 54px;
         }
 
         .hero {
+            position: relative;
+            overflow: hidden;
+            border-radius: 30px;
+            padding: 1px;
+            box-shadow: var(--shadow), var(--shadow-cyan);
+            isolation: isolate;
+        }
+
+        .hero::before {
+            content: "";
+            position: absolute;
+            inset: -42%;
+            z-index: -2;
+            background:
+                conic-gradient(from 180deg,
+                    transparent,
+                    rgba(56, 189, 248, 0.75),
+                    rgba(167, 139, 250, 0.78),
+                    rgba(34, 197, 94, 0.42),
+                    transparent 62%);
+            animation: borderSpin 10s linear infinite;
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            inset: 1px;
+            border-radius: 29px;
+            z-index: -1;
+            background:
+                radial-gradient(circle at 14% 20%, rgba(56, 189, 248, 0.24), transparent 34%),
+                radial-gradient(circle at 86% 18%, rgba(167, 139, 250, 0.22), transparent 30%),
+                linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(2, 6, 23, 0.9));
+        }
+
+        .hero-inner {
+            position: relative;
+            padding: 30px;
+            min-height: 190px;
+        }
+
+        .hero-inner::before {
+            content: "";
+            position: absolute;
+            width: 560px;
+            height: 560px;
+            right: -220px;
+            top: -270px;
+            border-radius: 999px;
+            background:
+                radial-gradient(circle, rgba(56, 189, 248, 0.22), transparent 55%),
+                repeating-radial-gradient(circle,
+                    rgba(255, 255, 255, 0.12) 0 1px,
+                    transparent 1px 18px);
+            animation: pulseGlow 4.5s ease-in-out infinite;
+        }
+
+        .hero-inner::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(110deg,
+                    transparent 0%,
+                    rgba(255, 255, 255, 0.08) 38%,
+                    transparent 58%);
+            transform: translateX(-120%);
+            animation: shimmer 6s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .hero-title-block {
+            min-width: 0;
+            flex: 1 1 360px;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            max-width: 100%;
+            padding: 8px 13px;
+            border-radius: 999px;
+            border: 1px solid rgba(125, 211, 252, 0.32);
+            background: rgba(2, 6, 23, 0.42);
+            color: #bae6fd;
+            font-size: 13px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            box-shadow: inset 0 0 24px rgba(56, 189, 248, 0.08);
+            backdrop-filter: blur(14px);
+            margin-bottom: 14px;
+            white-space: nowrap;
+        }
+
+        .status-dot {
+            flex: 0 0 auto;
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: #22c55e;
+            box-shadow: 0 0 12px rgba(34, 197, 94, 0.95);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(32px, 4.7vw, 58px);
+            line-height: 1.05;
+            letter-spacing: -0.06em;
+            color: white;
+            word-break: keep-all;
+        }
+
+        .hero-subtitle {
+            margin: 14px 0 0;
+            max-width: 660px;
+            color: #a8c7e8;
+            font-size: 15px;
+            line-height: 1.7;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            flex: 0 1 320px;
+        }
+
+        .select-wrap,
+        .input-wrap {
+            position: relative;
+            min-width: 0;
+        }
+
+        select,
+        input {
+            width: 100%;
+            min-height: 46px;
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            border-radius: 15px;
+            outline: none;
+            background:
+                linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(2, 6, 23, 0.82));
+            color: var(--text);
+            font-size: 14px;
+            padding: 12px 14px;
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.06),
+                0 12px 28px rgba(0, 0, 0, 0.22);
+            transition:
+                border-color 0.2s ease,
+                box-shadow 0.2s ease,
+                transform 0.2s ease;
+        }
+
+        select {
+            appearance: none;
+            padding-right: 42px;
+            cursor: pointer;
+        }
+
+        select option {
+            background: #0f172a;
+            color: #e5f0ff;
+        }
+
+        .select-wrap::after {
+            content: "⌄";
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-56%);
+            color: #7dd3fc;
+            pointer-events: none;
+            font-size: 18px;
+        }
+
+        input::placeholder {
+            color: rgba(148, 163, 184, 0.78);
+        }
+
+        select:focus,
+        input:focus {
+            border-color: rgba(56, 189, 248, 0.72);
+            box-shadow:
+                0 0 0 4px rgba(56, 189, 248, 0.12),
+                0 0 28px rgba(56, 189, 248, 0.16);
+        }
+
+        select:hover,
+        input:hover {
+            transform: translateY(-1px);
+        }
+
+        .hero select {
+            min-width: 270px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(150px, 1fr));
+            gap: 14px;
+            margin-top: 18px;
+        }
+
+        .stat-card {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: var(--radius);
+            padding: 18px;
+            background:
+                linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(2, 6, 23, 0.72));
+            box-shadow:
+                0 18px 45px rgba(0, 0, 0, 0.28),
+                inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(18px);
+            animation: fadeUp 0.5s ease both;
+            transition:
+                transform 0.25s ease,
+                border-color 0.25s ease,
+                box-shadow 0.25s ease;
+            min-width: 0;
+        }
+
+        .stat-card:nth-child(2) {
+            animation-delay: 0.05s;
+        }
+
+        .stat-card:nth-child(3) {
+            animation-delay: 0.1s;
+        }
+
+        .stat-card:nth-child(4) {
+            animation-delay: 0.15s;
+        }
+
+        .stat-card:nth-child(5) {
+            animation-delay: 0.2s;
+        }
+
+        .stat-card::before {
+            content: "";
+            position: absolute;
+            inset: -1px;
+            background:
+                radial-gradient(circle at 24% 0%, rgba(56, 189, 248, 0.2), transparent 36%),
+                linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 38%);
+            opacity: 0.85;
+            pointer-events: none;
+        }
+
+        .stat-card::after {
+            content: "";
+            position: absolute;
+            left: 18px;
+            right: 18px;
+            bottom: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.9), transparent);
+            opacity: 0.65;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(56, 189, 248, 0.44);
+            box-shadow:
+                0 24px 60px rgba(0, 0, 0, 0.34),
+                0 0 32px rgba(56, 189, 248, 0.12);
+        }
+
+        .stat-top {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            z-index: 1;
+            min-width: 0;
+        }
+
+        .stat-label {
+            color: var(--muted);
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+
+        .stat-icon {
+            flex: 0 0 auto;
+            width: 38px;
+            height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 14px;
+            background: rgba(56, 189, 248, 0.1);
+            color: #7dd3fc;
+            border: 1px solid rgba(125, 211, 252, 0.2);
+            box-shadow: inset 0 0 18px rgba(56, 189, 248, 0.1);
+        }
+
+        .stat-value {
+            position: relative;
+            z-index: 1;
+            color: #f8fafc;
+            font-weight: 950;
+            font-size: clamp(24px, 2.7vw, 34px);
+            letter-spacing: -0.04em;
+            font-variant-numeric: tabular-nums;
+            overflow-wrap: anywhere;
+        }
+
+        .panel {
+            position: relative;
+            margin-top: 18px;
+            overflow: hidden;
+            border-radius: 28px;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            background:
+                linear-gradient(180deg, rgba(15, 23, 42, 0.82), rgba(2, 6, 23, 0.84));
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(20px);
+        }
+
+        .panel::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 18% 0%, rgba(56, 189, 248, 0.12), transparent 30%),
+                radial-gradient(circle at 82% 0%, rgba(167, 139, 250, 0.1), transparent 32%);
+        }
+
+        .toolbar {
+            position: relative;
+            z-index: 2;
             padding: 16px;
-            margin-bottom: 12px;
             display: flex;
             gap: 12px;
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+            background: rgba(2, 6, 23, 0.5);
+            backdrop-filter: blur(18px);
         }
 
-        .title {
-            margin: 0;
-            font-size: 28px;
-            font-weight: 900;
-            letter-spacing: .5px;
+        .toolbar-left,
+        .toolbar-right {
             display: flex;
-            align-items: center;
             gap: 10px;
-        }
-
-        .controls {
-            display: flex;
-            align-items: center;
-            gap: 8px;
             flex-wrap: wrap;
-        }
-
-        .controls select {
-            background: #0b1220;
-            color: #e5e7eb;
-            border: 1px solid #334155;
-            border-radius: 10px;
-            padding: 8px 10px;
-            font-size: 13px;
-            min-width: 170px;
-        }
-
-        /* Top3 卡片 */
-        .top3 {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-
-        .top-card {
-            border-radius: 16px;
-            padding: 14px;
-            border: 1px solid var(--line);
-            background: linear-gradient(160deg, rgba(15, 23, 42, .9), rgba(2, 6, 23, .92));
-            position: relative;
-            overflow: hidden;
-        }
-
-        .top-card::after {
-            content: "";
-            position: absolute;
-            inset: -40% auto auto -20%;
-            width: 140px;
-            height: 140px;
-            border-radius: 50%;
-            filter: blur(28px);
-            opacity: .18;
-            pointer-events: none;
-        }
-
-        .top1 {
-            border-color: #facc1566
-        }
-
-        .top2 {
-            border-color: #cbd5e166
-        }
-
-        .top3c {
-            border-color: #fdba7466
-        }
-
-        .top1::after {
-            background: var(--gold)
-        }
-
-        .top2::after {
-            background: var(--silver)
-        }
-
-        .top3c::after {
-            background: var(--bronze)
-        }
-
-        .medal {
-            font-size: 20px;
-            font-weight: 900
-        }
-
-        .rank-line {
-            display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px
+            min-width: 0;
         }
 
-        .name {
-            font-size: 18px;
-            font-weight: 800;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis
+        .search {
+            min-width: min(390px, 100%);
         }
 
-        .cm {
-            font-size: 12px;
-            color: var(--muted)
-        }
-
-        .score {
-            font-size: 28px;
-            font-weight: 900;
-            line-height: 1
-        }
-
-        .delta {
-            font-size: 13px;
-            font-weight: 700;
-            margin-top: 6px
-        }
-
-        .up {
-            color: #22c55e
-        }
-
-        .down {
-            color: #f43f5e
-        }
-
-        .flat {
-            color: #94a3b8
-        }
-
-        .badge {
-            display: inline-block;
-            margin-top: 8px;
-            padding: 4px 10px;
-            border-radius: 999px;
-            font-weight: 800;
-            font-size: 12px;
-            border: 1px solid transparent;
-            text-shadow: 0 0 6px rgba(255, 255, 255, .2);
-        }
-
-        .隊長 {
-            color: var(--neon-purple);
-            border-color: #b026ff88;
-            box-shadow: 0 0 10px #b026ff44 inset
-        }
-
-        .副隊長 {
-            color: var(--neon-blue);
-            border-color: #00d4ff88;
-            box-shadow: 0 0 10px #00d4ff44 inset
-        }
-
-        .長老 {
-            color: var(--neon-yellow);
-            border-color: #ffe60088;
-            box-shadow: 0 0 10px #ffe60044 inset
-        }
-
-        .PASS {
-            color: var(--neon-green);
-            border-color: #39ff1488;
-            box-shadow: 0 0 10px #39ff1444 inset
-        }
-
-        .降級 {
-            color: var(--neon-orange);
-            border-color: #ff9f1a88;
-            box-shadow: 0 0 10px #ff9f1a44 inset
-        }
-
-        .淘汰 {
-            color: var(--neon-red);
-            border-color: #ff2d5588;
-            box-shadow: 0 0 12px #ff2d5555 inset, 0 0 10px #ff2d5533
-        }
-
-        .回歸 {
-            color: var(--neon-lime);
-            border-color: #39ff1488;
-            box-shadow: 0 0 10px #39ff1444 inset
-        }
-
-        /* 列表 */
-        .list.panel {
-            padding: 8px;
-        }
-
-        .row-item {
-            display: grid;
+        .hint {
+            display: inline-flex;
+            align-items: center;
             gap: 8px;
-            align-items: center;
-            padding: 10px 8px;
-            border-bottom: 1px solid #1f2b40;
+            color: #a8c7e8;
             font-size: 13px;
-        }
-
-        .row-item.head {
-            position: sticky;
-            top: 0;
-            z-index: 5;
-            background: #0b1220;
-            border: 1px solid #1f2b40;
-            border-radius: 10px;
-            margin-bottom: 6px;
-            font-weight: 800;
-            color: #cbd5e1;
-        }
-
-        .row-item:last-child {
-            border-bottom: none
-        }
-
-        .rank {
-            font-weight: 900
-        }
-
-        .line-name {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis
-        }
-
-        .num {
-            font-weight: 800
-        }
-
-        .total {
-            font-size: 15px
-        }
-
-        .delta-chip {
-            font-weight: 800;
+            padding: 10px 12px;
             border-radius: 999px;
-            padding: 4px 8px;
-            text-align: center;
-            border: 1px solid #334155;
+            border: 1px solid rgba(125, 211, 252, 0.18);
+            background: rgba(56, 189, 248, 0.07);
+            line-height: 1.4;
         }
 
-        .delta-chip.up {
-            color: #22c55e;
-            border-color: #22c55e55;
-            background: #22c55e11
+        .hint::before {
+            content: "";
+            flex: 0 0 auto;
+            width: 7px;
+            height: 7px;
+            border-radius: 999px;
+            background: #38bdf8;
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.95);
         }
 
-        .delta-chip.down {
-            color: #f43f5e;
-            border-color: #f43f5e55;
-            background: #f43f5e11
+        .table-wrap {
+            position: relative;
+            z-index: 1;
+            overflow: auto;
+            max-height: 72vh;
+            scrollbar-color: rgba(56, 189, 248, 0.42) rgba(15, 23, 42, 0.8);
+            scrollbar-width: thin;
+            -webkit-overflow-scrolling: touch;
         }
 
-        .delta-chip.flat {
-            color: #94a3b8;
-            background: #94a3b811
+        .table-wrap::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
         }
 
-        .empty {
-            padding: 24px;
-            text-align: center;
-            color: var(--muted);
+        .table-wrap::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        .table-wrap::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(56, 189, 248, 0.58), rgba(167, 139, 250, 0.55));
+            border-radius: 999px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            min-width: 980px;
             font-size: 14px;
         }
 
-        @media (max-width: 980px) {
-            .top3 {
-                grid-template-columns: 1fr
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            padding: 14px 11px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+            background: rgba(15, 23, 42, 0.96);
+            color: #bfe8ff;
+            text-align: right;
+            font-size: 12px;
+            letter-spacing: 0.07em;
+            white-space: nowrap;
+            text-transform: uppercase;
+            backdrop-filter: blur(14px);
+        }
+
+        thead th:first-child,
+        tbody td:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 4;
+            text-align: left;
+            min-width: 118px;
+            max-width: 118px;
+            background: rgba(15, 23, 42, 0.98);
+            box-shadow: 1px 0 0 rgba(148, 163, 184, 0.14);
+        }
+
+        thead th:nth-child(2),
+        tbody td:nth-child(2) {
+            position: sticky;
+            left: 118px;
+            z-index: 4;
+            text-align: left;
+            min-width: 190px;
+            max-width: 190px;
+            background: rgba(15, 23, 42, 0.98);
+            box-shadow: 1px 0 0 rgba(148, 163, 184, 0.14);
+        }
+
+        thead th:first-child,
+        thead th:nth-child(2) {
+            z-index: 8;
+            background: rgba(15, 23, 42, 0.99);
+        }
+
+        tbody tr {
+            animation: fadeUp 0.34s ease both;
+        }
+
+        tbody td {
+            padding: 13px 11px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+            text-align: right;
+            white-space: nowrap;
+            color: #d7e7fb;
+            background: rgba(2, 6, 23, 0.42);
+            transition:
+                background 0.18s ease,
+                color 0.18s ease,
+                box-shadow 0.18s ease;
+        }
+
+        tbody tr:hover td,
+        tbody tr:hover td:first-child,
+        tbody tr:hover td:nth-child(2) {
+            background: rgba(56, 189, 248, 0.08);
+            box-shadow: inset 0 1px 0 rgba(125, 211, 252, 0.06);
+        }
+
+        .name {
+            font-weight: 900;
+            color: #f8fafc;
+        }
+
+        .line-name {
+            color: #b8c7d9;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .score {
+            font-variant-numeric: tabular-nums;
+            font-weight: 800;
+            color: #e6f4ff;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 66px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-weight: 900;
+            font-size: 12px;
+            letter-spacing: 0.02em;
+            border: 1px solid transparent;
+            box-shadow: inset 0 0 16px rgba(255, 255, 255, 0.04);
+        }
+
+        .badge-pass {
+            color: #86efac;
+            background: rgba(34, 197, 94, 0.13);
+            border-color: rgba(34, 197, 94, 0.28);
+            box-shadow: 0 0 18px rgba(34, 197, 94, 0.12);
+        }
+
+        .badge-out {
+            color: #fda4af;
+            background: rgba(251, 113, 133, 0.13);
+            border-color: rgba(251, 113, 133, 0.28);
+            box-shadow: 0 0 18px rgba(251, 113, 133, 0.12);
+        }
+
+        .badge-return {
+            color: #c4b5fd;
+            background: rgba(167, 139, 250, 0.14);
+            border-color: rgba(167, 139, 250, 0.3);
+            box-shadow: 0 0 18px rgba(167, 139, 250, 0.12);
+        }
+
+        .badge-leader {
+            color: #7dd3fc;
+            background: rgba(56, 189, 248, 0.13);
+            border-color: rgba(56, 189, 248, 0.32);
+            box-shadow: 0 0 18px rgba(56, 189, 248, 0.14);
+        }
+
+        .badge-elder {
+            color: #fdba74;
+            background: rgba(251, 146, 60, 0.14);
+            border-color: rgba(251, 146, 60, 0.3);
+            box-shadow: 0 0 18px rgba(251, 146, 60, 0.12);
+        }
+
+        .badge-other {
+            color: #cbd5e1;
+            background: rgba(148, 163, 184, 0.12);
+            border-color: rgba(148, 163, 184, 0.22);
+        }
+
+        .trend-cell {
+            color: #e6f4ff;
+        }
+
+        .trend-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 86px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-weight: 950;
+            font-size: 12px;
+            letter-spacing: 0.02em;
+            border: 1px solid transparent;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .trend-up {
+            color: #86efac;
+            background: rgba(34, 197, 94, 0.14);
+            border-color: rgba(34, 197, 94, 0.3);
+            box-shadow: 0 0 18px rgba(34, 197, 94, 0.14);
+        }
+
+        .trend-down {
+            color: #fda4af;
+            background: rgba(251, 113, 133, 0.14);
+            border-color: rgba(251, 113, 133, 0.3);
+            box-shadow: 0 0 18px rgba(251, 113, 133, 0.14);
+        }
+
+        .trend-same {
+            color: #cbd5e1;
+            background: rgba(148, 163, 184, 0.12);
+            border-color: rgba(148, 163, 184, 0.22);
+        }
+
+        .trend-new {
+            color: #7dd3fc;
+            background: rgba(56, 189, 248, 0.12);
+            border-color: rgba(56, 189, 248, 0.28);
+            box-shadow: 0 0 18px rgba(56, 189, 248, 0.12);
+        }
+
+        .row-total td,
+        .row-total td:first-child,
+        .row-total td:nth-child(2) {
+            background:
+                linear-gradient(90deg, rgba(56, 189, 248, 0.24), rgba(167, 139, 250, 0.18)) !important;
+            color: #ffffff;
+            font-weight: 950;
+            border-bottom: 0;
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.12),
+                inset 0 -1px 0 rgba(125, 211, 252, 0.24);
+        }
+
+        .section-row td {
+            background:
+                linear-gradient(90deg, rgba(34, 211, 238, 0.18), rgba(167, 139, 250, 0.12)) !important;
+            color: #dff7ff;
+            font-weight: 950;
+            text-align: left;
+            font-size: 15px;
+            letter-spacing: 0.03em;
+        }
+
+        .empty-state {
+            padding: 32px !important;
+            color: #a8c7e8;
+            text-align: left !important;
+            line-height: 1.8;
+        }
+
+        .loading-row td {
+            padding: 30px !important;
+            color: var(--muted);
+            text-align: left !important;
+        }
+
+        .cyber-loader {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cyber-loader span {
+            width: 9px;
+            height: 9px;
+            border-radius: 999px;
+            background: #38bdf8;
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.95);
+            animation: loaderPulse 0.9s ease-in-out infinite alternate;
+        }
+
+        .cyber-loader span:nth-child(2) {
+            animation-delay: 0.15s;
+        }
+
+        .cyber-loader span:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        @media (max-width: 1180px) {
+            .stats {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 960px) {
+            .page {
+                width: min(100% - 24px, 1540px);
+                padding-top: 20px;
             }
 
-            .title {
-                font-size: 24px
+            .hero-inner {
+                padding: 24px;
+                min-height: auto;
             }
 
-            .row-item {
-                font-size: 12px
+            .hero-content {
+                align-items: stretch;
+            }
+
+            .hero-actions {
+                flex: 1 1 100%;
+                width: 100%;
+            }
+
+            .hero-actions .select-wrap {
+                width: 100%;
+            }
+
+            .hero select {
+                min-width: 100%;
+            }
+
+            .toolbar {
+                align-items: stretch;
+            }
+
+            .toolbar-left,
+            .toolbar-right,
+            .search,
+            .select-wrap,
+            .input-wrap,
+            select,
+            input {
+                width: 100%;
+            }
+
+            .hint {
+                width: 100%;
+                justify-content: center;
+                border-radius: 15px;
+                text-align: center;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 760px) {
+            body::before {
+                background-size: 34px 34px;
+                opacity: 0.65;
+            }
+
+            .orb {
+                width: 260px;
+                height: 260px;
+                opacity: 0.36;
+            }
+
+            .page {
+                width: min(100% - 20px, 1540px);
+                padding: 14px 0 34px;
+            }
+
+            .hero {
+                border-radius: 24px;
+            }
+
+            .hero::after {
+                border-radius: 23px;
+            }
+
+            .hero-inner {
+                padding: 20px;
+            }
+
+            .hero-inner::before {
+                width: 360px;
+                height: 360px;
+                right: -190px;
+                top: -210px;
+            }
+
+            .eyebrow {
+                font-size: 11px;
+                letter-spacing: 0.04em;
+                padding: 7px 10px;
+            }
+
+            h1 {
+                font-size: clamp(30px, 10vw, 42px);
+                letter-spacing: -0.05em;
+            }
+
+            .hero-subtitle {
+                font-size: 14px;
+                line-height: 1.65;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                margin-top: 14px;
+            }
+
+            .stat-card {
+                padding: 16px;
+                border-radius: 18px;
+            }
+
+            .stat-value {
+                font-size: 28px;
+            }
+
+            .panel {
+                margin-top: 14px;
+                border-radius: 22px;
+                overflow: visible;
+            }
+
+            .toolbar {
+                padding: 12px;
+                border-radius: 22px 22px 0 0;
+            }
+
+            .table-wrap {
+                overflow: visible;
+                max-height: none;
+                padding: 12px;
+            }
+
+            table {
+                display: block;
+                width: 100%;
+                min-width: 0;
+                font-size: 14px;
+            }
+
+            thead {
+                display: none;
+            }
+
+            tbody {
+                display: grid;
+                gap: 12px;
+                width: 100%;
+            }
+
+            tbody tr {
+                display: block;
+                width: 100%;
+                border: 1px solid rgba(148, 163, 184, 0.18);
+                border-radius: 18px;
+                overflow: hidden;
+                background:
+                    linear-gradient(180deg, rgba(15, 23, 42, 0.84), rgba(2, 6, 23, 0.78));
+                box-shadow:
+                    0 14px 34px rgba(0, 0, 0, 0.24),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            }
+
+            tbody td,
+            thead th:first-child,
+            tbody td:first-child,
+            thead th:nth-child(2),
+            tbody td:nth-child(2) {
+                position: static;
+                left: auto;
+                z-index: auto;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 16px;
+                width: 100%;
+                min-width: 0;
+                max-width: none;
+                padding: 12px 14px;
+                text-align: right;
+                white-space: normal;
+                word-break: break-word;
+                overflow-wrap: anywhere;
+                background: transparent;
+                box-shadow: none;
+                border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+            }
+
+            tbody td:last-child {
+                border-bottom: 0;
+            }
+
+            tbody td::before {
+                content: attr(data-label);
+                flex: 0 0 auto;
+                max-width: 46%;
+                color: #7dd3fc;
+                font-size: 12px;
+                font-weight: 800;
+                letter-spacing: 0.04em;
+                text-align: left;
+            }
+
+            tbody td.name,
+            tbody td.line-name {
+                text-align: right;
+            }
+
+            tbody tr:hover td,
+            tbody tr:hover td:first-child,
+            tbody tr:hover td:nth-child(2) {
+                background: transparent;
+                box-shadow: none;
+            }
+
+            .line-name {
+                overflow: visible;
+                text-overflow: clip;
+            }
+
+            .score,
+            .name,
+            .line-name {
+                min-width: 0;
+            }
+
+            .section-row {
+                border-color: rgba(56, 189, 248, 0.24);
+            }
+
+            .section-row td {
+                display: block;
+                width: 100%;
+                padding: 14px !important;
+                text-align: left !important;
+                border-bottom: 0;
+                border-radius: 18px;
+            }
+
+            .section-row td::before {
+                content: "";
+                display: none;
+            }
+
+            .row-total {
+                border-color: rgba(56, 189, 248, 0.34);
+            }
+
+            .row-total td,
+            .row-total td:first-child,
+            .row-total td:nth-child(2) {
+                background: transparent !important;
+                box-shadow: none;
+                border-bottom: 1px solid rgba(125, 211, 252, 0.18);
+            }
+
+            .row-total td:last-child {
+                border-bottom: 0;
+            }
+
+            .empty-state,
+            .loading-row td {
+                display: block !important;
+                border-bottom: 0 !important;
+            }
+
+            .empty-state::before,
+            .loading-row td::before {
+                display: none;
+                content: "";
+            }
+
+            .cyber-loader {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .page {
+                width: min(100% - 16px, 1540px);
+            }
+
+            .hero-inner {
+                padding: 16px;
+            }
+
+            .hero-subtitle {
+                margin-top: 10px;
+            }
+
+            select,
+            input {
+                min-height: 44px;
+                font-size: 14px;
+                border-radius: 13px;
+            }
+
+            .stat-card {
+                padding: 15px;
+            }
+
+            .stat-icon {
+                width: 34px;
+                height: 34px;
+                border-radius: 12px;
+            }
+
+            .toolbar {
+                padding: 10px;
+            }
+
+            .table-wrap {
+                padding: 10px;
+            }
+
+            tbody td,
+            thead th:first-child,
+            tbody td:first-child,
+            thead th:nth-child(2),
+            tbody td:nth-child(2) {
+                padding: 11px 12px;
+                gap: 12px;
+            }
+
+            tbody td::before {
+                max-width: 42%;
+                font-size: 11px;
+            }
+
+            .badge {
+                min-width: auto;
+                padding: 6px 9px;
+                font-size: 11px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.001ms !important;
+                animation-iteration-count: 1 !important;
+                scroll-behavior: auto !important;
+                transition-duration: 0.001ms !important;
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="wrap">
-        <div class="panel hero">
-            <div>
-                <h1 class="title">🏆 每週排行榜</h1>
-            </div>
-            <div class="controls">
-                <label style="font-size:13px;color:var(--muted)">週次</label>
-                <select id="weekSelect"></select>
-            </div>
-        </div>
-
-        <div id="top3" class="top3"></div>
-
-        <div class="list panel">
-            <div class="row-item head" id="listHead"></div>
-            <div id="listBody"></div>
-        </div>
+    <div class="ambient" aria-hidden="true">
+        <div class="orb one"></div>
+        <div class="orb two"></div>
+        <div class="orb three"></div>
     </div>
 
-    <script>
-        (function () {
-            const el = id => document.getElementById(id);
-            const fmt = n => Number(n || 0).toLocaleString("zh-Hant-TW");
-            let weeks = [];
+    <main class="page">
+        <section class="hero">
+            <div class="hero-inner">
+                <div class="hero-content">
+                    <div class="hero-title-block">
+                        <div class="eyebrow">
+                            <span class="status-dot"></span>
+                            Weekly Score Dashboard
+                        </div>
 
-            function weekTotal(w, m) {
-                const c = Number(w.activityCount || 3);
-                return (m.activities || []).slice(0, c).reduce((s, a) => s + Number(a.score || 0) + Number(a.missed || 0), 0);
-            }
+                        <h1>每週成績總覽</h1>
 
-            function sortMembers(w) {
-                return [...(w.members || [])].sort((a, b) => weekTotal(w, b) - weekTotal(w, a));
-            }
+                        <p class="hero-subtitle">
+                            即時檢視每週活動分數、合格狀態與成員表現。
+                        </p>
+                    </div>
 
-            function buildPrevMap(prev) {
-                const map = new Map();
-                if (!prev) return map;
-                const sorted = sortMembers(prev);
-                sorted.forEach((m, i) => map.set(m.cm, { total: weekTotal(prev, m), rank: i + 1 }));
-                return map;
-            }
-
-            function deltaInfo(total, prevMap, cm) {
-                if (!prevMap.has(cm)) return { text: "—", cls: "flat" };
-                const p = prevMap.get(cm);
-                const d = total - p.total;
-                if (d > 0) return { text: `▲ ${fmt(d)}`, cls: "up" };
-                if (d < 0) return { text: `▼ ${fmt(Math.abs(d))}`, cls: "down" };
-                return { text: "— 0", cls: "flat" };
-            }
-
-            function displayStatus(m) {
-                if ((m.type || "") === "回歸") return "回歸"; // 強制綠色回歸
-                return m.status || "-";
-            }
-
-            function setGridByActivityCount(c) {
-                const head = el("listHead");
-                const rows = document.querySelectorAll("#listBody .row-item");
-
-                // 欄位：排名 CM LINE + 活動欄位(c個) + 週總 + 較上週 + 狀態
-                const baseLeft = "56px 110px minmax(120px,1.2fr)";
-                const actCols = c === 2
-                    ? "minmax(78px,1fr) minmax(78px,1fr)"
-                    : "minmax(78px,1fr) minmax(78px,1fr) minmax(78px,1fr)";
-                const tail = "100px 120px 90px";
-                const grid = `${baseLeft} ${actCols} ${tail}`;
-
-                head.style.gridTemplateColumns = grid;
-                rows.forEach(r => r.style.gridTemplateColumns = grid);
-            }
-
-            function renderHead(c, names) {
-                const head = el("listHead");
-                const cols = [
-                    "<div>排名</div>",
-                    "<div>CM</div>",
-                    "<div>LINE名稱</div>",
-                    `<div>${names[0] || "活動1"}總</div>`,
-                    `<div>${names[1] || "活動2"}總</div>`
-                ];
-
-                if (c === 3) cols.push(`<div>${names[2] || "活動3"}總</div>`);
-
-                cols.push("<div>週總</div>", "<div>較上週</div>", "<div>狀態</div>");
-                head.innerHTML = cols.join("");
-            }
-
-            function render(weekIndex) {
-                const curr = weeks[weekIndex];
-                const prev = weekIndex > 0 ? weeks[weekIndex - 1] : null;
-                const prevMap = buildPrevMap(prev);
-
-                const c = Number(curr.activityCount || 3);
-                const names = curr.activityNames || ["活動1", "活動2", "活動3"];
-                const sorted = sortMembers(curr);
-
-                renderHead(c, names);
-
-                // Top3
-                const top3 = sorted.slice(0, 3);
-                el("top3").innerHTML = top3.map((m, idx) => {
-                    const rank = idx + 1;
-                    const total = weekTotal(curr, m);
-                    const d = deltaInfo(total, prevMap, m.cm);
-                    const medal = rank === 1 ? "🥇" : rank === 2 ? "🥈" : "🥉";
-                    const cls = rank === 1 ? "top1" : rank === 2 ? "top2" : "top3c";
-                    const status = displayStatus(m);
-
-                    return `
-            <div class="top-card ${cls}">
-              <div class="rank-line">
-                <div class="medal">${medal} #${rank}</div>
-                <div class="cm">${m.cm || ""}</div>
-              </div>
-              <div class="name">${m.cm || "-"}</div>
-              <div class="cm">${m.lineName || ""}</div>
-              <div class="score">${fmt(total)}</div>
-              <div class="delta ${d.cls}">${d.text}</div>
-              <span class="badge ${status}">${status}</span>
+                    <div class="hero-actions">
+                        <div class="select-wrap">
+                            <select id="weekSelect" aria-label="選擇週別"></select>
+                        </div>
+                    </div>
+                </div>
             </div>
-          `;
-                }).join("");
+        </section>
 
-                // 其他名次
-                const rest = sorted.slice(3);
-                el("listBody").innerHTML = rest.length ? rest.map((m, idx) => {
-                    const rank = idx + 4;
-                    const acts = (m.activities || []).slice(0, c);
-                    while (acts.length < c) acts.push({ score: 0, missed: 0 });
+        <section class="stats" id="stats"></section>
 
-                    const aTotals = acts.map(a => Number(a.score || 0) + Number(a.missed || 0));
-                    const total = aTotals.reduce((a, b) => a + b, 0);
-                    const d = deltaInfo(total, prevMap, m.cm);
-                    const status = displayStatus(m);
+        <section class="panel">
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <div class="input-wrap">
+                        <input class="search" id="searchInput" type="search" placeholder="搜尋 CM 或 LINE 名稱..." />
+                    </div>
 
-                    const actHtml = c === 2
-                        ? `
-              <div class="num">${fmt(aTotals[0] || 0)}</div>
-              <div class="num">${fmt(aTotals[1] || 0)}</div>
-            `
-                        : `
-              <div class="num">${fmt(aTotals[0] || 0)}</div>
-              <div class="num">${fmt(aTotals[1] || 0)}</div>
-              <div class="num">${fmt(aTotals[2] || 0)}</div>
+                    <div class="select-wrap">
+                        <select id="statusFilter" aria-label="篩選狀態">
+                            <option value="全部">全部狀態</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="toolbar-right">
+                    <span class="hint" id="resultHint">載入中...</span>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead id="tableHead"></thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const WEEK_INDEX_URL = "./data/weeks.csv";
+
+        const DISPLAY_HEADERS = [
+            "CM",
+            "LINE名稱",
+            "活動1總分",
+            "活動2總分",
+            "活動3總分",
+            "一週總分",
+            "距離合格分數",
+            "距離長老分數",
+            "較上週",
+            "狀態"
+        ];
+
+
+        const els = {
+            weekSelect: document.getElementById("weekSelect"),
+            stats: document.getElementById("stats"),
+            tableHead: document.getElementById("tableHead"),
+            tableBody: document.getElementById("tableBody"),
+            searchInput: document.getElementById("searchInput"),
+            statusFilter: document.getElementById("statusFilter"),
+            resultHint: document.getElementById("resultHint")
+        };
+
+        let weeks = [];
+        let currentRows = [];
+
+        function escapeHTML(value) {
+            return String(value ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        async function fetchText(url) {
+            const response = await fetch(url, { cache: "no-store" });
+
+            if (!response.ok) {
+                throw new Error(`讀取失敗：${url}`);
+            }
+
+            return response.text();
+        }
+
+        function parseCSV(text) {
+            const rows = [];
+            let row = [];
+            let cell = "";
+            let inQuotes = false;
+
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const nextChar = text[i + 1];
+
+                if (char === '"' && inQuotes && nextChar === '"') {
+                    cell += '"';
+                    i++;
+                    continue;
+                }
+
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                    continue;
+                }
+
+                if (char === "," && !inQuotes) {
+                    row.push(cell);
+                    cell = "";
+                    continue;
+                }
+
+                if ((char === "\n" || char === "\r") && !inQuotes) {
+                    if (char === "\r" && nextChar === "\n") i++;
+
+                    row.push(cell);
+
+                    if (row.some(value => String(value).trim() !== "")) {
+                        rows.push(row);
+                    }
+
+                    row = [];
+                    cell = "";
+                    continue;
+                }
+
+                cell += char;
+            }
+
+            row.push(cell);
+
+            if (row.some(value => String(value).trim() !== "")) {
+                rows.push(row);
+            }
+
+            return rows;
+        }
+
+        function csvToObjects(csvText) {
+            const rows = parseCSV(csvText);
+
+            if (!rows.length) return [];
+
+            const headers = rows[0].map(header => String(header || "").trim());
+
+            return rows.slice(1).map(cols => {
+                const obj = {};
+
+                headers.forEach((header, index) => {
+                    obj[header] = cols[index] ?? "";
+                });
+
+                return obj;
+            });
+        }
+
+        function parseNumber(value) {
+            if (!value) return 0;
+            return Number(String(value).replaceAll(",", "").trim()) || 0;
+        }
+
+        function formatNumber(value) {
+            return Number(value || 0).toLocaleString("zh-TW");
+        }
+
+        function getRowType(row) {
+            if (row.type) return row.type;
+            if (row["CM"] === "【回歸帳號】") return "section";
+            if (row["CM"] === "總計") return "total";
+            return "person";
+        }
+
+        function normalizeRows(rows) {
+            return rows
+                .map(row => {
+                    const normalized = { ...row };
+
+                    DISPLAY_HEADERS.forEach(header => {
+                        normalized[header] = normalized[header] ?? "";
+                    });
+
+                    normalized.__type = getRowType(normalized);
+
+                    return normalized;
+                })
+                .filter(row => {
+                    if (row.__type !== "person") return true;
+
+                    return (
+                        String(row["CM"] || "").trim() ||
+                        String(row["LINE名稱"] || "").trim()
+                    );
+                });
+        }
+
+        function getBadgeClass(status) {
+            if (status === "PASS") return "badge-pass";
+            if (status === "淘汰") return "badge-out";
+            if (status === "回歸") return "badge-return";
+            if (status === "隊長" || status === "副隊長") return "badge-leader";
+            if (status === "長老") return "badge-elder";
+            return "badge-other";
+        }
+        function getPersonKey(row) {
+            const cm = String(row["CM"] || "").trim();
+            const lineName = String(row["LINE名稱"] || "").trim();
+
+            if (cm) return `cm:${cm.toLowerCase()}`;
+            if (lineName) return `line:${lineName.toLowerCase()}`;
+
+            return "";
+        }
+
+        function buildPreviousScoreMap(rows) {
+            const map = new Map();
+
+            rows
+                .filter(row => row.__type === "person")
+                .forEach(row => {
+                    const key = getPersonKey(row);
+
+                    if (!key) return;
+
+                    map.set(key, parseNumber(row["一週總分"]));
+                });
+
+            return map;
+        }
+
+        async function getPreviousRows(currentWeekId) {
+            const currentIndex = weeks.findIndex(week => week.id === currentWeekId);
+
+            /**
+             * weeks 目前是依 startDate 由新到舊排序。
+             * 例如：
+             * index 0 = 4月第四週
+             * index 1 = 4月第三週
+             * index 2 = 4月第二週
+             *
+             * 所以上一週就是 currentIndex + 1。
+             */
+            const previousWeek = weeks[currentIndex + 1];
+
+            if (!previousWeek) {
+                return [];
+            }
+
+            try {
+                const csvText = await fetchText(previousWeek.file);
+                return normalizeRows(csvToObjects(csvText));
+            } catch (error) {
+                console.warn("上一週資料讀取失敗：", error);
+                return [];
+            }
+        }
+
+        function applyWeekComparison(rows, previousRows) {
+            const previousScoreMap = buildPreviousScoreMap(previousRows);
+
+            return rows.map(row => {
+                if (row.__type !== "person") {
+                    row["較上週"] = "";
+                    row.__trend = "";
+                    row.__delta = null;
+                    row.__prevScore = null;
+                    return row;
+                }
+
+                const key = getPersonKey(row);
+                const currentScore = parseNumber(row["一週總分"]);
+
+                if (!key || !previousScoreMap.has(key)) {
+                    row["較上週"] = "新 / 無資料";
+                    row.__trend = "new";
+                    row.__delta = null;
+                    row.__prevScore = null;
+                    return row;
+                }
+
+                const previousScore = previousScoreMap.get(key);
+                const delta = currentScore - previousScore;
+
+                row.__delta = delta;
+                row.__prevScore = previousScore;
+
+                if (delta > 0) {
+                    row["較上週"] = `▲ ${formatNumber(delta)}`;
+                    row.__trend = "up";
+                } else if (delta < 0) {
+                    row["較上週"] = `▼ ${formatNumber(Math.abs(delta))}`;
+                    row.__trend = "down";
+                } else {
+                    row["較上週"] = "— 0";
+                    row.__trend = "same";
+                }
+
+                return row;
+            });
+        }
+
+        function renderHead() {
+            els.tableHead.innerHTML = `
+                <tr>
+                    ${DISPLAY_HEADERS.map(header => `<th>${escapeHTML(header)}</th>`).join("")}
+                </tr>
+            `;
+        }
+
+        function renderLoading() {
+            els.tableBody.innerHTML = `
+                <tr class="loading-row">
+                    <td colspan="${DISPLAY_HEADERS.length}">
+                        <span class="cyber-loader">
+                            <span></span><span></span><span></span>
+                            <strong>資料同步中...</strong>
+                        </span>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function renderWeekSelect() {
+            els.weekSelect.innerHTML = weeks
+                .map(week => `
+                    <option value="${escapeHTML(week.id)}">
+                        ${escapeHTML(week.label)}
+                    </option>
+                `)
+                .join("");
+        }
+
+        function getFilteredRows() {
+            const keyword = els.searchInput.value.trim().toLowerCase();
+            const status = els.statusFilter.value;
+
+            return currentRows.filter(row => {
+                if (row.__type !== "person") return true;
+
+                const matchKeyword =
+                    !keyword ||
+                    String(row["CM"]).toLowerCase().includes(keyword) ||
+                    String(row["LINE名稱"]).toLowerCase().includes(keyword);
+
+                const matchStatus = status === "全部" || row["狀態"] === status;
+
+                return matchKeyword && matchStatus;
+            });
+        }
+
+        function renderStatusFilter(rows) {
+            const statuses = Array.from(
+                new Set(
+                    rows
+                        .filter(row => row.__type === "person")
+                        .map(row => row["狀態"])
+                        .filter(Boolean)
+                )
+            );
+
+            const current = els.statusFilter.value || "全部";
+
+            els.statusFilter.innerHTML = `
+                <option value="全部">全部狀態</option>
+                ${statuses.map(status => `
+                    <option value="${escapeHTML(status)}">${escapeHTML(status)}</option>
+                `).join("")}
             `;
 
-                    return `
-            <div class="row-item">
-              <div class="rank">#${rank}</div>
-              <div>${m.cm || ""}</div>
-              <div class="line-name">${m.lineName || "-"}</div>
-              ${actHtml}
-              <div class="num total">${fmt(total)}</div>
-              <div class="delta-chip ${d.cls}">${d.text}</div>
-              <div><span class="badge ${status}">${status}</span></div>
-            </div>
-          `;
-                }).join("") : `<div class="empty">沒有其他名次資料</div>`;
+            els.statusFilter.value = statuses.includes(current) ? current : "全部";
+        }
 
-                setGridByActivityCount(c);
+        function animateNumber(element, target) {
+            const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+            if (prefersReducedMotion) {
+                element.textContent = formatNumber(target);
+                return;
             }
 
-            fetch(`./data.json?v=${Date.now()}`)
-                .then(r => {
-                    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-                    return r.json();
-                })
-                .then(data => {
-                    if (Array.isArray(data.history) && data.history.length) {
-                        weeks = [...data.history].sort((a, b) => String(a.weekKey || "").localeCompare(String(b.weekKey || "")));
-                    } else {
-                        weeks = [data];
+            const duration = 850;
+            const startTime = performance.now();
+            const startValue = 0;
+
+            function update(now) {
+                const elapsed = now - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                const current = Math.round(startValue + (target - startValue) * eased);
+
+                element.textContent = formatNumber(current);
+
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                }
+            }
+
+            requestAnimationFrame(update);
+        }
+
+        function animateStatCards() {
+            document.querySelectorAll("[data-stat-value]").forEach(element => {
+                animateNumber(element, Number(element.dataset.statValue || 0));
+            });
+        }
+
+        function renderStats(rows) {
+            const people = rows.filter(row => row.__type === "person");
+            const totalScore = people.reduce((sum, row) => sum + parseNumber(row["一週總分"]), 0);
+            const passCount = people.filter(row => row["狀態"] === "PASS").length;
+            const outCount = people.filter(row => row["狀態"] === "淘汰").length;
+            const returnCount = people.filter(row => row["狀態"] === "回歸").length;
+
+            const statItems = [
+                { label: "成員筆數", value: people.length, icon: "👥" },
+                { label: "一週總分加總", value: totalScore, icon: "⚡" },
+                { label: "PASS", value: passCount, icon: "✅" },
+                { label: "淘汰", value: outCount, icon: "⛔" },
+                { label: "回歸", value: returnCount, icon: "↩" }
+            ];
+
+            els.stats.innerHTML = statItems
+                .map(item => `
+                    <article class="stat-card">
+                        <div class="stat-top">
+                            <div>
+                                <div class="stat-label">${escapeHTML(item.label)}</div>
+                                <div class="stat-value" data-stat-value="${Number(item.value)}">0</div>
+                            </div>
+                            <div class="stat-icon" aria-hidden="true">${escapeHTML(item.icon)}</div>
+                        </div>
+                    </article>
+                `)
+                .join("");
+
+            animateStatCards();
+        }
+
+        function renderBody() {
+            const filteredRows = getFilteredRows();
+
+            if (!filteredRows.length) {
+                els.tableBody.innerHTML = `
+                    <tr>
+                        <td class="empty-state" colspan="${DISPLAY_HEADERS.length}">
+                            找不到符合條件的資料。
+                        </td>
+                    </tr>
+                `;
+
+                els.resultHint.textContent = "目前顯示 0 筆成員資料";
+                return;
+            }
+
+            els.tableBody.innerHTML = filteredRows.map((row, index) => {
+                if (row.__type === "section") {
+                    return `
+                        <tr class="section-row" style="animation-delay: ${Math.min(index * 0.015, 0.3)}s">
+                            <td colspan="${DISPLAY_HEADERS.length}">📌 ${escapeHTML(row["CM"])}</td>
+                        </tr>
+                    `;
+                }
+
+                const rowClass = row.__type === "total" ? "row-total" : "";
+
+                return `
+                    <tr class="${rowClass}" style="animation-delay: ${Math.min(index * 0.015, 0.3)}s">
+                        ${DISPLAY_HEADERS.map(header => {
+                    const value = row[header] || "";
+
+                    if (header === "CM") {
+                        return `<td class="name" data-label="${escapeHTML(header)}">${escapeHTML(value || "-")}</td>`;
                     }
 
-                    const sel = el("weekSelect");
-                    sel.innerHTML = weeks.map((w, i) => {
-                        const label = w.week || w.weekKey || `第${i + 1}週`;
-                        return `<option value="${i}">${label}</option>`;
-                    }).join("");
-
-                    let idx = weeks.length - 1;
-                    if (data.currentWeekKey) {
-                        const found = weeks.findIndex(w => w.weekKey === data.currentWeekKey);
-                        if (found >= 0) idx = found;
+                    if (header === "LINE名稱") {
+                        return `<td class="line-name" data-label="${escapeHTML(header)}">${escapeHTML(value || "-")}</td>`;
                     }
 
-                    sel.value = String(idx);
-                    render(idx);
+                    if (header === "較上週") {
+                        const trendClass = row.__trend ? `trend-${row.__trend}` : "trend-same";
+                        const prevScoreText = row.__prevScore !== null && row.__prevScore !== undefined
+                            ? `上週：${formatNumber(row.__prevScore)}`
+                            : "上週無資料";
 
-                    sel.addEventListener("change", () => render(Number(sel.value)));
-                })
-                .catch(err => {
-                    console.error(err);
-                    el("top3").innerHTML = `<div class="empty">讀取 data.json 失敗</div>`;
-                    el("listHead").innerHTML = "";
-                    el("listBody").innerHTML = "";
-                });
-        })();
+                        return `
+                            <td class="score trend-cell" data-label="${escapeHTML(header)}">
+                                <span class="trend-badge ${trendClass}" title="${escapeHTML(prevScoreText)}">
+                                    ${escapeHTML(value || "-")}
+                                </span>
+                            </td>
+                        `;
+                    }
+
+                    if (header === "狀態") {
+                        return `
+                            <td data-label="${escapeHTML(header)}">
+                                ${value ? `<span class="badge ${getBadgeClass(value)}">${escapeHTML(value)}</span>` : "-"}
+                            </td>
+                        `;
+                    }
+
+                    return `<td class="score" data-label="${escapeHTML(header)}">${escapeHTML(value || "-")}</td>`;
+
+                }).join("")}
+                    </tr>
+                `;
+            }).join("");
+
+            const shownPeople = filteredRows.filter(row => row.__type === "person").length;
+            const allPeople = currentRows.filter(row => row.__type === "person").length;
+
+            els.resultHint.textContent = `目前顯示 ${shownPeople} / ${allPeople} 筆成員資料`;
+        }
+
+        async function loadWeeks() {
+            const csvText = await fetchText(WEEK_INDEX_URL);
+
+            weeks = csvToObjects(csvText).sort((a, b) => {
+                return String(b.startDate || "").localeCompare(String(a.startDate || ""));
+            });
+
+            renderWeekSelect();
+        }
+
+        async function loadWeek(weekId) {
+            const week = weeks.find(item => item.id === weekId) || weeks[0];
+
+            if (!week) {
+                throw new Error("找不到週別資料");
+            }
+
+            els.resultHint.textContent = "資料載入中...";
+            renderLoading();
+
+            const csvText = await fetchText(week.file);
+
+            const rows = normalizeRows(csvToObjects(csvText));
+            const previousRows = await getPreviousRows(week.id);
+
+            currentRows = applyWeekComparison(rows, previousRows);
+
+            renderHead();
+            renderStatusFilter(currentRows);
+            renderStats(currentRows);
+            renderBody();
+        }
+
+        function renderError(error) {
+            console.error(error);
+
+            els.stats.innerHTML = "";
+            els.resultHint.textContent = "資料讀取失敗";
+            els.tableHead.innerHTML = "";
+
+            els.tableBody.innerHTML = `
+                <tr>
+                    <td class="empty-state" colspan="${DISPLAY_HEADERS.length}">
+                        資料讀取失敗。
+                    </td>
+                </tr>
+            `;
+        }
+
+        els.weekSelect.addEventListener("change", async event => {
+            try {
+                els.searchInput.value = "";
+                els.statusFilter.value = "全部";
+                await loadWeek(event.target.value);
+            } catch (error) {
+                renderError(error);
+            }
+        });
+
+        els.searchInput.addEventListener("input", renderBody);
+        els.statusFilter.addEventListener("change", renderBody);
+
+        async function initApp() {
+            try {
+                renderHead();
+                renderLoading();
+                await loadWeeks();
+
+                if (!weeks.length) {
+                    throw new Error("weeks.csv 沒有週別資料");
+                }
+
+                await loadWeek(weeks[0].id);
+            } catch (error) {
+                renderError(error);
+            }
+        }
+
+        initApp();
     </script>
 </body>
 
