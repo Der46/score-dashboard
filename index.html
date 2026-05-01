@@ -2065,6 +2065,36 @@
         function getExcludedPeople(rows) {
             return rows.filter(row => row.__type === "person" && isExcludedFromCalculation(row));
         }
+        function getTotalRow(rows) {
+            return rows.find(row => {
+                return (
+                    row.__type === "total" ||
+                    String(row["CM"] || "").trim() === "總計"
+                );
+            }) || null;
+        }
+
+        function getWeeklyTotalScore(rows) {
+            const totalRow = getTotalRow(rows);
+
+            /**
+             * 優先使用 CSV 裡的「總計」列。
+             * 因為總計列才是你表格原始資料認定的正確總分。
+             */
+            if (totalRow) {
+                return parseNumber(totalRow["一週總分"]);
+            }
+
+            /**
+             * 如果某週 CSV 沒有總計列，才退回用所有 person 加總。
+             * 這裡不使用 getCalculablePeople，避免隊長 / 副隊長 / 回歸被排除後造成總分偏低。
+             */
+            return rows
+                .filter(row => row.__type === "person")
+                .reduce((sum, row) => {
+                    return sum + parseNumber(row["一週總分"]);
+                }, 0);
+        }
 
         function isEverBottomFive(row) {
             return (
@@ -2576,20 +2606,18 @@
         function renderStats(rows) {
             const people = getCalculablePeople(rows);
 
-            const totalScore = people.reduce((sum, row) => {
-                return sum + parseNumber(row["一週總分"]);
-            }, 0);
+            /**
+             * 一週總分加總讀取 CSV 的「總計」列。
+             * 這樣會和表格底部總計保持一致。
+             */
+            const totalScore = getWeeklyTotalScore(rows);
 
+            const elderCount = people.filter(row => row["狀態"] === "長老").length;
             const passCount = people.filter(row => row["狀態"] === "PASS").length;
+            const downgradeCount = people.filter(row => row["狀態"] === "降級").length;
             const outCount = people.filter(row => row["狀態"] === "淘汰").length;
 
             const statItems = [
-                {
-                    label: "計算成員筆數",
-                    value: people.length,
-                    icon: "👥",
-                    format: "normal"
-                },
                 {
                     label: "一週總分加總",
                     value: totalScore,
@@ -2597,9 +2625,21 @@
                     format: "compact"
                 },
                 {
+                    label: "長老",
+                    value: elderCount,
+                    icon: "🔥",
+                    format: "normal"
+                },
+                {
                     label: "PASS",
                     value: passCount,
                     icon: "✅",
+                    format: "normal"
+                },
+                {
+                    label: "降級",
+                    value: downgradeCount,
+                    icon: "⚠️",
                     format: "normal"
                 },
                 {
@@ -2612,24 +2652,24 @@
 
             els.stats.innerHTML = statItems
                 .map(item => `
-                <article class="stat-card">
-                    <div class="stat-top">
-                        <div>
-                            <div class="stat-label">${escapeHTML(item.label)}</div>
-                            <div
-                                class="stat-value"
-                                data-stat-value="${Number(item.value)}"
-                                data-format="${escapeHTML(item.format || "normal")}"
-                                title="${escapeHTML(formatNumber(item.value))}"
-                            >0</div>
-                        </div>
-
-                        <div class="stat-icon" aria-hidden="true">
-                            ${escapeHTML(item.icon)}
-                        </div>
+            <article class="stat-card">
+                <div class="stat-top">
+                    <div>
+                        <div class="stat-label">${escapeHTML(item.label)}</div>
+                        <div
+                            class="stat-value"
+                            data-stat-value="${Number(item.value)}"
+                            data-format="${escapeHTML(item.format || "normal")}"
+                            title="${escapeHTML(formatNumber(item.value))}"
+                        >0</div>
                     </div>
-                </article>
-            `)
+
+                    <div class="stat-icon" aria-hidden="true">
+                        ${escapeHTML(item.icon)}
+                    </div>
+                </div>
+            </article>
+        `)
                 .join("");
 
             animateStatCards();
