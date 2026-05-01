@@ -4,30 +4,22 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>每週成績總覽｜Cyber Dashboard</title>
+    <title>每週成績總覽</title>
 
     <style>
         :root {
             --bg: #050816;
-            --bg-2: #08111f;
-            --card: rgba(15, 23, 42, 0.72);
-            --card-strong: rgba(15, 23, 42, 0.92);
-            --glass: rgba(255, 255, 255, 0.08);
-            --glass-2: rgba(255, 255, 255, 0.12);
+            --card: rgba(15, 23, 42, 0.78);
+            --card-strong: rgba(15, 23, 42, 0.95);
             --text: #e5f0ff;
             --muted: #8ea3bd;
             --line: rgba(148, 163, 184, 0.18);
-            --primary: #38bdf8;
-            --primary-2: #2563eb;
-            --cyan: #22d3ee;
+            --cyan: #38bdf8;
             --green: #22c55e;
             --red: #fb7185;
             --orange: #fb923c;
             --purple: #a78bfa;
-            --yellow: #facc15;
-            --dark: #020617;
             --shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
-            --shadow-cyan: 0 0 35px rgba(34, 211, 238, 0.18);
             --radius: 22px;
         }
 
@@ -109,20 +101,6 @@
 
             50% {
                 transform: translate3d(24px, -28px, 0) scale(1.08);
-            }
-        }
-
-        @keyframes pulseGlow {
-
-            0%,
-            100% {
-                opacity: 0.55;
-                filter: blur(22px);
-            }
-
-            50% {
-                opacity: 0.95;
-                filter: blur(28px);
             }
         }
 
@@ -219,7 +197,7 @@
             overflow: hidden;
             border-radius: 30px;
             padding: 1px;
-            box-shadow: var(--shadow), var(--shadow-cyan);
+            box-shadow: var(--shadow), 0 0 35px rgba(34, 211, 238, 0.18);
             isolation: isolate;
         }
 
@@ -254,22 +232,6 @@
             position: relative;
             padding: 30px;
             min-height: 190px;
-        }
-
-        .hero-inner::before {
-            content: "";
-            position: absolute;
-            width: 560px;
-            height: 560px;
-            right: -220px;
-            top: -270px;
-            border-radius: 999px;
-            background:
-                radial-gradient(circle, rgba(56, 189, 248, 0.22), transparent 55%),
-                repeating-radial-gradient(circle,
-                    rgba(255, 255, 255, 0.12) 0 1px,
-                    transparent 1px 18px);
-            animation: pulseGlow 4.5s ease-in-out infinite;
         }
 
         .hero-inner::after {
@@ -325,7 +287,7 @@
             width: 8px;
             height: 8px;
             border-radius: 999px;
-            background: #22c55e;
+            background: var(--green);
             box-shadow: 0 0 12px rgba(34, 197, 94, 0.95);
         }
 
@@ -340,7 +302,7 @@
 
         .hero-subtitle {
             margin: 14px 0 0;
-            max-width: 660px;
+            max-width: 720px;
             color: #a8c7e8;
             font-size: 15px;
             line-height: 1.7;
@@ -426,7 +388,7 @@
 
         .stats {
             display: grid;
-            grid-template-columns: repeat(5, minmax(150px, 1fr));
+            grid-template-columns: repeat(6, minmax(140px, 1fr));
             gap: 14px;
             margin-top: 18px;
         }
@@ -444,27 +406,7 @@
                 inset 0 1px 0 rgba(255, 255, 255, 0.06);
             backdrop-filter: blur(18px);
             animation: fadeUp 0.5s ease both;
-            transition:
-                transform 0.25s ease,
-                border-color 0.25s ease,
-                box-shadow 0.25s ease;
             min-width: 0;
-        }
-
-        .stat-card:nth-child(2) {
-            animation-delay: 0.05s;
-        }
-
-        .stat-card:nth-child(3) {
-            animation-delay: 0.1s;
-        }
-
-        .stat-card:nth-child(4) {
-            animation-delay: 0.15s;
-        }
-
-        .stat-card:nth-child(5) {
-            animation-delay: 0.2s;
         }
 
         .stat-card::before {
@@ -487,14 +429,6 @@
             height: 2px;
             background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.9), transparent);
             opacity: 0.65;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-4px);
-            border-color: rgba(56, 189, 248, 0.44);
-            box-shadow:
-                0 24px 60px rgba(0, 0, 0, 0.34),
-                0 0 32px rgba(56, 189, 248, 0.12);
         }
 
         .stat-top {
@@ -524,7 +458,6 @@
             background: rgba(56, 189, 248, 0.1);
             color: #7dd3fc;
             border: 1px solid rgba(125, 211, 252, 0.2);
-            box-shadow: inset 0 0 18px rgba(56, 189, 248, 0.1);
         }
 
         .stat-value {
@@ -532,7 +465,7 @@
             z-index: 1;
             color: #f8fafc;
             font-weight: 950;
-            font-size: clamp(24px, 2.7vw, 34px);
+            font-size: clamp(22px, 2.4vw, 32px);
             letter-spacing: -0.04em;
             font-variant-numeric: tabular-nums;
             overflow-wrap: anywhere;
@@ -606,7 +539,7 @@
             width: 7px;
             height: 7px;
             border-radius: 999px;
-            background: #38bdf8;
+            background: var(--cyan);
             box-shadow: 0 0 12px rgba(56, 189, 248, 0.95);
         }
 
@@ -638,7 +571,7 @@
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            min-width: 980px;
+            min-width: 1120px;
             font-size: 14px;
         }
 
@@ -654,7 +587,6 @@
             font-size: 12px;
             letter-spacing: 0.07em;
             white-space: nowrap;
-            text-transform: uppercase;
             backdrop-filter: blur(14px);
         }
 
@@ -729,7 +661,9 @@
             color: #e6f4ff;
         }
 
-        .badge {
+        .badge,
+        .trend-badge,
+        .history-badge {
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -741,41 +675,42 @@
             letter-spacing: 0.02em;
             border: 1px solid transparent;
             box-shadow: inset 0 0 16px rgba(255, 255, 255, 0.04);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .trend-badge,
+        .history-badge {
+            min-width: 88px;
         }
 
         .badge-pass {
             color: #86efac;
             background: rgba(34, 197, 94, 0.13);
             border-color: rgba(34, 197, 94, 0.28);
-            box-shadow: 0 0 18px rgba(34, 197, 94, 0.12);
         }
 
         .badge-out {
             color: #fda4af;
             background: rgba(251, 113, 133, 0.13);
             border-color: rgba(251, 113, 133, 0.28);
-            box-shadow: 0 0 18px rgba(251, 113, 133, 0.12);
         }
 
         .badge-return {
             color: #c4b5fd;
             background: rgba(167, 139, 250, 0.14);
             border-color: rgba(167, 139, 250, 0.3);
-            box-shadow: 0 0 18px rgba(167, 139, 250, 0.12);
         }
 
         .badge-leader {
             color: #7dd3fc;
             background: rgba(56, 189, 248, 0.13);
             border-color: rgba(56, 189, 248, 0.32);
-            box-shadow: 0 0 18px rgba(56, 189, 248, 0.14);
         }
 
         .badge-elder {
             color: #fdba74;
             background: rgba(251, 146, 60, 0.14);
             border-color: rgba(251, 146, 60, 0.3);
-            box-shadow: 0 0 18px rgba(251, 146, 60, 0.12);
         }
 
         .badge-other {
@@ -784,39 +719,20 @@
             border-color: rgba(148, 163, 184, 0.22);
         }
 
-        .trend-cell {
-            color: #e6f4ff;
-        }
-
-        .trend-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 86px;
-            padding: 6px 10px;
-            border-radius: 999px;
-            font-weight: 950;
-            font-size: 12px;
-            letter-spacing: 0.02em;
-            border: 1px solid transparent;
-            font-variant-numeric: tabular-nums;
-        }
-
         .trend-up {
             color: #86efac;
             background: rgba(34, 197, 94, 0.14);
             border-color: rgba(34, 197, 94, 0.3);
-            box-shadow: 0 0 18px rgba(34, 197, 94, 0.14);
         }
 
         .trend-down {
             color: #fda4af;
             background: rgba(251, 113, 133, 0.14);
             border-color: rgba(251, 113, 133, 0.3);
-            box-shadow: 0 0 18px rgba(251, 113, 133, 0.14);
         }
 
-        .trend-same {
+        .trend-same,
+        .history-none {
             color: #cbd5e1;
             background: rgba(148, 163, 184, 0.12);
             border-color: rgba(148, 163, 184, 0.22);
@@ -826,7 +742,19 @@
             color: #7dd3fc;
             background: rgba(56, 189, 248, 0.12);
             border-color: rgba(56, 189, 248, 0.28);
-            box-shadow: 0 0 18px rgba(56, 189, 248, 0.12);
+        }
+
+        .history-risk {
+            color: #fecdd3;
+            background: rgba(251, 113, 133, 0.16);
+            border-color: rgba(251, 113, 133, 0.38);
+            box-shadow: 0 0 18px rgba(251, 113, 133, 0.16);
+        }
+
+        .history-watch {
+            color: #fdba74;
+            background: rgba(251, 146, 60, 0.14);
+            border-color: rgba(251, 146, 60, 0.3);
         }
 
         .row-total td,
@@ -837,9 +765,6 @@
             color: #ffffff;
             font-weight: 950;
             border-bottom: 0;
-            box-shadow:
-                inset 0 1px 0 rgba(255, 255, 255, 0.12),
-                inset 0 -1px 0 rgba(125, 211, 252, 0.24);
         }
 
         .section-row td {
@@ -875,7 +800,7 @@
             width: 9px;
             height: 9px;
             border-radius: 999px;
-            background: #38bdf8;
+            background: var(--cyan);
             box-shadow: 0 0 12px rgba(56, 189, 248, 0.95);
             animation: loaderPulse 0.9s ease-in-out infinite alternate;
         }
@@ -888,7 +813,7 @@
             animation-delay: 0.3s;
         }
 
-        @media (max-width: 1180px) {
+        @media (max-width: 1280px) {
             .stats {
                 grid-template-columns: repeat(3, minmax(0, 1fr));
             }
@@ -975,13 +900,6 @@
 
             .hero-inner {
                 padding: 20px;
-            }
-
-            .hero-inner::before {
-                width: 360px;
-                height: 360px;
-                right: -190px;
-                top: -210px;
             }
 
             .eyebrow {
@@ -1102,31 +1020,11 @@
                 text-align: left;
             }
 
-            tbody td.name,
-            tbody td.line-name {
-                text-align: right;
-            }
-
             tbody tr:hover td,
             tbody tr:hover td:first-child,
             tbody tr:hover td:nth-child(2) {
                 background: transparent;
                 box-shadow: none;
-            }
-
-            .line-name {
-                overflow: visible;
-                text-overflow: clip;
-            }
-
-            .score,
-            .name,
-            .line-name {
-                min-width: 0;
-            }
-
-            .section-row {
-                border-color: rgba(56, 189, 248, 0.24);
             }
 
             .section-row td {
@@ -1139,12 +1037,8 @@
             }
 
             .section-row td::before {
-                content: "";
                 display: none;
-            }
-
-            .row-total {
-                border-color: rgba(56, 189, 248, 0.34);
+                content: "";
             }
 
             .row-total td,
@@ -1153,10 +1047,6 @@
                 background: transparent !important;
                 box-shadow: none;
                 border-bottom: 1px solid rgba(125, 211, 252, 0.18);
-            }
-
-            .row-total td:last-child {
-                border-bottom: 0;
             }
 
             .empty-state,
@@ -1186,25 +1076,11 @@
                 padding: 16px;
             }
 
-            .hero-subtitle {
-                margin-top: 10px;
-            }
-
             select,
             input {
                 min-height: 44px;
                 font-size: 14px;
                 border-radius: 13px;
-            }
-
-            .stat-card {
-                padding: 15px;
-            }
-
-            .stat-icon {
-                width: 34px;
-                height: 34px;
-                border-radius: 12px;
             }
 
             .toolbar {
@@ -1216,9 +1092,7 @@
             }
 
             tbody td,
-            thead th:first-child,
             tbody td:first-child,
-            thead th:nth-child(2),
             tbody td:nth-child(2) {
                 padding: 11px 12px;
                 gap: 12px;
@@ -1229,7 +1103,9 @@
                 font-size: 11px;
             }
 
-            .badge {
+            .badge,
+            .trend-badge,
+            .history-badge {
                 min-width: auto;
                 padding: 6px 9px;
                 font-size: 11px;
@@ -1270,7 +1146,7 @@
                         <h1>每週成績總覽</h1>
 
                         <p class="hero-subtitle">
-                            即時檢視每週活動分數、合格狀態與成員表現。
+                            檢視每週活動分數、與上週比較，以及歷史最後五名。
                         </p>
                     </div>
 
@@ -1316,6 +1192,20 @@
     <script>
         const WEEK_INDEX_URL = "./data/weeks.csv";
 
+        /**
+         * 歷史最後五名判定設定：
+         *
+         * HISTORY_MIN_WEEKS = 至少出現幾週才會被判定為「都後五」
+         *
+         * HISTORY_MODE:
+         * - "appeared"：只看這個人有出現的週數。出現的每一週都在後五名，就算「都後五」。
+         * - "allWeeks"：必須每一週都有出現，而且每一週都在後五名，才算「都後五」。
+         */
+        const HISTORY_MIN_WEEKS = 2;
+        const HISTORY_MODE = "appeared";
+        const EXCLUDED_STATUSES = ["回歸", "副隊長", "隊長"];
+
+
         const DISPLAY_HEADERS = [
             "CM",
             "LINE名稱",
@@ -1326,9 +1216,9 @@
             "距離合格分數",
             "距離長老分數",
             "較上週",
+            "歷史後五",
             "狀態"
         ];
-
 
         const els = {
             weekSelect: document.getElementById("weekSelect"),
@@ -1342,6 +1232,7 @@
 
         let weeks = [];
         let currentRows = [];
+        let historySummaryMap = new Map();
 
         function escapeHTML(value) {
             return String(value ?? "")
@@ -1442,6 +1333,38 @@
             return Number(value || 0).toLocaleString("zh-TW");
         }
 
+        function isReturnAccount(row) {
+            const cm = String(row["CM"] || "").trim();
+            const status = String(row["狀態"] || "").trim();
+
+            return (
+                row.__isReturnAccount === true ||
+                cm === "【回歸帳號】" ||
+                status === "回歸"
+            );
+        }
+
+        function isExcludedFromCalculation(row) {
+            const status = String(row["狀態"] || "").trim();
+
+            return (
+                isReturnAccount(row) ||
+                EXCLUDED_STATUSES.includes(status)
+            );
+        }
+
+        function isCalculablePerson(row) {
+            return row.__type === "person" && !isExcludedFromCalculation(row);
+        }
+
+        function getCalculablePeople(rows) {
+            return rows.filter(isCalculablePerson);
+        }
+
+        function getExcludedPeople(rows) {
+            return rows.filter(row => row.__type === "person" && isExcludedFromCalculation(row));
+        }
+
         function getRowType(row) {
             if (row.type) return row.type;
             if (row["CM"] === "【回歸帳號】") return "section";
@@ -1450,6 +1373,8 @@
         }
 
         function normalizeRows(rows) {
+            let inReturnSection = false;
+
             return rows
                 .map(row => {
                     const normalized = { ...row };
@@ -1459,6 +1384,21 @@
                     });
 
                     normalized.__type = getRowType(normalized);
+
+                    const cm = String(normalized["CM"] || "").trim();
+                    const status = String(normalized["狀態"] || "").trim();
+
+                    if (cm === "【回歸帳號】") {
+                        inReturnSection = true;
+                        normalized.__isReturnAccount = true;
+                    } else if (normalized.__type === "section") {
+                        inReturnSection = false;
+                        normalized.__isReturnAccount = false;
+                    } else if (normalized.__type === "person") {
+                        normalized.__isReturnAccount = inReturnSection || status === "回歸";
+                    } else {
+                        normalized.__isReturnAccount = false;
+                    }
 
                     return normalized;
                 })
@@ -1472,15 +1412,9 @@
                 });
         }
 
-        function getBadgeClass(status) {
-            if (status === "PASS") return "badge-pass";
-            if (status === "淘汰") return "badge-out";
-            if (status === "回歸") return "badge-return";
-            if (status === "隊長" || status === "副隊長") return "badge-leader";
-            if (status === "長老") return "badge-elder";
-            return "badge-other";
-        }
         function getPersonKey(row) {
+            if (isExcludedFromCalculation(row)) return "";
+
             const cm = String(row["CM"] || "").trim();
             const lineName = String(row["LINE名稱"] || "").trim();
 
@@ -1490,11 +1424,20 @@
             return "";
         }
 
+        function getBadgeClass(status) {
+            if (status === "PASS") return "badge-pass";
+            if (status === "淘汰") return "badge-out";
+            if (status === "回歸") return "badge-return";
+            if (status === "隊長" || status === "副隊長") return "badge-leader";
+            if (status === "長老") return "badge-elder";
+            return "badge-other";
+        }
+
         function buildPreviousScoreMap(rows) {
             const map = new Map();
 
             rows
-                .filter(row => row.__type === "person")
+                .filter(isCalculablePerson)
                 .forEach(row => {
                     const key = getPersonKey(row);
 
@@ -1508,21 +1451,9 @@
 
         async function getPreviousRows(currentWeekId) {
             const currentIndex = weeks.findIndex(week => week.id === currentWeekId);
-
-            /**
-             * weeks 目前是依 startDate 由新到舊排序。
-             * 例如：
-             * index 0 = 4月第四週
-             * index 1 = 4月第三週
-             * index 2 = 4月第二週
-             *
-             * 所以上一週就是 currentIndex + 1。
-             */
             const previousWeek = weeks[currentIndex + 1];
 
-            if (!previousWeek) {
-                return [];
-            }
+            if (!previousWeek) return [];
 
             try {
                 const csvText = await fetchText(previousWeek.file);
@@ -1540,6 +1471,14 @@
                 if (row.__type !== "person") {
                     row["較上週"] = "";
                     row.__trend = "";
+                    row.__delta = null;
+                    row.__prevScore = null;
+                    return row;
+                }
+
+                if (isExcludedFromCalculation(row)) {
+                    row["較上週"] = "不計算";
+                    row.__trend = "same";
                     row.__delta = null;
                     row.__prevScore = null;
                     return row;
@@ -1577,6 +1516,144 @@
             });
         }
 
+        function getBottomFiveKeys(rows) {
+            const people = rows
+                .filter(isCalculablePerson)
+                .map(row => ({
+                    key: getPersonKey(row),
+                    score: parseNumber(row["一週總分"])
+                }))
+                .filter(item => item.key);
+
+            if (!people.length) return new Set();
+
+            people.sort((a, b) => a.score - b.score);
+
+            /**
+             * 取最後五名。
+             * 若第 5 名同分，會一起納入，避免同分者被硬切掉。
+             */
+            const cutoffIndex = Math.min(4, people.length - 1);
+            const cutoffScore = people[cutoffIndex].score;
+
+            return new Set(
+                people
+                    .filter(item => item.score <= cutoffScore)
+                    .map(item => item.key)
+            );
+        }
+
+        async function loadHistoryBottomFive() {
+            const summaryMap = new Map();
+
+            for (const week of weeks) {
+                try {
+                    const csvText = await fetchText(week.file);
+                    const rows = normalizeRows(csvToObjects(csvText));
+                    const bottomKeys = getBottomFiveKeys(rows);
+
+                    rows
+                        .filter(isCalculablePerson)
+                        .forEach(row => {
+                            const key = getPersonKey(row);
+
+                            if (!key) return;
+
+                            if (!summaryMap.has(key)) {
+                                summaryMap.set(key, {
+                                    key,
+                                    cm: row["CM"] || "",
+                                    lineName: row["LINE名稱"] || "",
+                                    weeksSeen: 0,
+                                    bottomWeeks: 0,
+                                    bottomWeekLabels: []
+                                });
+                            }
+
+                            const item = summaryMap.get(key);
+
+                            item.weeksSeen += 1;
+
+                            if (bottomKeys.has(key)) {
+                                item.bottomWeeks += 1;
+                                item.bottomWeekLabels.push(week.label || week.id);
+                            }
+                        });
+                } catch (error) {
+                    console.warn(`歷史資料讀取失敗：${week.file}`, error);
+                }
+            }
+
+            historySummaryMap = summaryMap;
+        }
+
+        function isAlwaysHistoricalBottomFive(summary) {
+            if (!summary) return false;
+            if (summary.weeksSeen < HISTORY_MIN_WEEKS) return false;
+
+            const appearedModePass = summary.bottomWeeks === summary.weeksSeen;
+            const allWeeksModePass =
+                summary.weeksSeen === weeks.length &&
+                summary.bottomWeeks === weeks.length;
+
+            return HISTORY_MODE === "allWeeks"
+                ? allWeeksModePass
+                : appearedModePass;
+        }
+
+        function applyHistoryBottomFive(rows) {
+            return rows.map(row => {
+                if (row.__type !== "person") {
+                    row["歷史後五"] = "";
+                    row.__historyLevel = "";
+                    row.__historyTitle = "";
+                    row.__historyAlways = false;
+                    return row;
+                }
+
+                if (isExcludedFromCalculation(row)) {
+                    const status = String(row["狀態"] || "").trim();
+
+                    row["歷史後五"] = "不計算";
+                    row.__historyLevel = "none";
+                    row.__historyTitle = `${status || "此帳號"}不納入歷史最後五名統計`;
+                    row.__historyAlways = false;
+                    return row;
+                }
+
+                const key = getPersonKey(row);
+                const summary = historySummaryMap.get(key);
+
+                if (!summary) {
+                    row["歷史後五"] = "—";
+                    row.__historyLevel = "none";
+                    row.__historyTitle = "沒有歷史資料";
+                    row.__historyAlways = false;
+                    return row;
+                }
+
+                const alwaysBottomFive = isAlwaysHistoricalBottomFive(summary);
+
+                row.__historyAlways = alwaysBottomFive;
+                row.__historyTitle = summary.bottomWeekLabels.length
+                    ? `曾在後五名週別：${summary.bottomWeekLabels.join("、")}`
+                    : "歷史上沒有進入最後五名";
+
+                if (alwaysBottomFive) {
+                    row["歷史後五"] = `都後五 ${summary.bottomWeeks}/${summary.weeksSeen}`;
+                    row.__historyLevel = "risk";
+                } else if (summary.bottomWeeks > 0) {
+                    row["歷史後五"] = `曾後五 ${summary.bottomWeeks}/${summary.weeksSeen}`;
+                    row.__historyLevel = "watch";
+                } else {
+                    row["歷史後五"] = "—";
+                    row.__historyLevel = "none";
+                }
+
+                return row;
+            });
+        }
+
         function renderHead() {
             els.tableHead.innerHTML = `
                 <tr>
@@ -1585,13 +1662,13 @@
             `;
         }
 
-        function renderLoading() {
+        function renderLoading(message = "資料同步中...") {
             els.tableBody.innerHTML = `
                 <tr class="loading-row">
                     <td colspan="${DISPLAY_HEADERS.length}">
                         <span class="cyber-loader">
                             <span></span><span></span><span></span>
-                            <strong>資料同步中...</strong>
+                            <strong>${escapeHTML(message)}</strong>
                         </span>
                     </td>
                 </tr>
@@ -1658,13 +1735,12 @@
 
             const duration = 850;
             const startTime = performance.now();
-            const startValue = 0;
 
             function update(now) {
                 const elapsed = now - startTime;
                 const progress = Math.min(elapsed / duration, 1);
                 const eased = 1 - Math.pow(1 - progress, 3);
-                const current = Math.round(startValue + (target - startValue) * eased);
+                const current = Math.round(target * eased);
 
                 element.textContent = formatNumber(current);
 
@@ -1681,34 +1757,36 @@
                 animateNumber(element, Number(element.dataset.statValue || 0));
             });
         }
-
         function renderStats(rows) {
-            const people = rows.filter(row => row.__type === "person");
+            const people = getCalculablePeople(rows);
+            const excludedCount = getExcludedPeople(rows).length;
+
             const totalScore = people.reduce((sum, row) => sum + parseNumber(row["一週總分"]), 0);
             const passCount = people.filter(row => row["狀態"] === "PASS").length;
             const outCount = people.filter(row => row["狀態"] === "淘汰").length;
-            const returnCount = people.filter(row => row["狀態"] === "回歸").length;
+            const historyRiskCount = people.filter(row => row.__historyAlways).length;
 
             const statItems = [
-                { label: "成員筆數", value: people.length, icon: "👥" },
+                { label: "計算成員筆數", value: people.length, icon: "👥" },
                 { label: "一週總分加總", value: totalScore, icon: "⚡" },
                 { label: "PASS", value: passCount, icon: "✅" },
                 { label: "淘汰", value: outCount, icon: "⛔" },
-                { label: "回歸", value: returnCount, icon: "↩" }
+                { label: "不計算排除", value: excludedCount, icon: "🚫" },
+                { label: "歷史都後五", value: historyRiskCount, icon: "⚠" }
             ];
 
             els.stats.innerHTML = statItems
                 .map(item => `
-                    <article class="stat-card">
-                        <div class="stat-top">
-                            <div>
-                                <div class="stat-label">${escapeHTML(item.label)}</div>
-                                <div class="stat-value" data-stat-value="${Number(item.value)}">0</div>
-                            </div>
-                            <div class="stat-icon" aria-hidden="true">${escapeHTML(item.icon)}</div>
-                        </div>
-                    </article>
-                `)
+            <article class="stat-card">
+                <div class="stat-top">
+                    <div>
+                        <div class="stat-label">${escapeHTML(item.label)}</div>
+                        <div class="stat-value" data-stat-value="${Number(item.value)}">0</div>
+                    </div>
+                    <div class="stat-icon" aria-hidden="true">${escapeHTML(item.icon)}</div>
+                </div>
+            </article>
+        `)
                 .join("");
 
             animateStatCards();
@@ -1756,38 +1834,58 @@
 
                     if (header === "較上週") {
                         const trendClass = row.__trend ? `trend-${row.__trend}` : "trend-same";
-                        const prevScoreText = row.__prevScore !== null && row.__prevScore !== undefined
-                            ? `上週：${formatNumber(row.__prevScore)}`
-                            : "上週無資料";
+                        const prevScoreText =
+                            row.__prevScore !== null && row.__prevScore !== undefined
+                                ? `上週：${formatNumber(row.__prevScore)}`
+                                : "上週無資料";
 
                         return `
-                            <td class="score trend-cell" data-label="${escapeHTML(header)}">
-                                <span class="trend-badge ${trendClass}" title="${escapeHTML(prevScoreText)}">
-                                    ${escapeHTML(value || "-")}
-                                </span>
-                            </td>
-                        `;
+                                    <td class="score" data-label="${escapeHTML(header)}">
+                                        <span class="trend-badge ${trendClass}" title="${escapeHTML(prevScoreText)}">
+                                            ${escapeHTML(value || "-")}
+                                        </span>
+                                    </td>
+                                `;
+                    }
+
+                    if (header === "歷史後五") {
+                        const historyClass = row.__historyLevel
+                            ? `history-${row.__historyLevel}`
+                            : "history-none";
+
+                        return `
+                                    <td class="score" data-label="${escapeHTML(header)}">
+                                        <span class="history-badge ${historyClass}" title="${escapeHTML(row.__historyTitle || "")}">
+                                            ${escapeHTML(value || "-")}
+                                        </span>
+                                    </td>
+                                `;
                     }
 
                     if (header === "狀態") {
                         return `
-                            <td data-label="${escapeHTML(header)}">
-                                ${value ? `<span class="badge ${getBadgeClass(value)}">${escapeHTML(value)}</span>` : "-"}
-                            </td>
-                        `;
+                                    <td data-label="${escapeHTML(header)}">
+                                        ${value ? `<span class="badge ${getBadgeClass(value)}">${escapeHTML(value)}</span>` : "-"}
+                                    </td>
+                                `;
                     }
 
                     return `<td class="score" data-label="${escapeHTML(header)}">${escapeHTML(value || "-")}</td>`;
-
                 }).join("")}
                     </tr>
                 `;
             }).join("");
 
-            const shownPeople = filteredRows.filter(row => row.__type === "person").length;
-            const allPeople = currentRows.filter(row => row.__type === "person").length;
+            const shownPeople = filteredRows.filter(isCalculablePerson).length;
+            const allPeople = getCalculablePeople(currentRows).length;
 
-            els.resultHint.textContent = `目前顯示 ${shownPeople} / ${allPeople} 筆成員資料`;
+            const shownExcludedCount = filteredRows.filter(row => row.__type === "person" && isExcludedFromCalculation(row)).length;
+            const allExcludedCount = getExcludedPeople(currentRows).length;
+
+            const historyRiskCount = currentRows.filter(row => isCalculablePerson(row) && row.__historyAlways).length;
+
+            els.resultHint.textContent =
+                `目前顯示可計算 ${shownPeople} / ${allPeople} 筆｜不計算排除 ${shownExcludedCount} / ${allExcludedCount} 筆｜歷史都後五 ${historyRiskCount} 人`;
         }
 
         async function loadWeeks() {
@@ -1816,6 +1914,7 @@
             const previousRows = await getPreviousRows(week.id);
 
             currentRows = applyWeekComparison(rows, previousRows);
+            currentRows = applyHistoryBottomFive(currentRows);
 
             renderHead();
             renderStatusFilter(currentRows);
@@ -1833,7 +1932,7 @@
             els.tableBody.innerHTML = `
                 <tr>
                     <td class="empty-state" colspan="${DISPLAY_HEADERS.length}">
-                        資料讀取失敗。
+                        資料讀取失敗，請確認 <strong>data/weeks.csv</strong> 與每週 CSV 檔案路徑是否正確。
                     </td>
                 </tr>
             `;
@@ -1855,12 +1954,16 @@
         async function initApp() {
             try {
                 renderHead();
-                renderLoading();
+                renderLoading("讀取週別資料中...");
                 await loadWeeks();
 
                 if (!weeks.length) {
                     throw new Error("weeks.csv 沒有週別資料");
                 }
+
+                els.resultHint.textContent = "分析歷史最後五名中...";
+                renderLoading("分析歷史最後五名中...");
+                await loadHistoryBottomFive();
 
                 await loadWeek(weeks[0].id);
             } catch (error) {
