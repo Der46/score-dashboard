@@ -5,20 +5,26 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>每週成績總覽</title>
+
     <style>
         :root {
-            --bg: #f5f7fb;
-            --bg-soft: #eef2f7;
-            --card: #ffffff;
-            --card-strong: #ffffff;
-            --text: #172033;
-            --muted: #667085;
-            --muted-soft: #98a2b3;
-            --line: #e4e7ec;
+            --bg: #f4f8ff;
+            --bg-soft: #eef5ff;
+            --card: rgba(255, 255, 255, 0.82);
+            --card-strong: rgba(255, 255, 255, 0.96);
+            --text: #102033;
+            --muted: #64748b;
+            --muted-soft: #94a3b8;
+            --line: rgba(37, 99, 235, 0.13);
 
             --primary: #2563eb;
+            --primary-strong: #1d4ed8;
             --primary-soft: #eff6ff;
             --primary-border: #bfdbfe;
+
+            --cyan: #0891b2;
+            --cyan-soft: #ecfeff;
+            --cyan-border: #a5f3fc;
 
             --green: #16a34a;
             --green-soft: #ecfdf3;
@@ -39,9 +45,10 @@
             --gray-soft: #f8fafc;
             --gray-border: #e2e8f0;
 
-            --shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
-            --shadow-soft: 0 8px 22px rgba(15, 23, 42, 0.06);
-            --radius: 18px;
+            --shadow: 0 18px 48px rgba(37, 99, 235, 0.12);
+            --shadow-soft: 0 10px 28px rgba(15, 23, 42, 0.08);
+            --glow: 0 0 0 1px rgba(37, 99, 235, 0.08), 0 18px 55px rgba(37, 99, 235, 0.12);
+            --radius: 20px;
         }
 
         * {
@@ -67,9 +74,10 @@
                 sans-serif;
             color: var(--text);
             background:
-                radial-gradient(circle at 12% 0%, rgba(37, 99, 235, 0.08), transparent 28%),
-                radial-gradient(circle at 88% 8%, rgba(124, 58, 237, 0.06), transparent 26%),
-                linear-gradient(180deg, #f8fafc 0%, #f5f7fb 46%, #eef2f7 100%);
+                radial-gradient(circle at 8% 6%, rgba(14, 165, 233, 0.16), transparent 28%),
+                radial-gradient(circle at 92% 12%, rgba(124, 58, 237, 0.13), transparent 30%),
+                radial-gradient(circle at 50% 102%, rgba(37, 99, 235, 0.12), transparent 34%),
+                linear-gradient(180deg, #f8fbff 0%, #f4f8ff 46%, #eaf2ff 100%);
             overflow-x: hidden;
         }
 
@@ -78,26 +86,45 @@
             position: fixed;
             inset: 0;
             z-index: -4;
-            background-image:
-                linear-gradient(rgba(148, 163, 184, 0.12) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(148, 163, 184, 0.12) 1px, transparent 1px);
-            background-size: 44px 44px;
-            mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), transparent 78%);
-            opacity: 0.45;
             pointer-events: none;
+            background-image:
+                linear-gradient(rgba(37, 99, 235, 0.09) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(37, 99, 235, 0.09) 1px, transparent 1px),
+                linear-gradient(rgba(14, 165, 233, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(14, 165, 233, 0.05) 1px, transparent 1px);
+            background-size:
+                48px 48px,
+                48px 48px,
+                12px 12px,
+                12px 12px;
+            mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), transparent 82%);
+            opacity: 0.82;
+            animation: gridMove 24s linear infinite;
         }
 
         body::after {
-            display: none;
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            pointer-events: none;
+            background:
+                linear-gradient(to bottom,
+                    transparent 0%,
+                    rgba(37, 99, 235, 0.035) 50%,
+                    transparent 100%);
+            background-size: 100% 9px;
+            opacity: 0.35;
+            mix-blend-mode: multiply;
         }
 
         @keyframes gridMove {
             from {
-                background-position: 0 0;
+                background-position: 0 0, 0 0, 0 0, 0 0;
             }
 
             to {
-                background-position: 42px 42px;
+                background-position: 48px 48px, 48px 48px, 12px 12px, 12px 12px;
             }
         }
 
@@ -109,7 +136,7 @@
             }
 
             50% {
-                transform: translate3d(18px, -18px, 0) scale(1.04);
+                transform: translate3d(22px, -22px, 0) scale(1.05);
             }
         }
 
@@ -135,13 +162,13 @@
             }
         }
 
-        @keyframes borderSpin {
-            from {
-                transform: rotate(0deg);
+        @keyframes borderScan {
+            0% {
+                transform: translateX(-100%);
             }
 
-            to {
-                transform: rotate(360deg);
+            100% {
+                transform: translateX(100%);
             }
         }
 
@@ -167,31 +194,31 @@
 
         .orb {
             position: absolute;
-            width: 360px;
-            height: 360px;
+            width: 380px;
+            height: 380px;
             border-radius: 999px;
-            filter: blur(24px);
-            opacity: 0.32;
+            filter: blur(28px);
+            opacity: 0.4;
             animation: floatOrb 11s ease-in-out infinite;
         }
 
         .orb.one {
-            left: -140px;
-            top: 70px;
-            background: radial-gradient(circle, rgba(37, 99, 235, 0.16), transparent 66%);
+            left: -150px;
+            top: 60px;
+            background: radial-gradient(circle, rgba(14, 165, 233, 0.24), transparent 66%);
         }
 
         .orb.two {
-            right: -130px;
+            right: -140px;
             top: 150px;
-            background: radial-gradient(circle, rgba(124, 58, 237, 0.12), transparent 68%);
+            background: radial-gradient(circle, rgba(124, 58, 237, 0.18), transparent 68%);
             animation-delay: -3s;
         }
 
         .orb.three {
             left: 42%;
-            bottom: -170px;
-            background: radial-gradient(circle, rgba(22, 163, 74, 0.1), transparent 68%);
+            bottom: -180px;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.18), transparent 68%);
             animation-delay: -5s;
         }
 
@@ -204,33 +231,70 @@
         .hero {
             position: relative;
             overflow: hidden;
-            border-radius: 28px;
+            border-radius: 30px;
             padding: 1px;
             box-shadow: var(--shadow);
             isolation: isolate;
-            background: linear-gradient(135deg, #dbeafe, #ede9fe);
+            background:
+                linear-gradient(135deg,
+                    rgba(14, 165, 233, 0.58),
+                    rgba(37, 99, 235, 0.58),
+                    rgba(124, 58, 237, 0.42));
         }
 
         .hero::before {
-            display: none;
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 55%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(14, 165, 233, 0.95), transparent);
+            animation: borderScan 4.8s ease-in-out infinite;
+            z-index: 2;
         }
 
         .hero::after {
             content: "";
             position: absolute;
             inset: 1px;
-            border-radius: 27px;
+            border-radius: 29px;
             z-index: -1;
             background:
-                radial-gradient(circle at 14% 18%, rgba(37, 99, 235, 0.1), transparent 32%),
-                radial-gradient(circle at 86% 18%, rgba(124, 58, 237, 0.08), transparent 30%),
-                linear-gradient(135deg, #ffffff, #f8fafc);
+                linear-gradient(90deg, rgba(37, 99, 235, 0.06) 1px, transparent 1px),
+                linear-gradient(rgba(37, 99, 235, 0.055) 1px, transparent 1px),
+                radial-gradient(circle at 14% 18%, rgba(14, 165, 233, 0.16), transparent 34%),
+                radial-gradient(circle at 86% 20%, rgba(124, 58, 237, 0.12), transparent 32%),
+                linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(248, 251, 255, 0.9));
+            background-size:
+                34px 34px,
+                34px 34px,
+                auto,
+                auto,
+                auto;
+            backdrop-filter: blur(18px);
         }
 
         .hero-inner {
             position: relative;
             padding: 30px;
             min-height: 184px;
+        }
+
+        .hero-inner::before {
+            content: "";
+            position: absolute;
+            right: 28px;
+            top: 28px;
+            width: 150px;
+            height: 150px;
+            border: 1px solid rgba(37, 99, 235, 0.16);
+            border-radius: 50%;
+            background:
+                linear-gradient(90deg, transparent 49%, rgba(37, 99, 235, 0.12) 50%, transparent 51%),
+                linear-gradient(transparent 49%, rgba(37, 99, 235, 0.12) 50%, transparent 51%);
+            opacity: 0.6;
+            pointer-events: none;
         }
 
         .hero-inner::after {
@@ -240,12 +304,12 @@
             background:
                 linear-gradient(110deg,
                     transparent 0%,
-                    rgba(255, 255, 255, 0.58) 38%,
+                    rgba(255, 255, 255, 0.68) 38%,
                     transparent 58%);
             transform: translateX(-120%);
             animation: shimmer 7s ease-in-out infinite;
             pointer-events: none;
-            opacity: 0.45;
+            opacity: 0.55;
         }
 
         .hero-content {
@@ -270,14 +334,16 @@
             max-width: 100%;
             padding: 8px 13px;
             border-radius: 999px;
-            border: 1px solid var(--primary-border);
-            background: var(--primary-soft);
+            border: 1px solid rgba(37, 99, 235, 0.22);
+            background: rgba(239, 246, 255, 0.82);
             color: #1d4ed8;
             font-size: 13px;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            box-shadow: none;
-            backdrop-filter: none;
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.9),
+                0 8px 22px rgba(37, 99, 235, 0.08);
+            backdrop-filter: blur(12px);
             margin-bottom: 14px;
             white-space: nowrap;
         }
@@ -287,8 +353,10 @@
             width: 8px;
             height: 8px;
             border-radius: 999px;
-            background: var(--green);
-            box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.12);
+            background: #10b981;
+            box-shadow:
+                0 0 0 4px rgba(16, 185, 129, 0.12),
+                0 0 14px rgba(16, 185, 129, 0.68);
         }
 
         h1 {
@@ -296,7 +364,7 @@
             font-size: clamp(32px, 4.7vw, 56px);
             line-height: 1.05;
             letter-spacing: -0.055em;
-            color: #101828;
+            color: #0f172a;
             word-break: keep-all;
         }
 
@@ -326,14 +394,17 @@
         input {
             width: 100%;
             min-height: 46px;
-            border: 1px solid #d0d5dd;
+            border: 1px solid rgba(37, 99, 235, 0.18);
             border-radius: 14px;
             outline: none;
-            background: #ffffff;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 251, 255, 0.92));
             color: var(--text);
             font-size: 14px;
             padding: 12px 14px;
-            box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.95),
+                0 10px 24px rgba(37, 99, 235, 0.07);
             transition:
                 border-color 0.2s ease,
                 box-shadow 0.2s ease,
@@ -358,27 +429,27 @@
             right: 15px;
             top: 50%;
             transform: translateY(-56%);
-            color: var(--muted);
+            color: var(--primary);
             pointer-events: none;
             font-size: 18px;
         }
 
         input::placeholder {
-            color: #98a2b3;
+            color: #94a3b8;
         }
 
         select:focus,
         input:focus {
-            border-color: var(--primary);
+            border-color: rgba(37, 99, 235, 0.72);
             box-shadow:
                 0 0 0 4px rgba(37, 99, 235, 0.12),
-                0 1px 2px rgba(16, 24, 40, 0.04);
+                0 12px 28px rgba(37, 99, 235, 0.1);
         }
 
         select:hover,
         input:hover {
             transform: translateY(-1px);
-            background: #fefefe;
+            background: #ffffff;
         }
 
         .hero select {
@@ -395,23 +466,33 @@
         .stat-card {
             position: relative;
             overflow: hidden;
-            border: 1px solid var(--line);
+            border: 1px solid rgba(37, 99, 235, 0.12);
             border-radius: var(--radius);
             padding: 18px;
-            background: var(--card);
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 251, 255, 0.82));
             box-shadow: var(--shadow-soft);
-            backdrop-filter: none;
+            backdrop-filter: blur(18px);
             animation: fadeUp 0.42s ease both;
             min-width: 0;
+            isolation: isolate;
         }
 
         .stat-card::before {
             content: "";
             position: absolute;
             inset: 0;
+            z-index: -1;
             background:
-                radial-gradient(circle at 24% 0%, rgba(37, 99, 235, 0.08), transparent 38%),
-                linear-gradient(135deg, rgba(255, 255, 255, 0.6), transparent 45%);
+                linear-gradient(90deg, rgba(37, 99, 235, 0.045) 1px, transparent 1px),
+                linear-gradient(rgba(37, 99, 235, 0.04) 1px, transparent 1px),
+                radial-gradient(circle at 24% 0%, rgba(14, 165, 233, 0.13), transparent 38%),
+                linear-gradient(135deg, rgba(255, 255, 255, 0.7), transparent 45%);
+            background-size:
+                22px 22px,
+                22px 22px,
+                auto,
+                auto;
             pointer-events: none;
         }
 
@@ -422,8 +503,8 @@
             right: 18px;
             bottom: 0;
             height: 2px;
-            background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.45), transparent);
-            opacity: 0.6;
+            background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.58), rgba(14, 165, 233, 0.56), transparent);
+            opacity: 0.75;
         }
 
         .stat-top {
@@ -444,23 +525,27 @@
 
         .stat-icon {
             flex: 0 0 auto;
-            width: 38px;
-            height: 38px;
+            width: 40px;
+            height: 40px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             justify-self: end;
             border-radius: 14px;
-            background: var(--primary-soft);
+            background:
+                linear-gradient(135deg, rgba(239, 246, 255, 0.95), rgba(236, 254, 255, 0.85));
             color: var(--primary);
-            border: 1px solid var(--primary-border);
+            border: 1px solid rgba(37, 99, 235, 0.16);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.9),
+                0 10px 18px rgba(37, 99, 235, 0.08);
         }
 
         .stat-value {
             position: relative;
             z-index: 1;
-            color: #101828;
-            font-weight: 900;
+            color: #0f172a;
+            font-weight: 950;
             font-size: clamp(20px, 2.1vw, 30px);
             line-height: 1.08;
             letter-spacing: -0.04em;
@@ -477,10 +562,11 @@
             margin-top: 18px;
             overflow: hidden;
             border-radius: 24px;
-            border: 1px solid var(--line);
-            background: var(--card);
-            box-shadow: var(--shadow);
-            backdrop-filter: none;
+            border: 1px solid rgba(37, 99, 235, 0.14);
+            background: rgba(255, 255, 255, 0.86);
+            box-shadow: var(--glow);
+            backdrop-filter: blur(18px);
+            isolation: isolate;
         }
 
         .panel::before {
@@ -488,9 +574,17 @@
             position: absolute;
             inset: 0;
             pointer-events: none;
+            z-index: -1;
             background:
-                radial-gradient(circle at 18% 0%, rgba(37, 99, 235, 0.04), transparent 30%),
-                radial-gradient(circle at 82% 0%, rgba(124, 58, 237, 0.035), transparent 32%);
+                linear-gradient(90deg, rgba(37, 99, 235, 0.035) 1px, transparent 1px),
+                linear-gradient(rgba(37, 99, 235, 0.03) 1px, transparent 1px),
+                radial-gradient(circle at 18% 0%, rgba(14, 165, 233, 0.07), transparent 30%),
+                radial-gradient(circle at 82% 0%, rgba(124, 58, 237, 0.055), transparent 32%);
+            background-size:
+                28px 28px,
+                28px 28px,
+                auto,
+                auto;
         }
 
         .toolbar {
@@ -502,9 +596,21 @@
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
-            border-bottom: 1px solid var(--line);
-            background: rgba(248, 250, 252, 0.92);
-            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(37, 99, 235, 0.12);
+            background: rgba(248, 251, 255, 0.78);
+            backdrop-filter: blur(16px);
+        }
+
+        .toolbar::after {
+            content: "";
+            position: absolute;
+            left: 16px;
+            right: 16px;
+            bottom: -1px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(14, 165, 233, 0.6), transparent);
+            opacity: 0.65;
+            pointer-events: none;
         }
 
         .toolbar-left,
@@ -524,13 +630,15 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            color: #475467;
+            color: #334155;
             font-size: 13px;
             padding: 10px 12px;
             border-radius: 999px;
-            border: 1px solid var(--primary-border);
-            background: var(--primary-soft);
+            border: 1px solid rgba(37, 99, 235, 0.18);
+            background:
+                linear-gradient(135deg, rgba(239, 246, 255, 0.92), rgba(236, 254, 255, 0.72));
             line-height: 1.4;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.88);
         }
 
         .hint::before {
@@ -540,7 +648,9 @@
             height: 7px;
             border-radius: 999px;
             background: var(--primary);
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+            box-shadow:
+                0 0 0 4px rgba(37, 99, 235, 0.12),
+                0 0 14px rgba(37, 99, 235, 0.45);
         }
 
         .table-wrap {
@@ -548,10 +658,10 @@
             z-index: 1;
             overflow: auto;
             max-height: 72vh;
-            scrollbar-color: rgba(37, 99, 235, 0.4) #eef2f7;
+            scrollbar-color: rgba(37, 99, 235, 0.45) #eaf2ff;
             scrollbar-width: thin;
             -webkit-overflow-scrolling: touch;
-            background: #ffffff;
+            background: rgba(255, 255, 255, 0.86);
         }
 
         .table-wrap::-webkit-scrollbar {
@@ -560,20 +670,20 @@
         }
 
         .table-wrap::-webkit-scrollbar-track {
-            background: #eef2f7;
+            background: #eaf2ff;
         }
 
         .table-wrap::-webkit-scrollbar-thumb {
-            background: linear-gradient(180deg, rgba(37, 99, 235, 0.5), rgba(99, 102, 241, 0.45));
+            background: linear-gradient(180deg, rgba(37, 99, 235, 0.58), rgba(14, 165, 233, 0.48));
             border-radius: 999px;
-            border: 2px solid #eef2f7;
+            border: 2px solid #eaf2ff;
         }
 
         table {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            min-width: 1120px;
+            min-width: 1060px;
             font-size: 14px;
         }
 
@@ -582,44 +692,46 @@
             top: 0;
             z-index: 5;
             padding: 14px 11px;
-            border-bottom: 1px solid var(--line);
-            background: #f8fafc;
-            color: #475467;
+            border-bottom: 1px solid rgba(37, 99, 235, 0.14);
+            background:
+                linear-gradient(180deg, rgba(248, 251, 255, 0.98), rgba(239, 246, 255, 0.94));
+            color: #475569;
             text-align: right;
             font-size: 12px;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.07em;
             white-space: nowrap;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(14px);
         }
 
         thead th:first-child,
         tbody td:first-child {
             position: sticky;
             left: 0;
-            z-index: 4;
-            text-align: left;
-            min-width: 118px;
-            max-width: 118px;
-            background: #ffffff;
-            box-shadow: 1px 0 0 var(--line);
+            z-index: 5;
+            min-width: 74px;
+            max-width: 74px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 1px 0 0 rgba(37, 99, 235, 0.12);
         }
 
         thead th:nth-child(2),
         tbody td:nth-child(2) {
             position: sticky;
-            left: 118px;
+            left: 74px;
             z-index: 4;
             text-align: left;
-            min-width: 190px;
-            max-width: 190px;
-            background: #ffffff;
-            box-shadow: 1px 0 0 var(--line);
+            min-width: 118px;
+            max-width: 118px;
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 1px 0 0 rgba(37, 99, 235, 0.12);
         }
 
         thead th:first-child,
         thead th:nth-child(2) {
             z-index: 8;
-            background: #f8fafc;
+            background:
+                linear-gradient(180deg, rgba(248, 251, 255, 1), rgba(239, 246, 255, 0.98));
         }
 
         tbody tr {
@@ -628,11 +740,11 @@
 
         tbody td {
             padding: 13px 11px;
-            border-bottom: 1px solid #eef2f7;
+            border-bottom: 1px solid rgba(37, 99, 235, 0.08);
             text-align: right;
             white-space: nowrap;
-            color: #344054;
-            background: #ffffff;
+            color: #334155;
+            background: rgba(255, 255, 255, 0.9);
             transition:
                 background 0.18s ease,
                 color 0.18s ease,
@@ -640,31 +752,57 @@
         }
 
         tbody tr:nth-child(even) td {
-            background: #fcfcfd;
+            background: rgba(248, 251, 255, 0.82);
         }
 
         tbody tr:hover td,
         tbody tr:hover td:first-child,
         tbody tr:hover td:nth-child(2) {
-            background: #f0f7ff;
-            box-shadow: inset 0 1px 0 rgba(37, 99, 235, 0.04);
+            background: #edf7ff;
+            box-shadow:
+                inset 0 1px 0 rgba(14, 165, 233, 0.08),
+                inset 0 -1px 0 rgba(14, 165, 233, 0.08);
         }
 
         .name {
-            font-weight: 800;
-            color: #101828;
+            font-weight: 850;
+            color: #0f172a;
         }
 
         .line-name {
-            color: #475467;
+            color: #475569;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
         .score {
             font-variant-numeric: tabular-nums;
-            font-weight: 700;
-            color: #1d2939;
+            font-weight: 760;
+            color: #1e293b;
+        }
+
+        .rank-cell {
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .rank-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 34px;
+            height: 28px;
+            padding: 0 9px;
+            border-radius: 999px;
+            color: #1d4ed8;
+            background:
+                linear-gradient(135deg, rgba(239, 246, 255, 0.98), rgba(236, 254, 255, 0.88));
+            border: 1px solid rgba(37, 99, 235, 0.22);
+            font-size: 13px;
+            font-weight: 950;
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.9),
+                0 8px 18px rgba(37, 99, 235, 0.08);
         }
 
         .badge,
@@ -676,11 +814,11 @@
             min-width: 66px;
             padding: 6px 10px;
             border-radius: 999px;
-            font-weight: 800;
+            font-weight: 850;
             font-size: 12px;
             letter-spacing: 0.02em;
             border: 1px solid transparent;
-            box-shadow: none;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
             font-variant-numeric: tabular-nums;
         }
 
@@ -720,7 +858,7 @@
         }
 
         .badge-other {
-            color: #475467;
+            color: #475569;
             background: var(--gray-soft);
             border-color: var(--gray-border);
         }
@@ -739,7 +877,7 @@
 
         .trend-same,
         .history-none {
-            color: #475467;
+            color: #475569;
             background: var(--gray-soft);
             border-color: var(--gray-border);
         }
@@ -754,7 +892,9 @@
             color: #be123c;
             background: var(--red-soft);
             border-color: var(--red-border);
-            box-shadow: none;
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.82),
+                0 0 18px rgba(225, 29, 72, 0.1);
         }
 
         .history-watch {
@@ -766,16 +906,18 @@
         .row-total td,
         .row-total td:first-child,
         .row-total td:nth-child(2) {
-            background: #eff6ff !important;
+            background:
+                linear-gradient(90deg, rgba(219, 234, 254, 0.95), rgba(236, 254, 255, 0.82)) !important;
             color: #1e3a8a;
-            font-weight: 900;
+            font-weight: 950;
             border-bottom: 0;
         }
 
         .section-row td {
-            background: #f1f5f9 !important;
+            background:
+                linear-gradient(90deg, rgba(226, 232, 240, 0.95), rgba(239, 246, 255, 0.82)) !important;
             color: #334155;
-            font-weight: 900;
+            font-weight: 950;
             text-align: left;
             font-size: 15px;
             letter-spacing: 0.02em;
@@ -783,17 +925,17 @@
 
         .empty-state {
             padding: 32px !important;
-            color: #667085;
+            color: #64748b;
             text-align: left !important;
             line-height: 1.8;
-            background: #ffffff !important;
+            background: rgba(255, 255, 255, 0.9) !important;
         }
 
         .loading-row td {
             padding: 30px !important;
             color: var(--muted);
             text-align: left !important;
-            background: #ffffff !important;
+            background: rgba(255, 255, 255, 0.9) !important;
         }
 
         .cyber-loader {
@@ -807,7 +949,9 @@
             height: 9px;
             border-radius: 999px;
             background: var(--primary);
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+            box-shadow:
+                0 0 0 4px rgba(37, 99, 235, 0.12),
+                0 0 14px rgba(37, 99, 235, 0.45);
             animation: loaderPulse 0.9s ease-in-out infinite alternate;
         }
 
@@ -817,6 +961,425 @@
 
         .cyber-loader span:nth-child(3) {
             animation-delay: 0.3s;
+        }
+
+        .person-link {
+            appearance: none;
+            border: 0;
+            padding: 0;
+            margin: 0;
+            background: transparent;
+            color: #0f172a;
+            font: inherit;
+            font-weight: 900;
+            cursor: pointer;
+            text-align: left;
+            border-radius: 8px;
+            transition:
+                color 0.18s ease,
+                text-shadow 0.18s ease,
+                transform 0.18s ease;
+        }
+
+        .person-link:hover,
+        .person-link:focus-visible {
+            color: var(--primary);
+            text-shadow: 0 0 18px rgba(37, 99, 235, 0.18);
+            outline: none;
+            transform: translateX(2px);
+        }
+
+        .person-link::after {
+            content: "  ↗";
+            color: var(--primary);
+            font-size: 11px;
+            opacity: 0.72;
+        }
+
+        body.profile-open {
+            overflow: hidden;
+        }
+
+        .profile-modal[hidden] {
+            display: none;
+        }
+
+        .profile-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 80;
+            display: grid;
+            place-items: center;
+            padding: 20px;
+        }
+
+        .profile-backdrop {
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 20% 10%, rgba(14, 165, 233, 0.18), transparent 34%),
+                radial-gradient(circle at 88% 12%, rgba(124, 58, 237, 0.16), transparent 34%),
+                rgba(15, 23, 42, 0.42);
+            backdrop-filter: blur(10px);
+        }
+
+        .profile-dialog {
+            position: relative;
+            width: min(1040px, 100%);
+            max-height: min(86vh, 860px);
+            overflow: auto;
+            border-radius: 28px;
+            border: 1px solid rgba(37, 99, 235, 0.18);
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 251, 255, 0.92));
+            box-shadow:
+                0 30px 90px rgba(15, 23, 42, 0.22),
+                0 0 0 1px rgba(255, 255, 255, 0.68) inset;
+            animation: fadeUp 0.24s ease both;
+            isolation: isolate;
+        }
+
+        .profile-dialog::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            background:
+                linear-gradient(90deg, rgba(37, 99, 235, 0.045) 1px, transparent 1px),
+                linear-gradient(rgba(37, 99, 235, 0.04) 1px, transparent 1px),
+                radial-gradient(circle at 20% 0%, rgba(14, 165, 233, 0.12), transparent 34%),
+                radial-gradient(circle at 82% 8%, rgba(124, 58, 237, 0.08), transparent 34%);
+            background-size:
+                28px 28px,
+                28px 28px,
+                auto,
+                auto;
+            pointer-events: none;
+        }
+
+        .profile-head {
+            position: sticky;
+            top: 0;
+            z-index: 4;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 22px 22px 16px;
+            border-bottom: 1px solid rgba(37, 99, 235, 0.12);
+            background: rgba(248, 251, 255, 0.88);
+            backdrop-filter: blur(18px);
+        }
+
+        .profile-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            color: var(--primary);
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .profile-kicker::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: #10b981;
+            box-shadow:
+                0 0 0 4px rgba(16, 185, 129, 0.12),
+                0 0 16px rgba(16, 185, 129, 0.55);
+        }
+
+        .profile-title {
+            margin: 0;
+            font-size: clamp(26px, 4vw, 42px);
+            line-height: 1.08;
+            letter-spacing: -0.05em;
+            color: #0f172a;
+        }
+
+        .profile-meta {
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .profile-close {
+            flex: 0 0 auto;
+            width: 42px;
+            height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(37, 99, 235, 0.18);
+            border-radius: 14px;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(239, 246, 255, 0.86));
+            color: #334155;
+            cursor: pointer;
+            font-size: 22px;
+            box-shadow: var(--shadow-soft);
+            transition:
+                transform 0.18s ease,
+                border-color 0.18s ease,
+                color 0.18s ease;
+        }
+
+        .profile-close:hover {
+            transform: translateY(-1px);
+            border-color: rgba(37, 99, 235, 0.45);
+            color: var(--primary);
+        }
+
+        .profile-body {
+            padding: 18px 22px 22px;
+        }
+
+        .profile-loading,
+        .profile-empty {
+            padding: 26px;
+            color: var(--muted);
+            line-height: 1.8;
+            border: 1px solid rgba(37, 99, 235, 0.12);
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.76);
+        }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .profile-stat {
+            position: relative;
+            overflow: hidden;
+            min-width: 0;
+            border: 1px solid rgba(37, 99, 235, 0.12);
+            border-radius: 18px;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.78);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .profile-stat::after {
+            content: "";
+            position: absolute;
+            left: 14px;
+            right: 14px;
+            bottom: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.52), transparent);
+        }
+
+        .profile-stat-label {
+            color: var(--muted);
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .profile-stat-value {
+            color: #0f172a;
+            font-size: clamp(19px, 2vw, 27px);
+            font-weight: 950;
+            letter-spacing: -0.04em;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .profile-stat-note {
+            margin-top: 6px;
+            color: #64748b;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .profile-section {
+            border: 1px solid rgba(37, 99, 235, 0.12);
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.78);
+            box-shadow: var(--shadow-soft);
+            overflow: hidden;
+            margin-top: 14px;
+        }
+
+        .profile-section-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(37, 99, 235, 0.1);
+            background: rgba(239, 246, 255, 0.72);
+        }
+
+        .profile-section-title {
+            margin: 0;
+            color: #0f172a;
+            font-size: 15px;
+            font-weight: 950;
+        }
+
+        .profile-section-subtitle {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .profile-chart {
+            padding: 14px;
+            overflow-x: auto;
+        }
+
+        .profile-chart svg {
+            display: block;
+            width: 100%;
+            min-width: 620px;
+            height: auto;
+        }
+
+        .chart-axis {
+            stroke: rgba(100, 116, 139, 0.25);
+            stroke-width: 1;
+        }
+
+        .chart-grid {
+            stroke: rgba(37, 99, 235, 0.09);
+            stroke-width: 1;
+        }
+
+        .chart-line {
+            fill: none;
+            stroke: #2563eb;
+            stroke-width: 4;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 8px 12px rgba(37, 99, 235, 0.18));
+        }
+
+        .chart-area {
+            fill: url(#scoreAreaGradient);
+            opacity: 0.9;
+        }
+
+        .chart-dot {
+            fill: #ffffff;
+            stroke: #2563eb;
+            stroke-width: 3;
+        }
+
+        .chart-dot-empty {
+            fill: #e2e8f0;
+            stroke: #94a3b8;
+            stroke-width: 2;
+            opacity: 0.8;
+        }
+
+        .chart-label,
+        .chart-value {
+            fill: #64748b;
+            font-size: 12px;
+            font-weight: 750;
+        }
+
+        .chart-value {
+            fill: #1e293b;
+            font-size: 11px;
+        }
+
+        .profile-timeline {
+            display: grid;
+            gap: 8px;
+            padding: 14px;
+            max-height: 260px;
+            overflow: auto;
+        }
+
+        .profile-week-row {
+            display: grid;
+            grid-template-columns: minmax(160px, 1.3fr) repeat(var(--profile-week-columns, 4), minmax(90px, 1fr));
+            gap: 10px;
+            align-items: center;
+            padding: 11px 12px;
+            border: 1px solid rgba(37, 99, 235, 0.1);
+            border-radius: 14px;
+            background: rgba(248, 251, 255, 0.82);
+        }
+
+        .profile-week-label {
+            color: #0f172a;
+            font-weight: 900;
+            line-height: 1.4;
+        }
+
+        .profile-week-small {
+            color: var(--muted);
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        .profile-week-score {
+            text-align: right;
+            color: #1e293b;
+            font-weight: 900;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .profile-week-caption {
+            display: block;
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+
+        @media (max-width: 960px) {
+            .profile-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .profile-week-row {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 620px) {
+            .profile-modal {
+                padding: 10px;
+                align-items: end;
+            }
+
+            .profile-dialog {
+                max-height: 92vh;
+                border-radius: 22px;
+            }
+
+            .profile-head {
+                padding: 18px 16px 14px;
+            }
+
+            .profile-body {
+                padding: 14px;
+            }
+
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .profile-week-row {
+                grid-template-columns: 1fr;
+            }
+
+            .profile-week-score {
+                text-align: left;
+            }
         }
 
         @media (max-width: 1280px) {
@@ -881,14 +1444,18 @@
 
         @media (max-width: 760px) {
             body::before {
-                background-size: 34px 34px;
-                opacity: 0.42;
+                background-size:
+                    34px 34px,
+                    34px 34px,
+                    10px 10px,
+                    10px 10px;
+                opacity: 0.55;
             }
 
             .orb {
                 width: 260px;
                 height: 260px;
-                opacity: 0.2;
+                opacity: 0.22;
             }
 
             .page {
@@ -906,6 +1473,14 @@
 
             .hero-inner {
                 padding: 20px;
+            }
+
+            .hero-inner::before {
+                width: 110px;
+                height: 110px;
+                right: 16px;
+                top: 18px;
+                opacity: 0.35;
             }
 
             .eyebrow {
@@ -977,17 +1552,18 @@
             tbody tr {
                 display: block;
                 width: 100%;
-                border: 1px solid var(--line);
+                border: 1px solid rgba(37, 99, 235, 0.12);
                 border-radius: 16px;
                 overflow: hidden;
-                background: #ffffff;
+                background: rgba(255, 255, 255, 0.9);
                 box-shadow: var(--shadow-soft);
+                backdrop-filter: blur(14px);
             }
 
             tbody td,
             thead th:first-child,
-            tbody td:first-child,
             thead th:nth-child(2),
+            tbody td:first-child,
             tbody td:nth-child(2) {
                 position: static;
                 left: auto;
@@ -1006,7 +1582,7 @@
                 overflow-wrap: anywhere;
                 background: transparent;
                 box-shadow: none;
-                border-bottom: 1px solid #eef2f7;
+                border-bottom: 1px solid rgba(37, 99, 235, 0.08);
             }
 
             tbody td:last-child {
@@ -1019,7 +1595,7 @@
                 max-width: 46%;
                 color: #2563eb;
                 font-size: 12px;
-                font-weight: 800;
+                font-weight: 850;
                 letter-spacing: 0.04em;
                 text-align: left;
             }
@@ -1038,7 +1614,8 @@
                 text-align: left !important;
                 border-bottom: 0;
                 border-radius: 16px;
-                background: #f1f5f9 !important;
+                background:
+                    linear-gradient(90deg, rgba(226, 232, 240, 0.95), rgba(239, 246, 255, 0.82)) !important;
             }
 
             .section-row td::before {
@@ -1058,7 +1635,7 @@
             .loading-row td {
                 display: block !important;
                 border-bottom: 0 !important;
-                background: #ffffff !important;
+                background: rgba(255, 255, 255, 0.9) !important;
             }
 
             .empty-state::before,
@@ -1098,8 +1675,7 @@
             }
 
             tbody td,
-            tbody td:first-child,
-            tbody td:nth-child(2) {
+            tbody td:first-child {
                 padding: 11px 12px;
                 gap: 12px;
             }
@@ -1130,7 +1706,6 @@
             }
         }
     </style>
-
 </head>
 
 <body>
@@ -1153,7 +1728,7 @@
                         <h1>每週成績總覽</h1>
 
                         <p class="hero-subtitle">
-                            檢視每週活動分數、與上週比較，以及歷史最後五名。
+                            檢視每週活動分數、與上週比較，以及本月最後五名。
                         </p>
                     </div>
 
@@ -1172,7 +1747,7 @@
             <div class="toolbar">
                 <div class="toolbar-left">
                     <div class="input-wrap">
-                        <input class="search" id="searchInput" type="search" placeholder="搜尋 CM 或 LINE 名稱..." />
+                        <input class="search" id="searchInput" type="search" placeholder="搜尋 CM..." />
                     </div>
 
                     <div class="select-wrap">
@@ -1196,30 +1771,47 @@
         </section>
     </main>
 
+    <section class="profile-modal" id="profileModal" hidden aria-modal="true" role="dialog"
+        aria-labelledby="profileName">
+        <div class="profile-backdrop" data-profile-close></div>
+
+        <article class="profile-dialog">
+            <header class="profile-head">
+                <div>
+                    <div class="profile-kicker">Member Analytics</div>
+                    <h2 class="profile-title" id="profileName">成員資料</h2>
+                    <div class="profile-meta" id="profileMeta">載入中...</div>
+                </div>
+
+                <button class="profile-close" id="profileClose" type="button" aria-label="關閉個人資料">
+                    ×
+                </button>
+            </header>
+
+            <div class="profile-body" id="profileBody">
+                <div class="profile-loading">資料分析中...</div>
+            </div>
+        </article>
+    </section>
+
     <script>
         const WEEK_INDEX_URL = "./data/weeks.csv";
 
-        /**
-         * 歷史最後五名判定設定：
-         *
-         * HISTORY_MIN_WEEKS = 至少出現幾週才會被判定為「都後五」
-         *
-         * HISTORY_MODE:
-         * - "appeared"：只看這個人有出現的週數。出現的每一週都在後五名，就算「都後五」。
-         * - "allWeeks"：必須每一週都有出現，而且每一週都在後五名，才算「都後五」。
-         */
         const HISTORY_MIN_WEEKS = 2;
         const HISTORY_MODE = "appeared";
 
-        /**
-         * 不納入統計、上週比較、歷史後五名計算的狀態。
-         * 這些資料仍會顯示在表格中，但不參與計算。
-         */
         const EXCLUDED_STATUSES = ["回歸", "副隊長", "隊長"];
 
+        const RANK_COLUMN = "編號";
+
+        const HISTORY_COLUMN = "本月後五";
+        const SPECIAL_STATUS_FILTERS = {
+            EVER_BOTTOM_FIVE: "__everBottomFive"
+        };
+
         const DISPLAY_HEADERS = [
+            RANK_COLUMN,
             "CM",
-            "LINE名稱",
             "活動1總分",
             "活動2總分",
             "活動3總分",
@@ -1227,7 +1819,7 @@
             "距離合格分數",
             "距離長老分數",
             "較上週",
-            "歷史後五",
+            HISTORY_COLUMN,
             "狀態"
         ];
 
@@ -1238,12 +1830,21 @@
             tableBody: document.getElementById("tableBody"),
             searchInput: document.getElementById("searchInput"),
             statusFilter: document.getElementById("statusFilter"),
-            resultHint: document.getElementById("resultHint")
+            resultHint: document.getElementById("resultHint"),
+            profileModal: document.getElementById("profileModal"),
+            profileClose: document.getElementById("profileClose"),
+            profileName: document.getElementById("profileName"),
+            profileMeta: document.getElementById("profileMeta"),
+            profileBody: document.getElementById("profileBody")
         };
 
         let weeks = [];
+        let currentWeek = null;
         let currentRows = [];
         let historySummaryMap = new Map();
+        let historyScopeWeekCount = 0;
+        let historyScopeLabel = "本月";
+        let weekRowsCache = new Map();
 
         function escapeHTML(value) {
             return String(value ?? "")
@@ -1367,6 +1968,72 @@
             return formatNumber(number);
         }
 
+        function getWeekMonthKey(week) {
+            const startDate = String(week?.startDate || "").trim();
+            const startDateMatch = startDate.match(/^(\d{4})-(\d{2})/);
+
+            if (startDateMatch) {
+                return `${startDateMatch[1]}-${startDateMatch[2]}`;
+            }
+
+            const id = String(week?.id || "").trim();
+            const idMatch = id.match(/^(\d{4})-(\d{2})/);
+
+            if (idMatch) {
+                return `${idMatch[1]}-${idMatch[2]}`;
+            }
+
+            return "";
+        }
+
+        function formatMonthLabel(monthKey) {
+            const [year, month] = String(monthKey || "").split("-");
+
+            if (!year || !month) {
+                return "本月";
+            }
+
+            return `${year}年${month}月`;
+        }
+
+        function getWeeksInSameMonth(targetWeek) {
+            const targetMonthKey = getWeekMonthKey(targetWeek);
+
+            if (!targetMonthKey) {
+                return [];
+            }
+
+            return weeks.filter(week => {
+                return getWeekMonthKey(week) === targetMonthKey;
+            });
+        }
+
+        function getWeekShortLabel(week) {
+            const label = String(week?.label || week?.id || "");
+            const parts = label.split("｜");
+
+            return parts[0] || label;
+        }
+
+        async function getWeekRows(week) {
+            if (!week) return [];
+
+            if (weekRowsCache.has(week.id)) {
+                return weekRowsCache.get(week.id);
+            }
+
+            const csvText = await fetchText(week.file);
+            const rows = normalizeRows(csvToObjects(csvText));
+
+            weekRowsCache.set(week.id, rows);
+
+            return rows;
+        }
+
+        function cloneRows(rows) {
+            return rows.map(row => ({ ...row }));
+        }
+
         function isReturnAccount(row) {
             const cm = String(row["CM"] || "").trim();
             const status = String(row["狀態"] || "").trim();
@@ -1397,6 +2064,16 @@
 
         function getExcludedPeople(rows) {
             return rows.filter(row => row.__type === "person" && isExcludedFromCalculation(row));
+        }
+
+        function isEverBottomFive(row) {
+            return (
+                isCalculablePerson(row) &&
+                (
+                    row.__historyLevel === "watch" ||
+                    row.__historyLevel === "risk"
+                )
+            );
         }
 
         function getRowType(row) {
@@ -1446,16 +2123,39 @@
                 });
         }
 
+        function normalizeCmName(value) {
+            return String(value || "")
+                .trim()
+                .replace(/\s+/g, " ")
+                .toLowerCase();
+        }
+
+        function getCmKey(row) {
+            const cm = normalizeCmName(row["CM"]);
+
+            return cm ? `cm:${cm}` : "";
+        }
+
+        /**
+         * 個人資料、歷史紀錄、上週比較全部只使用 CM 比對。
+         * 不再使用 LINE名稱，避免不同 CM 共用同一個 LINE名稱 時被誤判為同一人。
+         */
+        function getProfileKeys(row) {
+            const cmKey = getCmKey(row);
+
+            return cmKey ? [cmKey] : [];
+        }
+
+        function hasMatchingProfileKey(row, keySet) {
+            const cmKey = getCmKey(row);
+
+            return Boolean(cmKey && keySet.has(cmKey));
+        }
+
         function getPersonKey(row) {
             if (isExcludedFromCalculation(row)) return "";
 
-            const cm = String(row["CM"] || "").trim();
-            const lineName = String(row["LINE名稱"] || "").trim();
-
-            if (cm) return `cm:${cm.toLowerCase()}`;
-            if (lineName) return `line:${lineName.toLowerCase()}`;
-
-            return "";
+            return getCmKey(row);
         }
 
         function getBadgeClass(status) {
@@ -1490,8 +2190,8 @@
             if (!previousWeek) return [];
 
             try {
-                const csvText = await fetchText(previousWeek.file);
-                return normalizeRows(csvToObjects(csvText));
+                const rows = await getWeekRows(previousWeek);
+                return cloneRows(rows);
             } catch (error) {
                 console.warn("上一週資料讀取失敗：", error);
                 return [];
@@ -1563,10 +2263,6 @@
 
             people.sort((a, b) => a.score - b.score);
 
-            /**
-             * 取最後五名。
-             * 若第 5 名同分，會一起納入，避免同分者被硬切掉。
-             */
             const cutoffIndex = Math.min(4, people.length - 1);
             const cutoffScore = people[cutoffIndex].score;
 
@@ -1577,13 +2273,17 @@
             );
         }
 
-        async function loadHistoryBottomFive() {
+        async function loadHistoryBottomFive(targetWeek) {
             const summaryMap = new Map();
+            const monthKey = getWeekMonthKey(targetWeek);
+            const monthWeeks = getWeeksInSameMonth(targetWeek);
 
-            for (const week of weeks) {
+            historyScopeWeekCount = monthWeeks.length;
+            historyScopeLabel = formatMonthLabel(monthKey);
+
+            for (const week of monthWeeks) {
                 try {
-                    const csvText = await fetchText(week.file);
-                    const rows = normalizeRows(csvToObjects(csvText));
+                    const rows = await getWeekRows(week);
                     const bottomKeys = getBottomFiveKeys(rows);
 
                     rows
@@ -1600,7 +2300,9 @@
                                     lineName: row["LINE名稱"] || "",
                                     weeksSeen: 0,
                                     bottomWeeks: 0,
-                                    bottomWeekLabels: []
+                                    bottomWeekLabels: [],
+                                    monthKey,
+                                    totalWeeks: monthWeeks.length
                                 });
                             }
 
@@ -1614,7 +2316,7 @@
                             }
                         });
                 } catch (error) {
-                    console.warn(`歷史資料讀取失敗：${week.file}`, error);
+                    console.warn(`本月後五資料讀取失敗：${week.file}`, error);
                 }
             }
 
@@ -1625,11 +2327,14 @@
             if (!summary) return false;
             if (summary.weeksSeen < HISTORY_MIN_WEEKS) return false;
 
+            const totalWeeks = summary.totalWeeks || historyScopeWeekCount || 0;
+
             const appearedModePass = summary.bottomWeeks === summary.weeksSeen;
 
             const allWeeksModePass =
-                summary.weeksSeen === weeks.length &&
-                summary.bottomWeeks === weeks.length;
+                totalWeeks > 0 &&
+                summary.weeksSeen === totalWeeks &&
+                summary.bottomWeeks === totalWeeks;
 
             return HISTORY_MODE === "allWeeks"
                 ? allWeeksModePass
@@ -1639,7 +2344,7 @@
         function applyHistoryBottomFive(rows) {
             return rows.map(row => {
                 if (row.__type !== "person") {
-                    row["歷史後五"] = "";
+                    row[HISTORY_COLUMN] = "";
                     row.__historyLevel = "";
                     row.__historyTitle = "";
                     row.__historyAlways = false;
@@ -1649,9 +2354,9 @@
                 if (isExcludedFromCalculation(row)) {
                     const status = String(row["狀態"] || "").trim();
 
-                    row["歷史後五"] = "不計算";
+                    row[HISTORY_COLUMN] = "不計算";
                     row.__historyLevel = "none";
-                    row.__historyTitle = `${status || "此帳號"}不納入歷史最後五名統計`;
+                    row.__historyTitle = `${status || "此帳號"}不納入${historyScopeLabel}後五名統計`;
                     row.__historyAlways = false;
                     return row;
                 }
@@ -1660,9 +2365,9 @@
                 const summary = historySummaryMap.get(key);
 
                 if (!summary) {
-                    row["歷史後五"] = "—";
+                    row[HISTORY_COLUMN] = "—";
                     row.__historyLevel = "none";
-                    row.__historyTitle = "沒有歷史資料";
+                    row.__historyTitle = `${historyScopeLabel}沒有資料`;
                     row.__historyAlways = false;
                     return row;
                 }
@@ -1671,19 +2376,70 @@
 
                 row.__historyAlways = alwaysBottomFive;
                 row.__historyTitle = summary.bottomWeekLabels.length
-                    ? `曾在後五名週別：${summary.bottomWeekLabels.join("、")}`
-                    : "歷史上沒有進入最後五名";
+                    ? `${historyScopeLabel}曾在後五名週別：${summary.bottomWeekLabels.join("、")}`
+                    : `${historyScopeLabel}沒有進入最後五名`;
 
                 if (alwaysBottomFive) {
-                    row["歷史後五"] = `都後五 ${summary.bottomWeeks}/${summary.weeksSeen}`;
+                    row[HISTORY_COLUMN] = `都後五 ${summary.bottomWeeks}/${summary.weeksSeen}`;
                     row.__historyLevel = "risk";
                 } else if (summary.bottomWeeks > 0) {
-                    row["歷史後五"] = `曾後五 ${summary.bottomWeeks}/${summary.weeksSeen}`;
+                    row[HISTORY_COLUMN] = `曾後五 ${summary.bottomWeeks}/${summary.weeksSeen}`;
                     row.__historyLevel = "watch";
                 } else {
-                    row["歷史後五"] = "—";
+                    row[HISTORY_COLUMN] = "—";
                     row.__historyLevel = "none";
                 }
+
+                return row;
+            });
+        }
+        function applyRowNumbers(rows) {
+            let normalNumber = 0;
+            let returnNumber = 0;
+            let inReturnSection = false;
+
+            return rows.map(row => {
+                if (row.__type === "section") {
+                    const cm = String(row["CM"] || "").trim();
+
+                    if (cm === "【回歸帳號】") {
+                        inReturnSection = true;
+                        returnNumber = 0;
+                    } else {
+                        inReturnSection = false;
+                    }
+
+                    row.__rank = null;
+                    row.__rankTitle = "";
+                    row[RANK_COLUMN] = "";
+
+                    return row;
+                }
+
+                if (row.__type !== "person") {
+                    row.__rank = null;
+                    row.__rankTitle = "";
+                    row[RANK_COLUMN] = "";
+
+                    return row;
+                }
+
+                /**
+                 * 編號牌規則：
+                 * 1. 不依分數排名
+                 * 2. 不管隊長、副隊長、長老、PASS、淘汰等狀態，都照表格順序發號碼
+                 * 3. 回歸帳號區塊獨立從 1 開始
+                 */
+                const number = inReturnSection || isReturnAccount(row)
+                    ? ++returnNumber
+                    : ++normalNumber;
+
+                row.__rank = number;
+                row.__rankTitle = inReturnSection || isReturnAccount(row)
+                    ? `回歸帳號編號 ${number}`
+                    : `編號 ${number}`;
+
+                row[RANK_COLUMN] = String(number);
 
                 return row;
             });
@@ -1729,10 +2485,17 @@
 
                 const matchKeyword =
                     !keyword ||
-                    String(row["CM"]).toLowerCase().includes(keyword) ||
-                    String(row["LINE名稱"]).toLowerCase().includes(keyword);
+                    normalizeCmName(row["CM"]).includes(keyword);
 
-                const matchStatus = status === "全部" || row["狀態"] === status;
+                let matchStatus = false;
+
+                if (status === "全部") {
+                    matchStatus = true;
+                } else if (status === SPECIAL_STATUS_FILTERS.EVER_BOTTOM_FIVE) {
+                    matchStatus = isEverBottomFive(row);
+                } else {
+                    matchStatus = row["狀態"] === status;
+                }
 
                 return matchKeyword && matchStatus;
             });
@@ -1750,14 +2513,27 @@
 
             const current = els.statusFilter.value || "全部";
 
+            const specialFilterOptions = `
+            <option value="${SPECIAL_STATUS_FILTERS.EVER_BOTTOM_FIVE}">
+                曾經最後五
+            </option>
+        `;
+
             els.statusFilter.innerHTML = `
-            <option value="全部">全部狀態</option>
-            ${statuses.map(status => `
+        <option value="全部">全部狀態</option>
+        ${specialFilterOptions}
+        ${statuses.map(status => `
                 <option value="${escapeHTML(status)}">${escapeHTML(status)}</option>
             `).join("")}
         `;
 
-            els.statusFilter.value = statuses.includes(current) ? current : "全部";
+            const validValues = [
+                "全部",
+                SPECIAL_STATUS_FILTERS.EVER_BOTTOM_FIVE,
+                ...statuses
+            ];
+
+            els.statusFilter.value = validValues.includes(current) ? current : "全部";
         }
 
         function animateNumber(element, target) {
@@ -1892,11 +2668,38 @@
                     const value = row[header] || "";
 
                     if (header === "CM") {
+                        const cmKey = getCmKey(row);
+
+                        if (row.__type === "person" && cmKey) {
+                            return `
+                            <td class="name" data-label="${escapeHTML(header)}">
+                                <button
+                                    class="person-link"
+                                    type="button"
+                                    data-profile-keys="${escapeHTML(cmKey)}"
+                                    title="查看 ${escapeHTML(value || "此成員")} 的個人資料"
+                                >
+                                    ${escapeHTML(value || "-")}
+                                </button>
+                            </td>
+                        `;
+                        }
+
                         return `<td class="name" data-label="${escapeHTML(header)}">${escapeHTML(value || "-")}</td>`;
                     }
+                    if (header === RANK_COLUMN) {
+                        const numberValue = row[RANK_COLUMN] || "";
 
-                    if (header === "LINE名稱") {
-                        return `<td class="line-name" data-label="${escapeHTML(header)}">${escapeHTML(value || "-")}</td>`;
+                        return `
+                                <td class="rank-cell" data-label="${escapeHTML(header)}">
+                                    ${numberValue
+                                ? `<span class="rank-badge" title="${escapeHTML(row.__rankTitle || "")}">
+                                                ${escapeHTML(numberValue)}
+                                            </span>`
+                                : ""
+                            }
+                                </td>
+                            `;
                     }
 
                     if (header === "較上週") {
@@ -1916,7 +2719,7 @@
                             `;
                     }
 
-                    if (header === "歷史後五") {
+                    if (header === HISTORY_COLUMN) {
                         const historyClass = row.__historyLevel
                             ? `history-${row.__historyLevel}`
                             : "history-none";
@@ -1956,9 +2759,536 @@
             const historyRiskCount = currentRows.filter(row => {
                 return isCalculablePerson(row) && row.__historyAlways;
             }).length;
+            const historyEverCount = currentRows.filter(isEverBottomFive).length;
 
             els.resultHint.textContent =
-                `目前顯示可計算 ${shownPeople} / ${allPeople} 筆｜不計算排除 ${shownExcludedCount} / ${allExcludedCount} 筆｜歷史都後五 ${historyRiskCount} 人`;
+                `目前顯示可計算 ${shownPeople} / ${allPeople} 筆｜不計算排除 ${shownExcludedCount} / ${allExcludedCount} 筆｜${historyScopeLabel}曾後五 ${historyEverCount} 人｜都後五 ${historyRiskCount} 人`
+
+        }
+
+        function getScoreRecordsFromRows(row, week) {
+            const activity1Raw = String(row["活動1總分"] ?? "").trim();
+            const activity2Raw = String(row["活動2總分"] ?? "").trim();
+            const activity3Raw = String(row["活動3總分"] ?? "").trim();
+
+            const activity1 = parseNumber(activity1Raw);
+            const activity2 = parseNumber(activity2Raw);
+            const activity3 = parseNumber(activity3Raw);
+
+            /**
+             * 活動 1、活動 2 預設顯示。
+             * 活動 3 只有在有填值且不為 0 時才顯示，
+             * 避免兩活動週被多顯示一個「活動 3：0」。
+             */
+            const activities = [
+                {
+                    label: "活動 1",
+                    value: activity1,
+                    raw: activity1Raw,
+                    show: true
+                },
+                {
+                    label: "活動 2",
+                    value: activity2,
+                    raw: activity2Raw,
+                    show: true
+                }
+            ];
+
+            if (activity3Raw !== "" && activity3 !== 0) {
+                activities.push({
+                    label: "活動 3",
+                    value: activity3,
+                    raw: activity3Raw,
+                    show: true
+                });
+            }
+
+            return {
+                weekId: week.id,
+                weekLabel: week.label || week.id,
+                shortLabel: getWeekShortLabel(week),
+                startDate: week.startDate || "",
+                monthKey: getWeekMonthKey(week),
+                cm: row["CM"] || "",
+                lineName: row["LINE名稱"] || "",
+                status: row["狀態"] || "",
+                activity1,
+                activity2,
+                activity3,
+                activities,
+                score: parseNumber(row["一週總分"])
+            };
+        }
+
+        async function buildMemberProfile(initialKeys) {
+            /**
+             * 個人頁只接受 cm:* key。
+             * 即使舊資料或瀏覽器暫存中帶有 line:*，這裡也會直接忽略。
+             */
+            const keySet = new Set(
+                initialKeys
+                    .filter(Boolean)
+                    .filter(key => String(key).startsWith("cm:"))
+            );
+
+            const records = [];
+
+            if (!keySet.size) {
+                const selectedMonthKey = getWeekMonthKey(currentWeek);
+                const monthWeeks = getWeeksInSameMonth(currentWeek).reverse();
+
+                return {
+                    records: [],
+                    monthRecords: monthWeeks.map(week => ({
+                        weekId: week.id,
+                        weekLabel: week.label || week.id,
+                        shortLabel: getWeekShortLabel(week),
+                        startDate: week.startDate || "",
+                        monthKey: getWeekMonthKey(week),
+                        cm: "",
+                        lineName: "",
+                        status: "無資料",
+                        activity1: null,
+                        activity2: null,
+                        activity3: null,
+                        score: null
+                    })),
+                    selectedMonthKey,
+                    selectedMonthLabel: formatMonthLabel(selectedMonthKey)
+                };
+            }
+
+            const chronologicalWeeks = [...weeks].reverse();
+
+            for (const week of chronologicalWeeks) {
+                const rows = await getWeekRows(week);
+
+                const matchedRow = rows.find(row => {
+                    return row.__type === "person" && hasMatchingProfileKey(row, keySet);
+                });
+
+                if (!matchedRow) continue;
+
+                /**
+                 * 不再把 LINE名稱 或其他 key 加入 keySet。
+                 * 身分鎖定只看一開始點擊的 CM。
+                 */
+                records.push(getScoreRecordsFromRows(matchedRow, week));
+            }
+
+            const selectedMonthKey = getWeekMonthKey(currentWeek);
+            const monthWeeks = getWeeksInSameMonth(currentWeek).reverse();
+
+            const monthRecords = monthWeeks.map(week => {
+                const record = records.find(item => item.weekId === week.id);
+
+                if (record) return record;
+
+                return {
+                    weekId: week.id,
+                    weekLabel: week.label || week.id,
+                    shortLabel: getWeekShortLabel(week),
+                    startDate: week.startDate || "",
+                    monthKey: getWeekMonthKey(week),
+                    cm: "",
+                    lineName: "",
+                    status: "無資料",
+                    activity1: null,
+                    activity2: null,
+                    activity3: null,
+                    score: null
+                };
+            });
+
+            return {
+                records,
+                monthRecords,
+                selectedMonthKey,
+                selectedMonthLabel: formatMonthLabel(selectedMonthKey)
+            };
+        }
+
+        function calculateAverage(values) {
+            const validValues = values.filter(value => Number.isFinite(value));
+
+            if (!validValues.length) return 0;
+
+            return Math.round(
+                validValues.reduce((sum, value) => sum + value, 0) / validValues.length
+            );
+        }
+
+        function getProfileSummary(profile) {
+            const records = profile.records;
+            const validScores = records.map(record => record.score).filter(Number.isFinite);
+
+            const bestRecord = records.reduce((best, record) => {
+                if (!best) return record;
+                return record.score > best.score ? record : best;
+            }, null);
+
+            const latestRecord = records[records.length - 1] || null;
+            const previousRecord = records[records.length - 2] || null;
+
+            const monthValidRecords = profile.monthRecords.filter(record => Number.isFinite(record.score));
+            const monthScores = monthValidRecords.map(record => record.score);
+            const monthTotal = monthScores.reduce((sum, score) => sum + score, 0);
+            const monthAverage = calculateAverage(monthScores);
+
+            const firstMonthRecord = monthValidRecords[0] || null;
+            const lastMonthRecord = monthValidRecords[monthValidRecords.length - 1] || null;
+
+            const monthDelta =
+                firstMonthRecord && lastMonthRecord
+                    ? lastMonthRecord.score - firstMonthRecord.score
+                    : null;
+
+            const latestDelta =
+                latestRecord && previousRecord
+                    ? latestRecord.score - previousRecord.score
+                    : null;
+
+            return {
+                totalWeeks: records.length,
+                bestRecord,
+                latestRecord,
+                previousRecord,
+                averageScore: calculateAverage(validScores),
+                monthTotal,
+                monthAverage,
+                monthDelta,
+                latestDelta
+            };
+        }
+
+        function formatDelta(delta) {
+            if (delta === null || delta === undefined) return "無資料";
+            if (delta > 0) return `▲ ${formatNumber(delta)}`;
+            if (delta < 0) return `▼ ${formatNumber(Math.abs(delta))}`;
+            return "— 0";
+        }
+
+        function renderProfileChart(monthRecords) {
+            const width = 760;
+            const height = 280;
+            const padding = {
+                top: 32,
+                right: 26,
+                bottom: 52,
+                left: 70
+            };
+
+            const chartWidth = width - padding.left - padding.right;
+            const chartHeight = height - padding.top - padding.bottom;
+
+            const validScores = monthRecords
+                .map(record => record.score)
+                .filter(Number.isFinite);
+
+            if (!validScores.length) {
+                return `
+                <div class="profile-empty">
+                    這個月份沒有可繪製的分數資料。
+                </div>
+            `;
+            }
+
+            const maxScore = Math.max(...validScores, 1);
+            const niceMax = Math.ceil(maxScore / 100000) * 100000 || maxScore;
+
+            const getX = index => {
+                if (monthRecords.length <= 1) {
+                    return padding.left + chartWidth / 2;
+                }
+
+                return padding.left + (index / (monthRecords.length - 1)) * chartWidth;
+            };
+
+            const getY = score => {
+                return padding.top + (1 - score / niceMax) * chartHeight;
+            };
+
+            const points = monthRecords.map((record, index) => {
+                const hasScore = Number.isFinite(record.score);
+
+                return {
+                    ...record,
+                    index,
+                    hasScore,
+                    x: getX(index),
+                    y: hasScore ? getY(record.score) : padding.top + chartHeight
+                };
+            });
+
+            const validPoints = points.filter(point => point.hasScore);
+
+            const linePath = validPoints
+                .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
+                .join(" ");
+
+            const areaPath = validPoints.length
+                ? `${linePath} L ${validPoints[validPoints.length - 1].x} ${padding.top + chartHeight} L ${validPoints[0].x} ${padding.top + chartHeight} Z`
+                : "";
+
+            const gridLines = [0, 0.25, 0.5, 0.75, 1].map(ratio => {
+                const y = padding.top + ratio * chartHeight;
+                const value = Math.round(niceMax * (1 - ratio));
+
+                return `
+                <line class="chart-grid" x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}"></line>
+                <text class="chart-label" x="${padding.left - 12}" y="${y + 4}" text-anchor="end">
+                    ${formatCompactNumber(value)}
+                </text>
+            `;
+            }).join("");
+
+            const dots = points.map(point => {
+                const label = escapeHTML(point.shortLabel);
+                const value = point.hasScore ? formatNumber(point.score) : "無資料";
+
+                if (!point.hasScore) {
+                    return `
+                    <circle class="chart-dot-empty" cx="${point.x}" cy="${point.y}" r="5">
+                        <title>${label}：無資料</title>
+                    </circle>
+                    <text class="chart-label" x="${point.x}" y="${height - 24}" text-anchor="middle">${label}</text>
+                `;
+                }
+
+                return `
+                <circle class="chart-dot" cx="${point.x}" cy="${point.y}" r="6">
+                    <title>${label}：${value}</title>
+                </circle>
+                <text class="chart-value" x="${point.x}" y="${point.y - 12}" text-anchor="middle">${formatCompactNumber(point.score)}</text>
+                <text class="chart-label" x="${point.x}" y="${height - 24}" text-anchor="middle">${label}</text>
+            `;
+            }).join("");
+
+            return `
+            <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="本月分數折線圖">
+                <defs>
+                    <linearGradient id="scoreAreaGradient" x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0%" stop-color="rgba(37, 99, 235, 0.22)"></stop>
+                        <stop offset="100%" stop-color="rgba(14, 165, 233, 0.02)"></stop>
+                    </linearGradient>
+                </defs>
+
+                ${gridLines}
+
+                <line class="chart-axis" x1="${padding.left}" y1="${padding.top + chartHeight}" x2="${width - padding.right}" y2="${padding.top + chartHeight}"></line>
+                <line class="chart-axis" x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${padding.top + chartHeight}"></line>
+
+                ${areaPath ? `<path class="chart-area" d="${areaPath}"></path>` : ""}
+                ${linePath ? `<path class="chart-line" d="${linePath}"></path>` : ""}
+
+                ${dots}
+            </svg>
+        `;
+        }
+        function getRecordActivities(record) {
+            if (Array.isArray(record.activities) && record.activities.length) {
+                return record.activities.filter(activity => activity.show !== false);
+            }
+
+            const activities = [
+                {
+                    label: "活動 1",
+                    value: record.activity1,
+                    show: true
+                },
+                {
+                    label: "活動 2",
+                    value: record.activity2,
+                    show: true
+                }
+            ];
+
+            if (Number.isFinite(record.activity3) && record.activity3 !== 0) {
+                activities.push({
+                    label: "活動 3",
+                    value: record.activity3,
+                    show: true
+                });
+            }
+
+            return activities;
+        }
+
+        function renderProfileTimeline(records) {
+            if (!records.length) {
+                return `
+                <div class="profile-empty">
+                    查無這位成員的週別紀錄。
+                </div>
+            `;
+            }
+
+            return records
+                .slice()
+                .reverse()
+                .map(record => {
+                    const activities = getRecordActivities(record);
+
+                    /**
+                     * 欄位數計算：
+                     * - 一週總分：1 欄
+                     * - 活動欄位：activities.length 欄
+                     * - 狀態：1 欄
+                     *
+                     * 左側週別資訊是固定第一欄，所以這裡只控制後面的 repeat 欄位數。
+                     */
+                    const dynamicColumnCount = activities.length + 2;
+
+                    const activityHTML = activities
+                        .map(activity => `
+                    <div class="profile-week-score">
+                        <span class="profile-week-caption">${escapeHTML(activity.label)}</span>
+                        ${formatNumber(activity.value)}
+                    </div>
+                `)
+                        .join("");
+
+                    return `
+                <div class="profile-week-row" style="--profile-week-columns: ${dynamicColumnCount}">
+                    <div>
+                        <div class="profile-week-label">${escapeHTML(record.weekLabel)}</div>
+                        <div class="profile-week-small">${escapeHTML(record.startDate || "未提供日期")}</div>
+                    </div>
+
+                    <div class="profile-week-score">
+                        <span class="profile-week-caption">一週總分</span>
+                        ${formatNumber(record.score)}
+                    </div>
+
+                    ${activityHTML}
+
+                    <div class="profile-week-score">
+                        <span class="profile-week-caption">狀態</span>
+                        <span class="badge ${getBadgeClass(record.status)}">${escapeHTML(record.status || "-")}</span>
+                    </div>
+                </div>
+            `;
+                })
+                .join("");
+        }
+
+        function renderMemberProfile(profile) {
+            const summary = getProfileSummary(profile);
+
+            if (!profile.records.length) {
+                els.profileName.textContent = "查無成員資料";
+                els.profileMeta.textContent = "沒有找到對應的歷史紀錄。";
+                els.profileBody.innerHTML = `
+                <div class="profile-empty">
+                    找不到這位成員的歷史資料。
+                </div>
+            `;
+                return;
+            }
+
+            const latestRecord = summary.latestRecord;
+            const bestRecord = summary.bestRecord;
+
+            const displayName = latestRecord.cm || latestRecord.lineName || "未命名成員";
+
+            els.profileName.textContent = displayName;
+            els.profileMeta.textContent =
+                `共出現 ${summary.totalWeeks} 週｜最新狀態：${latestRecord.status || "未標記"}｜${profile.selectedMonthLabel}走勢分析`;
+
+            els.profileBody.innerHTML = `
+            <div class="profile-grid">
+                <article class="profile-stat">
+                    <div class="profile-stat-label">歷史最高分</div>
+                    <div class="profile-stat-value">${formatNumber(bestRecord.score)}</div>
+                    <div class="profile-stat-note">${escapeHTML(bestRecord.weekLabel)}</div>
+                </article>
+
+                <article class="profile-stat">
+                    <div class="profile-stat-label">歷史平均分</div>
+                    <div class="profile-stat-value">${formatNumber(summary.averageScore)}</div>
+                    <div class="profile-stat-note">依出現週數平均</div>
+                </article>
+
+                <article class="profile-stat">
+                    <div class="profile-stat-label">${escapeHTML(profile.selectedMonthLabel)}總分</div>
+                    <div class="profile-stat-value">${formatNumber(summary.monthTotal)}</div>
+                    <div class="profile-stat-note">本月已出現週別加總</div>
+                </article>
+
+                <article class="profile-stat">
+                    <div class="profile-stat-label">本月走勢</div>
+                    <div class="profile-stat-value">${escapeHTML(formatDelta(summary.monthDelta))}</div>
+                    <div class="profile-stat-note">以本月第一筆與最後一筆比較</div>
+                </article>
+            </div>
+
+            <section class="profile-section">
+                <div class="profile-section-head">
+                    <h3 class="profile-section-title">${escapeHTML(profile.selectedMonthLabel)}分數折線圖</h3>
+                    <span class="profile-section-subtitle">顯示目前選取月份的每週總分</span>
+                </div>
+
+                <div class="profile-chart">
+                    ${renderProfileChart(profile.monthRecords)}
+                </div>
+            </section>
+
+            <section class="profile-section">
+                <div class="profile-section-head">
+                    <h3 class="profile-section-title">歷史週別紀錄</h3>
+                    <span class="profile-section-subtitle">最新週別在最上方</span>
+                </div>
+
+                <div class="profile-timeline">
+                    ${renderProfileTimeline(profile.records)}
+                </div>
+            </section>
+        `;
+        }
+
+        function openProfileModal() {
+            els.profileModal.hidden = false;
+            document.body.classList.add("profile-open");
+        }
+
+        function closeProfileModal() {
+            els.profileModal.hidden = true;
+            document.body.classList.remove("profile-open");
+        }
+
+        async function openMemberProfile(profileKeyValue) {
+            const initialKeys = String(profileKeyValue || "")
+                .split("|")
+                .map(key => key.trim())
+                .filter(Boolean);
+
+            if (!initialKeys.length) return;
+
+            openProfileModal();
+
+            els.profileName.textContent = "成員資料";
+            els.profileMeta.textContent = "資料分析中...";
+            els.profileBody.innerHTML = `
+            <div class="profile-loading">
+                正在彙整歷史最高分、本月折線圖與週別紀錄...
+            </div>
+        `;
+
+            try {
+                const profile = await buildMemberProfile(initialKeys);
+                renderMemberProfile(profile);
+            } catch (error) {
+                console.error(error);
+
+                els.profileName.textContent = "資料讀取失敗";
+                els.profileMeta.textContent = "個人資料分析時發生錯誤。";
+                els.profileBody.innerHTML = `
+                <div class="profile-empty">
+                    個人資料讀取失敗，請確認每週 CSV 檔案是否都能正常讀取。
+                </div>
+            `;
+            }
         }
 
         async function loadWeeks() {
@@ -1978,16 +3308,22 @@
                 throw new Error("找不到週別資料");
             }
 
+            currentWeek = week;
+
             els.resultHint.textContent = "資料載入中...";
             renderLoading();
 
-            const csvText = await fetchText(week.file);
-
-            const rows = normalizeRows(csvToObjects(csvText));
+            const rows = cloneRows(await getWeekRows(week));
             const previousRows = await getPreviousRows(week.id);
+
+            els.resultHint.textContent = "分析本月後五名中...";
+            renderLoading("分析本月後五名中...");
+            await loadHistoryBottomFive(week);
 
             currentRows = applyWeekComparison(rows, previousRows);
             currentRows = applyHistoryBottomFive(currentRows);
+            currentRows = applyRowNumbers(currentRows);
+
 
             renderHead();
             renderStatusFilter(currentRows);
@@ -2024,6 +3360,28 @@
         els.searchInput.addEventListener("input", renderBody);
         els.statusFilter.addEventListener("change", renderBody);
 
+        els.tableBody.addEventListener("click", event => {
+            const button = event.target.closest("[data-profile-keys]");
+
+            if (!button) return;
+
+            openMemberProfile(button.dataset.profileKeys || "");
+        });
+
+        els.profileClose.addEventListener("click", closeProfileModal);
+
+        els.profileModal.addEventListener("click", event => {
+            if (event.target.matches("[data-profile-close]")) {
+                closeProfileModal();
+            }
+        });
+
+        document.addEventListener("keydown", event => {
+            if (event.key === "Escape" && !els.profileModal.hidden) {
+                closeProfileModal();
+            }
+        });
+
         async function initApp() {
             try {
                 renderHead();
@@ -2033,10 +3391,6 @@
                 if (!weeks.length) {
                     throw new Error("weeks.csv 沒有週別資料");
                 }
-
-                els.resultHint.textContent = "分析歷史最後五名中...";
-                renderLoading("分析歷史最後五名中...");
-                await loadHistoryBottomFive();
 
                 await loadWeek(weeks[0].id);
             } catch (error) {
