@@ -388,7 +388,7 @@
 
         .stats {
             display: grid;
-            grid-template-columns: repeat(6, minmax(140px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 14px;
             margin-top: 18px;
         }
@@ -433,9 +433,9 @@
 
         .stat-top {
             position: relative;
-            display: flex;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
             align-items: center;
-            justify-content: space-between;
             gap: 12px;
             z-index: 1;
             min-width: 0;
@@ -454,6 +454,7 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            justify-self: end;
             border-radius: 14px;
             background: rgba(56, 189, 248, 0.1);
             color: #7dd3fc;
@@ -465,10 +466,15 @@
             z-index: 1;
             color: #f8fafc;
             font-weight: 950;
-            font-size: clamp(22px, 2.4vw, 32px);
+            font-size: clamp(20px, 2.1vw, 30px);
+            line-height: 1.08;
             letter-spacing: -0.04em;
             font-variant-numeric: tabular-nums;
-            overflow-wrap: anywhere;
+            min-width: 0;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .panel {
@@ -930,7 +936,7 @@
             }
 
             .stat-value {
-                font-size: 28px;
+                font-size: 26px;
             }
 
             .panel {
@@ -1203,8 +1209,12 @@
          */
         const HISTORY_MIN_WEEKS = 2;
         const HISTORY_MODE = "appeared";
-        const EXCLUDED_STATUSES = ["回歸", "副隊長", "隊長"];
 
+        /**
+         * 不納入統計、上週比較、歷史後五名計算的狀態。
+         * 這些資料仍會顯示在表格中，但不參與計算。
+         */
+        const EXCLUDED_STATUSES = ["回歸", "副隊長", "隊長"];
 
         const DISPLAY_HEADERS = [
             "CM",
@@ -1331,6 +1341,29 @@
 
         function formatNumber(value) {
             return Number(value || 0).toLocaleString("zh-TW");
+        }
+
+        function formatCompactNumber(value) {
+            const number = Number(value || 0);
+            const abs = Math.abs(number);
+
+            if (abs >= 100000000) {
+                const result = number / 100000000;
+
+                return `${result.toLocaleString("zh-TW", {
+                    maximumFractionDigits: 1
+                })}億`;
+            }
+
+            if (abs >= 10000) {
+                const result = number / 10000;
+
+                return `${result.toLocaleString("zh-TW", {
+                    maximumFractionDigits: 1
+                })}萬`;
+            }
+
+            return formatNumber(number);
         }
 
         function isReturnAccount(row) {
@@ -1592,6 +1625,7 @@
             if (summary.weeksSeen < HISTORY_MIN_WEEKS) return false;
 
             const appearedModePass = summary.bottomWeeks === summary.weeksSeen;
+
             const allWeeksModePass =
                 summary.weeksSeen === weeks.length &&
                 summary.bottomWeeks === weeks.length;
@@ -1656,32 +1690,32 @@
 
         function renderHead() {
             els.tableHead.innerHTML = `
-                <tr>
-                    ${DISPLAY_HEADERS.map(header => `<th>${escapeHTML(header)}</th>`).join("")}
-                </tr>
-            `;
+            <tr>
+                ${DISPLAY_HEADERS.map(header => `<th>${escapeHTML(header)}</th>`).join("")}
+            </tr>
+        `;
         }
 
         function renderLoading(message = "資料同步中...") {
             els.tableBody.innerHTML = `
-                <tr class="loading-row">
-                    <td colspan="${DISPLAY_HEADERS.length}">
-                        <span class="cyber-loader">
-                            <span></span><span></span><span></span>
-                            <strong>${escapeHTML(message)}</strong>
-                        </span>
-                    </td>
-                </tr>
-            `;
+            <tr class="loading-row">
+                <td colspan="${DISPLAY_HEADERS.length}">
+                    <span class="cyber-loader">
+                        <span></span><span></span><span></span>
+                        <strong>${escapeHTML(message)}</strong>
+                    </span>
+                </td>
+            </tr>
+        `;
         }
 
         function renderWeekSelect() {
             els.weekSelect.innerHTML = weeks
                 .map(week => `
-                    <option value="${escapeHTML(week.id)}">
-                        ${escapeHTML(week.label)}
-                    </option>
-                `)
+                <option value="${escapeHTML(week.id)}">
+                    ${escapeHTML(week.label)}
+                </option>
+            `)
                 .join("");
         }
 
@@ -1716,20 +1750,23 @@
             const current = els.statusFilter.value || "全部";
 
             els.statusFilter.innerHTML = `
-                <option value="全部">全部狀態</option>
-                ${statuses.map(status => `
-                    <option value="${escapeHTML(status)}">${escapeHTML(status)}</option>
-                `).join("")}
-            `;
+            <option value="全部">全部狀態</option>
+            ${statuses.map(status => `
+                <option value="${escapeHTML(status)}">${escapeHTML(status)}</option>
+            `).join("")}
+        `;
 
             els.statusFilter.value = statuses.includes(current) ? current : "全部";
         }
 
         function animateNumber(element, target) {
             const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            const formatType = element.dataset.format || "normal";
+            const formatter = formatType === "compact" ? formatCompactNumber : formatNumber;
 
             if (prefersReducedMotion) {
-                element.textContent = formatNumber(target);
+                element.textContent = formatter(target);
+                element.title = formatNumber(target);
                 return;
             }
 
@@ -1742,7 +1779,8 @@
                 const eased = 1 - Math.pow(1 - progress, 3);
                 const current = Math.round(target * eased);
 
-                element.textContent = formatNumber(current);
+                element.textContent = formatter(current);
+                element.title = formatNumber(current);
 
                 if (progress < 1) {
                     requestAnimationFrame(update);
@@ -1757,34 +1795,64 @@
                 animateNumber(element, Number(element.dataset.statValue || 0));
             });
         }
+
         function renderStats(rows) {
             const people = getCalculablePeople(rows);
-            const excludedCount = getExcludedPeople(rows).length;
 
-            const totalScore = people.reduce((sum, row) => sum + parseNumber(row["一週總分"]), 0);
+            const totalScore = people.reduce((sum, row) => {
+                return sum + parseNumber(row["一週總分"]);
+            }, 0);
+
             const passCount = people.filter(row => row["狀態"] === "PASS").length;
             const outCount = people.filter(row => row["狀態"] === "淘汰").length;
-            const historyRiskCount = people.filter(row => row.__historyAlways).length;
 
             const statItems = [
-                { label: "計算成員筆數", value: people.length, icon: "👥" },
-                { label: "一週總分加總", value: totalScore, icon: "⚡" },
-                { label: "PASS", value: passCount, icon: "✅" },
-                { label: "淘汰", value: outCount, icon: "⛔" },
+                {
+                    label: "計算成員筆數",
+                    value: people.length,
+                    icon: "👥",
+                    format: "normal"
+                },
+                {
+                    label: "一週總分加總",
+                    value: totalScore,
+                    icon: "⚡",
+                    format: "compact"
+                },
+                {
+                    label: "PASS",
+                    value: passCount,
+                    icon: "✅",
+                    format: "normal"
+                },
+                {
+                    label: "淘汰",
+                    value: outCount,
+                    icon: "⛔",
+                    format: "normal"
+                }
             ];
 
             els.stats.innerHTML = statItems
                 .map(item => `
-            <article class="stat-card">
-                <div class="stat-top">
-                    <div>
-                        <div class="stat-label">${escapeHTML(item.label)}</div>
-                        <div class="stat-value" data-stat-value="${Number(item.value)}">0</div>
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <div>
+                            <div class="stat-label">${escapeHTML(item.label)}</div>
+                            <div
+                                class="stat-value"
+                                data-stat-value="${Number(item.value)}"
+                                data-format="${escapeHTML(item.format || "normal")}"
+                                title="${escapeHTML(formatNumber(item.value))}"
+                            >0</div>
+                        </div>
+
+                        <div class="stat-icon" aria-hidden="true">
+                            ${escapeHTML(item.icon)}
+                        </div>
                     </div>
-                    <div class="stat-icon" aria-hidden="true">${escapeHTML(item.icon)}</div>
-                </div>
-            </article>
-        `)
+                </article>
+            `)
                 .join("");
 
             animateStatCards();
@@ -1795,12 +1863,12 @@
 
             if (!filteredRows.length) {
                 els.tableBody.innerHTML = `
-                    <tr>
-                        <td class="empty-state" colspan="${DISPLAY_HEADERS.length}">
-                            找不到符合條件的資料。
-                        </td>
-                    </tr>
-                `;
+                <tr>
+                    <td class="empty-state" colspan="${DISPLAY_HEADERS.length}">
+                        找不到符合條件的資料。
+                    </td>
+                </tr>
+            `;
 
                 els.resultHint.textContent = "目前顯示 0 筆成員資料";
                 return;
@@ -1809,17 +1877,17 @@
             els.tableBody.innerHTML = filteredRows.map((row, index) => {
                 if (row.__type === "section") {
                     return `
-                        <tr class="section-row" style="animation-delay: ${Math.min(index * 0.015, 0.3)}s">
-                            <td colspan="${DISPLAY_HEADERS.length}">📌 ${escapeHTML(row["CM"])}</td>
-                        </tr>
-                    `;
+                    <tr class="section-row" style="animation-delay: ${Math.min(index * 0.015, 0.3)}s">
+                        <td colspan="${DISPLAY_HEADERS.length}">📌 ${escapeHTML(row["CM"])}</td>
+                    </tr>
+                `;
                 }
 
                 const rowClass = row.__type === "total" ? "row-total" : "";
 
                 return `
-                    <tr class="${rowClass}" style="animation-delay: ${Math.min(index * 0.015, 0.3)}s">
-                        ${DISPLAY_HEADERS.map(header => {
+                <tr class="${rowClass}" style="animation-delay: ${Math.min(index * 0.015, 0.3)}s">
+                    ${DISPLAY_HEADERS.map(header => {
                     const value = row[header] || "";
 
                     if (header === "CM") {
@@ -1832,18 +1900,19 @@
 
                     if (header === "較上週") {
                         const trendClass = row.__trend ? `trend-${row.__trend}` : "trend-same";
+
                         const prevScoreText =
                             row.__prevScore !== null && row.__prevScore !== undefined
                                 ? `上週：${formatNumber(row.__prevScore)}`
                                 : "上週無資料";
 
                         return `
-                                    <td class="score" data-label="${escapeHTML(header)}">
-                                        <span class="trend-badge ${trendClass}" title="${escapeHTML(prevScoreText)}">
-                                            ${escapeHTML(value || "-")}
-                                        </span>
-                                    </td>
-                                `;
+                                <td class="score" data-label="${escapeHTML(header)}">
+                                    <span class="trend-badge ${trendClass}" title="${escapeHTML(prevScoreText)}">
+                                        ${escapeHTML(value || "-")}
+                                    </span>
+                                </td>
+                            `;
                     }
 
                     if (header === "歷史後五") {
@@ -1852,35 +1921,40 @@
                             : "history-none";
 
                         return `
-                                    <td class="score" data-label="${escapeHTML(header)}">
-                                        <span class="history-badge ${historyClass}" title="${escapeHTML(row.__historyTitle || "")}">
-                                            ${escapeHTML(value || "-")}
-                                        </span>
-                                    </td>
-                                `;
+                                <td class="score" data-label="${escapeHTML(header)}">
+                                    <span class="history-badge ${historyClass}" title="${escapeHTML(row.__historyTitle || "")}">
+                                        ${escapeHTML(value || "-")}
+                                    </span>
+                                </td>
+                            `;
                     }
 
                     if (header === "狀態") {
                         return `
-                                    <td data-label="${escapeHTML(header)}">
-                                        ${value ? `<span class="badge ${getBadgeClass(value)}">${escapeHTML(value)}</span>` : "-"}
-                                    </td>
-                                `;
+                                <td data-label="${escapeHTML(header)}">
+                                    ${value ? `<span class="badge ${getBadgeClass(value)}">${escapeHTML(value)}</span>` : "-"}
+                                </td>
+                            `;
                     }
 
                     return `<td class="score" data-label="${escapeHTML(header)}">${escapeHTML(value || "-")}</td>`;
                 }).join("")}
-                    </tr>
-                `;
+                </tr>
+            `;
             }).join("");
 
             const shownPeople = filteredRows.filter(isCalculablePerson).length;
             const allPeople = getCalculablePeople(currentRows).length;
 
-            const shownExcludedCount = filteredRows.filter(row => row.__type === "person" && isExcludedFromCalculation(row)).length;
+            const shownExcludedCount = filteredRows.filter(row => {
+                return row.__type === "person" && isExcludedFromCalculation(row);
+            }).length;
+
             const allExcludedCount = getExcludedPeople(currentRows).length;
 
-            const historyRiskCount = currentRows.filter(row => isCalculablePerson(row) && row.__historyAlways).length;
+            const historyRiskCount = currentRows.filter(row => {
+                return isCalculablePerson(row) && row.__historyAlways;
+            }).length;
 
             els.resultHint.textContent =
                 `目前顯示可計算 ${shownPeople} / ${allPeople} 筆｜不計算排除 ${shownExcludedCount} / ${allExcludedCount} 筆｜歷史都後五 ${historyRiskCount} 人`;
@@ -1928,12 +2002,12 @@
             els.tableHead.innerHTML = "";
 
             els.tableBody.innerHTML = `
-                <tr>
-                    <td class="empty-state" colspan="${DISPLAY_HEADERS.length}">
-                        資料讀取失敗，請確認 <strong>data/weeks.csv</strong> 與每週 CSV 檔案路徑是否正確。
-                    </td>
-                </tr>
-            `;
+            <tr>
+                <td class="empty-state" colspan="${DISPLAY_HEADERS.length}">
+                    資料讀取失敗，請確認 <strong>data/weeks.csv</strong> 與每週 CSV 檔案路徑是否正確。
+                </td>
+            </tr>
+        `;
         }
 
         els.weekSelect.addEventListener("change", async event => {
