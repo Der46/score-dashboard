@@ -683,7 +683,7 @@
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            min-width: 1060px;
+            min-width: 1160px;
             font-size: 14px;
         }
 
@@ -1803,8 +1803,9 @@
         const EXCLUDED_STATUSES = ["回歸", "副隊長", "隊長"];
 
         const RANK_COLUMN = "編號";
-
+        const MONTH_TOTAL_COLUMN = "本月總分";
         const HISTORY_COLUMN = "本月後五";
+
         const SPECIAL_STATUS_FILTERS = {
             EVER_BOTTOM_FIVE: "__everBottomFive"
         };
@@ -1816,6 +1817,7 @@
             "活動2總分",
             "活動3總分",
             "一週總分",
+            MONTH_TOTAL_COLUMN,
             "距離合格分數",
             "距離長老分數",
             "較上週",
@@ -1842,6 +1844,7 @@
         let currentWeek = null;
         let currentRows = [];
         let historySummaryMap = new Map();
+        let monthlyTotalMap = new Map();
         let historyScopeWeekCount = 0;
         let historyScopeLabel = "本月";
         let weekRowsCache = new Map();
@@ -2352,6 +2355,112 @@
 
             historySummaryMap = summaryMap;
         }
+        function getMonthlyTotalPersonKey(row) {
+            /**
+             * 本月總分欄位要包含所有職位與狀態，
+             * 所以不能使用 getPersonKey(row)，因為 getPersonKey 會排除隊長、副隊長、回歸。
+             *
+             * 這裡只用 CM 作為同一人的識別 key。
+             */
+            return getCmKey(row);
+        }
+
+        async function loadMonthlyPersonalTotals(targetWeek) {
+            const summaryMap = new Map();
+            const monthWeeks = getWeeksInSameMonth(targetWeek);
+
+            for (const week of monthWeeks) {
+                try {
+                    const rows = await getWeekRows(week);
+
+                    rows
+                        .filter(row => row.__type === "person")
+                        .forEach(row => {
+                            const key = getMonthlyTotalPersonKey(row);
+
+                            if (!key) return;
+
+                            if (!summaryMap.has(key)) {
+                                summaryMap.set(key, {
+                                    key,
+                                    cm: row["CM"] || "",
+                                    totalScore: 0,
+                                    weeksSeen: 0,
+                                    totalWeeks: monthWeeks.length,
+                                    weekLabels: []
+                                });
+                            }
+
+                            const item = summaryMap.get(key);
+
+                            item.totalScore += parseNumber(row["一週總分"]);
+                            item.weeksSeen += 1;
+                            item.weekLabels.push(week.label || week.id);
+                        });
+                } catch (error) {
+                    console.warn(`本月個人總分讀取失敗：${week.file}`, error);
+                }
+            }
+
+            /**
+             * 低分排序：
+             * 分數越低，低分排序越前面。
+             * 同分同名次。
+             */
+            const rankedItems = Array.from(summaryMap.values())
+                .sort((a, b) => a.totalScore - b.totalScore);
+
+            let previousScore = null;
+            let previousRank = 0;
+
+            rankedItems.forEach((item, index) => {
+                const rank =
+                    previousScore !== null && item.totalScore === previousScore
+                        ? previousRank
+                        : index + 1;
+
+                item.lowRank = rank;
+
+                previousScore = item.totalScore;
+                previousRank = rank;
+            });
+
+            monthlyTotalMap = summaryMap;
+        }
+
+        function applyMonthlyPersonalTotals(rows) {
+            return rows.map(row => {
+                if (row.__type !== "person") {
+                    row[MONTH_TOTAL_COLUMN] = "";
+                    row.__monthTotal = null;
+                    row.__monthTotalLowRank = null;
+                    row.__monthTotalTitle = "";
+                    return row;
+                }
+
+                const key = getMonthlyTotalPersonKey(row);
+                const summary = monthlyTotalMap.get(key);
+
+                if (!summary) {
+                    row[MONTH_TOTAL_COLUMN] = "—";
+                    row.__monthTotal = null;
+                    row.__monthTotalLowRank = null;
+                    row.__monthTotalTitle = `${historyScopeLabel}沒有本月總分資料`;
+                    return row;
+                }
+
+                row.__monthTotal = summary.totalScore;
+                row.__monthTotalLowRank = summary.lowRank;
+                row[MONTH_TOTAL_COLUMN] = formatNumber(summary.totalScore);
+
+                row.__monthTotalTitle =
+                    `${historyScopeLabel}總分：${formatNumber(summary.totalScore)}｜` +
+                    `低分排序第 ${summary.lowRank} 名｜` +
+                    `出現 ${summary.weeksSeen}/${summary.totalWeeks} 週`;
+
+                return row;
+            });
+        }
 
         function isAlwaysHistoricalBottomFive(summary) {
             if (!summary) return false;
@@ -2741,7 +2850,6 @@
                                 </td>
                             `;
                     }
-
                     if (header === "較上週") {
                         const trendClass = row.__trend ? `trend-${row.__trend}` : "trend-same";
 
@@ -2757,6 +2865,17 @@
                                     </span>
                                 </td>
                             `;
+                    }
+                    if (header === MONTH_TOTAL_COLUMN) {
+                        const monthTotalValue = row[MONTH_TOTAL_COLUMN] || "";
+
+                        return `
+                            <td class="score" data-label="${escapeHTML(header)}">
+                                <span title="${escapeHTML(row.__monthTotalTitle || "")}">
+                                    ${escapeHTML(monthTotalValue || "-")}
+                                </span>
+                            </td>
+                        `;
                     }
 
                     if (header === HISTORY_COLUMN) {
@@ -3360,10 +3479,14 @@
             renderLoading("分析本月後五名中...");
             await loadHistoryBottomFive(week);
 
+            els.resultHint.textContent = "計算本月個人總分中...";
+            renderLoading("計算本月個人總分中...");
+            await loadMonthlyPersonalTotals(week);
+
             currentRows = applyWeekComparison(rows, previousRows);
             currentRows = applyHistoryBottomFive(currentRows);
+            currentRows = applyMonthlyPersonalTotals(currentRows);
             currentRows = applyRowNumbers(currentRows);
-
 
             renderHead();
             renderStatusFilter(currentRows);
