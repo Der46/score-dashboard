@@ -683,7 +683,7 @@
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            min-width: 1160px;
+            min-width: 1260px;
             font-size: 14px;
         }
 
@@ -1807,7 +1807,8 @@
         const HISTORY_COLUMN = "本月後五";
 
         const SPECIAL_STATUS_FILTERS = {
-            EVER_BOTTOM_FIVE: "__everBottomFive"
+            EVER_BOTTOM_FIVE: "__everBottomFive",
+            MONTH_LOW_SCORE_SORT: "__monthLowScoreSort"
         };
 
         const DISPLAY_HEADERS = [
@@ -2387,7 +2388,8 @@
                                     totalScore: 0,
                                     weeksSeen: 0,
                                     totalWeeks: monthWeeks.length,
-                                    weekLabels: []
+                                    weekLabels: [],
+                                    isReturnAccount: isReturnAccount(row)
                                 });
                             }
 
@@ -2396,6 +2398,10 @@
                             item.totalScore += parseNumber(row["一週總分"]);
                             item.weeksSeen += 1;
                             item.weekLabels.push(week.label || week.id);
+
+                            if (isReturnAccount(row)) {
+                                item.isReturnAccount = true;
+                            }
                         });
                 } catch (error) {
                     console.warn(`本月個人總分讀取失敗：${week.file}`, error);
@@ -2403,11 +2409,14 @@
             }
 
             /**
-             * 低分排序：
-             * 分數越低，低分排序越前面。
-             * 同分同名次。
+             * 本月總分最低排序：
+             * 1. 隊長、副隊長、長老、PASS、降級、淘汰都納入
+             * 2. 回歸號不納入低分排序
+             * 3. 分數越低，低分排序越前面
+             * 4. 同分同名次
              */
             const rankedItems = Array.from(summaryMap.values())
+                .filter(item => !item.isReturnAccount)
                 .sort((a, b) => a.totalScore - b.totalScore);
 
             let previousScore = null;
@@ -2450,13 +2459,20 @@
                 }
 
                 row.__monthTotal = summary.totalScore;
-                row.__monthTotalLowRank = summary.lowRank;
+                row.__monthTotalLowRank = summary.lowRank || null;
                 row[MONTH_TOTAL_COLUMN] = formatNumber(summary.totalScore);
 
-                row.__monthTotalTitle =
-                    `${historyScopeLabel}總分：${formatNumber(summary.totalScore)}｜` +
-                    `低分排序第 ${summary.lowRank} 名｜` +
-                    `出現 ${summary.weeksSeen}/${summary.totalWeeks} 週`;
+                if (summary.isReturnAccount || isReturnAccount(row)) {
+                    row.__monthTotalTitle =
+                        `${historyScopeLabel}總分：${formatNumber(summary.totalScore)}｜` +
+                        `回歸號不納入本月最低排序｜` +
+                        `出現 ${summary.weeksSeen}/${summary.totalWeeks} 週`;
+                } else {
+                    row.__monthTotalTitle =
+                        `${historyScopeLabel}總分：${formatNumber(summary.totalScore)}｜` +
+                        `低分排序第 ${summary.lowRank} 名｜` +
+                        `出現 ${summary.weeksSeen}/${summary.totalWeeks} 週`;
+                }
 
                 return row;
             });
@@ -2619,6 +2635,55 @@
             const keyword = els.searchInput.value.trim().toLowerCase();
             const status = els.statusFilter.value;
 
+            /**
+             * 本月總分最低排序：
+             * 1. 隊長、副隊長、長老、PASS、降級、淘汰都納入
+             * 2. 回歸號不納入排序
+             * 3. 依本月總分由低到高排序
+             * 4. 排序畫面中的編號會依排序結果重新編號
+             * 5. 總計列保留在最下面
+             */
+            if (status === SPECIAL_STATUS_FILTERS.MONTH_LOW_SCORE_SORT) {
+                const peopleRows = currentRows
+                    .filter(row => {
+                        return row.__type === "person" && !isReturnAccount(row);
+                    })
+                    .filter(row => {
+                        return (
+                            !keyword ||
+                            normalizeCmName(row["CM"]).includes(keyword)
+                        );
+                    })
+                    .slice()
+                    .sort((a, b) => {
+                        const aScore = Number.isFinite(a.__monthTotal)
+                            ? a.__monthTotal
+                            : Number.MAX_SAFE_INTEGER;
+
+                        const bScore = Number.isFinite(b.__monthTotal)
+                            ? b.__monthTotal
+                            : Number.MAX_SAFE_INTEGER;
+
+                        if (aScore !== bScore) {
+                            return aScore - bScore;
+                        }
+
+                        return normalizeCmName(a["CM"]).localeCompare(normalizeCmName(b["CM"]));
+                    })
+                    .map((row, index) => ({
+                        ...row,
+                        __displayRank: index + 1,
+                        __displayRankTitle: `本月總分最低排序第 ${index + 1} 名`
+                    }));
+
+                const totalRows = currentRows.filter(row => row.__type === "total");
+
+                return [
+                    ...peopleRows,
+                    ...totalRows
+                ];
+            }
+
             return currentRows.filter(row => {
                 if (row.__type !== "person") return true;
 
@@ -2653,10 +2718,13 @@
             const current = els.statusFilter.value || "全部";
 
             const specialFilterOptions = `
-            <option value="${SPECIAL_STATUS_FILTERS.EVER_BOTTOM_FIVE}">
-                曾經最後五
-            </option>
-        `;
+                <option value="${SPECIAL_STATUS_FILTERS.EVER_BOTTOM_FIVE}">
+                    曾經最後五
+                </option>
+                <option value="${SPECIAL_STATUS_FILTERS.MONTH_LOW_SCORE_SORT}">
+                    本月總分最低排序
+                </option>
+            `;
 
             els.statusFilter.innerHTML = `
         <option value="全部">全部狀態</option>
@@ -2669,6 +2737,7 @@
             const validValues = [
                 "全部",
                 SPECIAL_STATUS_FILTERS.EVER_BOTTOM_FIVE,
+                SPECIAL_STATUS_FILTERS.MONTH_LOW_SCORE_SORT,
                 ...statuses
             ];
 
@@ -2837,18 +2906,39 @@
                         return `<td class="name" data-label="${escapeHTML(header)}">${escapeHTML(value || "-")}</td>`;
                     }
                     if (header === RANK_COLUMN) {
-                        const numberValue = row[RANK_COLUMN] || "";
+                        const isMonthLowScoreSort =
+                            els.statusFilter.value === SPECIAL_STATUS_FILTERS.MONTH_LOW_SCORE_SORT;
+
+                        const numberValue = isMonthLowScoreSort
+                            ? row.__displayRank
+                            : row[RANK_COLUMN];
+
+                        const rankTitle = isMonthLowScoreSort
+                            ? row.__displayRankTitle
+                            : row.__rankTitle;
 
                         return `
-                                <td class="rank-cell" data-label="${escapeHTML(header)}">
-                                    ${numberValue
-                                ? `<span class="rank-badge" title="${escapeHTML(row.__rankTitle || "")}">
-                                                ${escapeHTML(numberValue)}
-                                            </span>`
+                            <td class="rank-cell" data-label="${escapeHTML(header)}">
+                                ${numberValue
+                                ? `<span class="rank-badge" title="${escapeHTML(rankTitle || "")}">
+                                        ${escapeHTML(numberValue)}
+                                    </span>`
                                 : ""
                             }
-                                </td>
-                            `;
+                            </td>
+                        `;
+                    }
+
+                    if (header === MONTH_TOTAL_COLUMN) {
+                        const monthTotalValue = row[MONTH_TOTAL_COLUMN] || "";
+
+                        return `
+                            <td class="score" data-label="${escapeHTML(header)}">
+                                <span title="${escapeHTML(row.__monthTotalTitle || "")}">
+                                    ${escapeHTML(monthTotalValue || "-")}
+                                </span>
+                            </td>
+                        `;
                     }
                     if (header === "較上週") {
                         const trendClass = row.__trend ? `trend-${row.__trend}` : "trend-same";
@@ -2866,18 +2956,6 @@
                                 </td>
                             `;
                     }
-                    if (header === MONTH_TOTAL_COLUMN) {
-                        const monthTotalValue = row[MONTH_TOTAL_COLUMN] || "";
-
-                        return `
-                            <td class="score" data-label="${escapeHTML(header)}">
-                                <span title="${escapeHTML(row.__monthTotalTitle || "")}">
-                                    ${escapeHTML(monthTotalValue || "-")}
-                                </span>
-                            </td>
-                        `;
-                    }
-
                     if (header === HISTORY_COLUMN) {
                         const historyClass = row.__historyLevel
                             ? `history-${row.__historyLevel}`
@@ -2919,9 +2997,22 @@
                 return isCalculablePerson(row) && row.__historyAlways;
             }).length;
             const historyEverCount = currentRows.filter(isEverBottomFive).length;
+            if (els.statusFilter.value === SPECIAL_STATUS_FILTERS.MONTH_LOW_SCORE_SORT) {
+                const sortedPeople = filteredRows.filter(row => {
+                    return row.__type === "person" && !isReturnAccount(row);
+                });
+
+                const lowestPerson = sortedPeople[0] || null;
+
+                els.resultHint.textContent = lowestPerson
+                    ? `${historyScopeLabel}本月總分最低：${lowestPerson["CM"] || "-"}｜${formatNumber(lowestPerson.__monthTotal || 0)} 分｜已排除回歸號｜目前依本月總分由低到高排序`
+                    : `目前沒有可排序的本月總分資料`;
+
+                return;
+            }
 
             els.resultHint.textContent =
-                `目前顯示可計算 ${shownPeople} / ${allPeople} 筆｜不計算排除 ${shownExcludedCount} / ${allExcludedCount} 筆｜${historyScopeLabel}曾後五 ${historyEverCount} 人｜都後五 ${historyRiskCount} 人`
+                `目前顯示可計算 ${shownPeople} / ${allPeople} 筆｜不計算排除 ${shownExcludedCount} / ${allExcludedCount} 筆｜${historyScopeLabel}曾後五 ${historyEverCount} 人｜都後五 ${historyRiskCount} 人`;
 
         }
 
