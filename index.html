@@ -718,6 +718,101 @@
             transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
         }
 
+        /* ================================
+        重點欄位：距離合格分數 / 距離長老分數
+        ================================ */
+
+        /* 距離合格分數：整欄橘色提示 */
+        thead th.col-pass-distance,
+        tbody td.col-pass-distance {
+            background: linear-gradient(180deg, rgba(255, 247, 237, 0.98), rgba(255, 237, 213, 0.9)) !important;
+            color: #9a3412;
+            box-shadow:
+                inset 1px 0 0 rgba(251, 146, 60, 0.26),
+                inset -1px 0 0 rgba(251, 146, 60, 0.18);
+        }
+
+        /* 距離長老分數：整欄金色重點 */
+        thead th.col-elder-distance,
+        tbody td.col-elder-distance {
+            background: linear-gradient(180deg, rgba(255, 251, 235, 0.98), rgba(254, 243, 199, 0.92)) !important;
+            color: #92400e;
+            box-shadow:
+                inset 1px 0 0 rgba(245, 158, 11, 0.3),
+                inset -1px 0 0 rgba(245, 158, 11, 0.2);
+        }
+
+        /* 表頭文字加強 */
+        thead th.col-pass-distance,
+        thead th.col-elder-distance {
+            font-weight: 950;
+        }
+
+        /* 欄位數字加強 */
+        tbody td.col-pass-distance.score,
+        tbody td.col-elder-distance.score {
+            font-weight: 950;
+        }
+
+        /* 滑過列時，兩個重點欄位仍保留自己的顏色 */
+        tbody tr:hover td.col-pass-distance {
+            background: linear-gradient(180deg, rgba(255, 237, 213, 1), rgba(254, 215, 170, 0.94)) !important;
+            color: #9a3412;
+        }
+
+        tbody tr:hover td.col-elder-distance {
+            background: linear-gradient(180deg, rgba(254, 243, 199, 1), rgba(253, 230, 138, 0.94)) !important;
+            color: #92400e;
+        }
+
+        /* 長老列本身有特殊背景，所以重點欄位再提高辨識 */
+        .row-elder td.col-pass-distance {
+            background: linear-gradient(180deg, rgba(255, 237, 213, 0.98), rgba(254, 215, 170, 0.92)) !important;
+        }
+
+        .row-elder td.col-elder-distance {
+            background: linear-gradient(180deg, rgba(254, 243, 199, 1), rgba(253, 224, 71, 0.8)) !important;
+        }
+
+        /* 總計列也保留欄位色 */
+        .row-total td.col-pass-distance {
+            background: linear-gradient(180deg, rgba(255, 237, 213, 0.98), rgba(254, 215, 170, 0.92)) !important;
+            color: #9a3412 !important;
+        }
+
+        .row-total td.col-elder-distance {
+            background: linear-gradient(180deg, rgba(254, 243, 199, 1), rgba(253, 230, 138, 0.92)) !important;
+            color: #92400e !important;
+        }
+
+        /* 手機版卡片：重點欄位加左側色條 */
+        @media (max-width: 760px) {
+            tbody td.col-pass-distance {
+                background: rgba(255, 247, 237, 0.88) !important;
+                border-left: 4px solid #fb923c;
+            }
+
+            tbody td.col-elder-distance {
+                background: rgba(255, 251, 235, 0.92) !important;
+                border-left: 4px solid #f59e0b;
+            }
+
+            tbody td.col-pass-distance::before {
+                color: #c2410c;
+                font-weight: 950;
+            }
+
+            tbody td.col-elder-distance::before {
+                color: #92400e;
+                font-weight: 950;
+            }
+
+            .row-elder td.col-pass-distance,
+            .row-elder td.col-elder-distance {
+                background: rgba(255, 251, 235, 0.74) !important;
+            }
+        }
+
         tbody tr:nth-child(even) td {
             background: rgba(248, 251, 255, 0.82);
         }
@@ -2270,6 +2365,12 @@
             return "badge-other";
         }
 
+        function getColumnClass(header) {
+            if (header === "距離合格分數") return "col-pass-distance";
+            if (header === "距離長老分數") return "col-elder-distance";
+            return "";
+        }
+
         function isEverBottomFive(row) {
             return (
                 isCalculablePerson(row) &&
@@ -2663,7 +2764,19 @@
         }
 
         function renderHead() {
-            els.tableHead.innerHTML = `<tr>${DISPLAY_HEADERS.map(header => `<th>${escapeHTML(header)}</th>`).join("")}</tr>`;
+            els.tableHead.innerHTML = `
+                <tr>
+                    ${DISPLAY_HEADERS.map(header => {
+                const columnClass = getColumnClass(header);
+
+                return `
+                            <th class="${escapeHTML(columnClass)}">
+                                ${escapeHTML(header)}
+                            </th>
+                        `;
+            }).join("")}
+                </tr>
+            `;
         }
 
         function renderLoading(message = "資料同步中...") {
@@ -2879,12 +2992,12 @@
 
             if (!filteredRows.length) {
                 els.tableBody.innerHTML = `
-                                                <tr>
-                                                    <td class="empty-state" colspan="${DISPLAY_HEADERS.length}">
-                                                        找不到符合條件的資料。
-                                                    </td>
-                                                </tr>
-                                            `;
+            <tr>
+                <td class="empty-state" colspan="${DISPLAY_HEADERS.length}">
+                    找不到符合條件的資料。
+                </td>
+            </tr>
+        `;
 
                 els.resultHint.textContent = "目前顯示 0 筆成員資料";
                 return;
@@ -2893,10 +3006,10 @@
             els.tableBody.innerHTML = filteredRows.map((row, index) => {
                 if (row.__type === "section") {
                     return `
-                                                    <tr class="section-row" style="animation-delay: ${Math.min(index * 0.015, 0.3)}s">
-                                                        <td colspan="${DISPLAY_HEADERS.length}">📌 ${escapeHTML(cleanText(row["CM"]))}</td>
-                                                    </tr>
-                                                `;
+                <tr class="section-row" style="animation-delay: ${Math.min(index * 0.015, 0.3)}s">
+                    <td colspan="${DISPLAY_HEADERS.length}">📌 ${escapeHTML(cleanText(row["CM"]))}</td>
+                </tr>
+            `;
                 }
 
                 const rowClass = [
@@ -2906,6 +3019,8 @@
 
                 const cells = DISPLAY_HEADERS.map(header => {
                     const value = row[header] || "";
+                    const columnClass = getColumnClass(header);
+                    const columnClassHTML = escapeHTML(columnClass);
 
                     if (header === "CM") {
                         const cmKey = getCmKey(row);
@@ -2913,10 +3028,25 @@
                         const titleName = escapeHTML(cleanText(value) || "此成員");
 
                         if (row.__type === "person" && cmKey) {
-                            return `<td class="name" data-label="${escapeHTML(header)}"><button class="${getPersonLinkClass(row)}" type="button" data-profile-keys="${escapeHTML(cmKey)}" title="查看 ${titleName} 的個人資料">${displayName}</button></td>`;
+                            return `
+                        <td class="name ${columnClassHTML}" data-label="${escapeHTML(header)}">
+                            <button 
+                                class="${getPersonLinkClass(row)}" 
+                                type="button" 
+                                data-profile-keys="${escapeHTML(cmKey)}" 
+                                title="查看 ${titleName} 的個人資料"
+                            >
+                                ${displayName}
+                            </button>
+                        </td>
+                    `;
                         }
 
-                        return `<td class="name" data-label="${escapeHTML(header)}">${displayName}</td>`;
+                        return `
+                    <td class="name ${columnClassHTML}" data-label="${escapeHTML(header)}">
+                        ${displayName}
+                    </td>
+                `;
                     }
 
                     if (header === RANK_COLUMN) {
@@ -2932,25 +3062,25 @@
                             : row.__rankTitle;
 
                         return `
-                                                        <td class="rank-cell" data-label="${escapeHTML(header)}">
-                                                            ${numberValue
+                    <td class="rank-cell ${columnClassHTML}" data-label="${escapeHTML(header)}">
+                        ${numberValue
                                 ? `<span class="${getRankBadgeClass(row)}" title="${escapeHTML(rankTitle || "")}">${escapeHTML(numberValue)}</span>`
                                 : ""
                             }
-                                                        </td>
-                                                    `;
+                    </td>
+                `;
                     }
 
                     if (header === MONTH_TOTAL_COLUMN) {
                         const monthTotalValue = row[MONTH_TOTAL_COLUMN] || "";
 
                         return `
-                                                        <td class="score" data-label="${escapeHTML(header)}">
-                                                            <span title="${escapeHTML(row.__monthTotalTitle || "")}">
-                                                                ${escapeHTML(monthTotalValue || "-")}
-                                                            </span>
-                                                        </td>
-                                                    `;
+                    <td class="score ${columnClassHTML}" data-label="${escapeHTML(header)}">
+                        <span title="${escapeHTML(row.__monthTotalTitle || "")}">
+                            ${escapeHTML(monthTotalValue || "-")}
+                        </span>
+                    </td>
+                `;
                     }
 
                     if (header === "較上週") {
@@ -2962,12 +3092,12 @@
                                 : "上週無資料";
 
                         return `
-                                                        <td class="score" data-label="${escapeHTML(header)}">
-                                                            <span class="trend-badge ${trendClass}" title="${escapeHTML(prevScoreText)}">
-                                                                ${escapeHTML(value || "-")}
-                                                            </span>
-                                                        </td>
-                                                    `;
+                    <td class="score ${columnClassHTML}" data-label="${escapeHTML(header)}">
+                        <span class="trend-badge ${trendClass}" title="${escapeHTML(prevScoreText)}">
+                            ${escapeHTML(value || "-")}
+                        </span>
+                    </td>
+                `;
                     }
 
                     if (header === HISTORY_COLUMN) {
@@ -2976,12 +3106,12 @@
                             : "history-none";
 
                         return `
-                                                        <td class="score" data-label="${escapeHTML(header)}">
-                                                            <span class="history-badge ${historyClass}" title="${escapeHTML(row.__historyTitle || "")}">
-                                                                ${escapeHTML(value || "-")}
-                                                            </span>
-                                                        </td>
-                                                    `;
+                    <td class="score ${columnClassHTML}" data-label="${escapeHTML(header)}">
+                        <span class="history-badge ${historyClass}" title="${escapeHTML(row.__historyTitle || "")}">
+                            ${escapeHTML(value || "-")}
+                        </span>
+                    </td>
+                `;
                     }
 
                     if (header === "狀態") {
@@ -2990,13 +3120,25 @@
                             ? `<span class="badge ${getBadgeClass(status)}" title="${escapeHTML(getStatusTitle(status))}">${escapeHTML(status)}</span>`
                             : "-";
 
-                        return `<td data-label="${escapeHTML(header)}">${statusHTML}</td>`;
+                        return `
+                    <td class="${columnClassHTML}" data-label="${escapeHTML(header)}">
+                        ${statusHTML}
+                    </td>
+                `;
                     }
 
-                    return `<td class="score" data-label="${escapeHTML(header)}">${escapeHTML(value || "-")}</td>`;
+                    return `
+                <td class="score ${columnClassHTML}" data-label="${escapeHTML(header)}">
+                    ${escapeHTML(value || "-")}
+                </td>
+            `;
                 }).join("");
 
-                return `<tr class="${rowClass}" style="animation-delay: ${Math.min(index * 0.015, 0.3)}s">${cells}</tr>`;
+                return `
+            <tr class="${rowClass}" style="animation-delay: ${Math.min(index * 0.015, 0.3)}s">
+                ${cells}
+            </tr>
+        `;
             }).join("");
 
             const shownPeople = filteredRows.filter(isCalculablePerson).length;
