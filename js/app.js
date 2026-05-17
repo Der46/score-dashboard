@@ -1325,7 +1325,7 @@ function renderAchievementsPodium() {
         <div class="achievements-head">
             <div>
                 <div class="achievements-kicker">Achievement Podium</div>
-                <h2 class="achievements-title" id="achievementsTitle">${escapeHTML(loadedText)}成就徽章</h2>
+                <h2 class="achievements-title" id="achievementsTitle">${escapeHTML(loadedText)}成就徽章(不含職位以及回歸帳號)</h2>
             </div>
 
             <div class="achievements-note">
