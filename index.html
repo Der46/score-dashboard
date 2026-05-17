@@ -5,36 +5,57 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>每週成績總覽</title>
-
     <style>
         :root {
             --bg: #f4f8ff;
             --text: #102033;
             --muted: #64748b;
+
             --primary: #2563eb;
             --primary-soft: #eff6ff;
             --primary-border: #bfdbfe;
+
             --cyan-soft: #ecfeff;
+
             --green-soft: #ecfdf3;
             --green-border: #bbf7d0;
+
             --red-soft: #fff1f2;
             --red-border: #fecdd3;
+
             --orange-soft: #fff7ed;
             --orange-border: #fed7aa;
+
             --purple-soft: #f5f3ff;
             --purple-border: #ddd6fe;
+
             --gray-soft: #f8fafc;
             --gray-border: #e2e8f0;
-            --shadow: 0 18px 48px rgba(37, 99, 235, 0.12);
-            --shadow-soft: 0 10px 28px rgba(15, 23, 42, 0.08);
-            --glow: 0 0 0 1px rgba(37, 99, 235, 0.08), 0 18px 55px rgba(37, 99, 235, 0.12);
+
+            --shadow: 0 14px 34px rgba(37, 99, 235, 0.1);
+            --shadow-soft: 0 8px 20px rgba(15, 23, 42, 0.06);
+            --glow: 0 0 0 1px rgba(37, 99, 235, 0.08), 0 14px 36px rgba(37, 99, 235, 0.1);
             --radius: 20px;
 
             --elder-gold: #d97706;
             --elder-gold-strong: #92400e;
             --elder-gold-soft: #fffbeb;
             --elder-gold-line: rgba(245, 158, 11, 0.72);
+
+            --captain-blue: #1d4ed8;
+            --captain-blue-strong: #1e3a8a;
+            --captain-blue-soft: #eff6ff;
+            --captain-blue-line: rgba(37, 99, 235, 0.78);
+
+            --vice-purple: #7c3aed;
+            --vice-purple-strong: #5b21b6;
+            --vice-purple-soft: #f5f3ff;
+            --vice-purple-line: rgba(124, 58, 237, 0.72);
         }
+
+        /* ================================
+Base
+================================ */
 
         * {
             box-sizing: border-box;
@@ -59,9 +80,9 @@
                 sans-serif;
             color: var(--text);
             background:
-                radial-gradient(circle at 8% 6%, rgba(14, 165, 233, 0.16), transparent 28%),
-                radial-gradient(circle at 92% 12%, rgba(124, 58, 237, 0.13), transparent 30%),
-                radial-gradient(circle at 50% 102%, rgba(37, 99, 235, 0.12), transparent 34%),
+                radial-gradient(circle at 8% 6%, rgba(14, 165, 233, 0.12), transparent 28%),
+                radial-gradient(circle at 92% 12%, rgba(124, 58, 237, 0.1), transparent 30%),
+                radial-gradient(circle at 50% 102%, rgba(37, 99, 235, 0.1), transparent 34%),
                 linear-gradient(180deg, #f8fbff 0%, #f4f8ff 46%, #eaf2ff 100%);
             overflow-x: hidden;
         }
@@ -73,14 +94,14 @@
             z-index: -4;
             pointer-events: none;
             background-image:
-                linear-gradient(rgba(37, 99, 235, 0.09) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(37, 99, 235, 0.09) 1px, transparent 1px),
-                linear-gradient(rgba(14, 165, 233, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(14, 165, 233, 0.05) 1px, transparent 1px);
+                linear-gradient(rgba(37, 99, 235, 0.07) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(37, 99, 235, 0.07) 1px, transparent 1px),
+                linear-gradient(rgba(14, 165, 233, 0.035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(14, 165, 233, 0.035) 1px, transparent 1px);
             background-size: 48px 48px, 48px 48px, 12px 12px, 12px 12px;
-            mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), transparent 82%);
-            opacity: 0.82;
-            animation: gridMove 24s linear infinite;
+            mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), transparent 82%);
+            opacity: 0.42;
+            animation: gridMove 60s linear infinite;
         }
 
         body::after {
@@ -89,12 +110,15 @@
             inset: 0;
             z-index: -2;
             pointer-events: none;
-            background:
-                linear-gradient(to bottom, transparent 0%, rgba(37, 99, 235, 0.035) 50%, transparent 100%);
+            background: linear-gradient(to bottom, transparent 0%, rgba(37, 99, 235, 0.025) 50%, transparent 100%);
             background-size: 100% 9px;
-            opacity: 0.35;
+            opacity: 0.18;
             mix-blend-mode: multiply;
         }
+
+        /* ================================
+Animations
+================================ */
 
         @keyframes gridMove {
             from {
@@ -114,7 +138,7 @@
             }
 
             50% {
-                transform: translate3d(22px, -22px, 0) scale(1.05);
+                transform: translate3d(18px, -18px, 0) scale(1.03);
             }
         }
 
@@ -131,7 +155,7 @@
         @keyframes fadeUp {
             from {
                 opacity: 0;
-                transform: translateY(10px);
+                transform: translateY(8px);
             }
 
             to {
@@ -162,25 +186,6 @@
             }
         }
 
-        @keyframes elderAura {
-
-            0%,
-            100% {
-                box-shadow:
-                    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-                    0 0 0 1px rgba(245, 158, 11, 0.18),
-                    0 12px 30px rgba(245, 158, 11, 0.08);
-            }
-
-            50% {
-                box-shadow:
-                    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-                    0 0 0 1px rgba(14, 165, 233, 0.18),
-                    0 16px 42px rgba(245, 158, 11, 0.18),
-                    0 0 28px rgba(14, 165, 233, 0.14);
-            }
-        }
-
         @keyframes elderSheen {
             from {
                 transform: translateX(-130%) skewX(-18deg);
@@ -190,6 +195,20 @@
                 transform: translateX(150%) skewX(-18deg);
             }
         }
+
+        @keyframes leaderSheen {
+            from {
+                transform: translateX(-130%) skewX(-18deg);
+            }
+
+            to {
+                transform: translateX(150%) skewX(-18deg);
+            }
+        }
+
+        /* ================================
+Ambient Background
+================================ */
 
         .ambient {
             position: fixed;
@@ -201,33 +220,38 @@
 
         .orb {
             position: absolute;
-            width: 380px;
-            height: 380px;
+            width: 280px;
+            height: 280px;
             border-radius: 999px;
-            filter: blur(28px);
-            opacity: 0.4;
-            animation: floatOrb 11s ease-in-out infinite;
+            filter: blur(18px);
+            opacity: 0.22;
+            animation: floatOrb 18s ease-in-out infinite;
+            will-change: transform, opacity;
         }
 
         .orb.one {
-            left: -150px;
-            top: 60px;
-            background: radial-gradient(circle, rgba(14, 165, 233, 0.24), transparent 66%);
+            left: -120px;
+            top: 70px;
+            background: radial-gradient(circle, rgba(14, 165, 233, 0.22), transparent 66%);
         }
 
         .orb.two {
-            right: -140px;
+            right: -120px;
             top: 150px;
-            background: radial-gradient(circle, rgba(124, 58, 237, 0.18), transparent 68%);
+            background: radial-gradient(circle, rgba(124, 58, 237, 0.16), transparent 68%);
             animation-delay: -3s;
         }
 
         .orb.three {
             left: 42%;
-            bottom: -180px;
-            background: radial-gradient(circle, rgba(37, 99, 235, 0.18), transparent 68%);
+            bottom: -150px;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.16), transparent 68%);
             animation-delay: -5s;
         }
+
+        /* ================================
+Layout / Hero
+================================ */
 
         .page {
             width: min(1540px, calc(100% - 32px));
@@ -242,8 +266,7 @@
             padding: 1px;
             box-shadow: var(--shadow);
             isolation: isolate;
-            background:
-                linear-gradient(135deg, rgba(14, 165, 233, 0.58), rgba(37, 99, 235, 0.58), rgba(124, 58, 237, 0.42));
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.5), rgba(37, 99, 235, 0.5), rgba(124, 58, 237, 0.34));
         }
 
         .hero::before {
@@ -253,31 +276,33 @@
             left: 0;
             width: 55%;
             height: 2px;
-            background: linear-gradient(90deg, transparent, rgba(14, 165, 233, 0.95), transparent);
-            animation: borderScan 4.8s ease-in-out infinite;
             z-index: 2;
+            opacity: 0.55;
+            background: linear-gradient(90deg, transparent, rgba(14, 165, 233, 0.88), transparent);
+            animation: borderScan 9s ease-in-out infinite;
+            will-change: transform, opacity;
         }
 
         .hero::after {
             content: "";
             position: absolute;
             inset: 1px;
-            border-radius: 29px;
             z-index: -1;
+            border-radius: 29px;
             background:
-                linear-gradient(90deg, rgba(37, 99, 235, 0.06) 1px, transparent 1px),
-                linear-gradient(rgba(37, 99, 235, 0.055) 1px, transparent 1px),
-                radial-gradient(circle at 14% 18%, rgba(14, 165, 233, 0.16), transparent 34%),
-                radial-gradient(circle at 86% 20%, rgba(124, 58, 237, 0.12), transparent 32%),
+                linear-gradient(90deg, rgba(37, 99, 235, 0.045) 1px, transparent 1px),
+                linear-gradient(rgba(37, 99, 235, 0.04) 1px, transparent 1px),
+                radial-gradient(circle at 14% 18%, rgba(14, 165, 233, 0.13), transparent 34%),
+                radial-gradient(circle at 86% 20%, rgba(124, 58, 237, 0.1), transparent 32%),
                 linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(248, 251, 255, 0.9));
             background-size: 34px 34px, 34px 34px, auto, auto, auto;
-            backdrop-filter: blur(18px);
+            backdrop-filter: blur(12px);
         }
 
         .hero-inner {
             position: relative;
-            padding: 30px;
             min-height: 184px;
+            padding: 30px;
         }
 
         .hero-inner::before {
@@ -287,12 +312,12 @@
             top: 28px;
             width: 150px;
             height: 150px;
-            border: 1px solid rgba(37, 99, 235, 0.16);
+            border: 1px solid rgba(37, 99, 235, 0.14);
             border-radius: 50%;
             background:
-                linear-gradient(90deg, transparent 49%, rgba(37, 99, 235, 0.12) 50%, transparent 51%),
-                linear-gradient(transparent 49%, rgba(37, 99, 235, 0.12) 50%, transparent 51%);
-            opacity: 0.6;
+                linear-gradient(90deg, transparent 49%, rgba(37, 99, 235, 0.1) 50%, transparent 51%),
+                linear-gradient(transparent 49%, rgba(37, 99, 235, 0.1) 50%, transparent 51%);
+            opacity: 0.45;
             pointer-events: none;
         }
 
@@ -300,12 +325,12 @@
             content: "";
             position: absolute;
             inset: 0;
-            background:
-                linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.68) 38%, transparent 58%);
-            transform: translateX(-120%);
-            animation: shimmer 7s ease-in-out infinite;
             pointer-events: none;
-            opacity: 0.55;
+            opacity: 0.28;
+            background: linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.6) 38%, transparent 58%);
+            transform: translateX(-120%);
+            animation: shimmer 14s ease-in-out infinite;
+            will-change: transform, opacity;
         }
 
         .hero-content {
@@ -329,16 +354,16 @@
             gap: 9px;
             max-width: 100%;
             padding: 8px 13px;
+            margin-bottom: 14px;
             border-radius: 999px;
-            border: 1px solid rgba(37, 99, 235, 0.22);
+            border: 1px solid rgba(37, 99, 235, 0.2);
             background: rgba(239, 246, 255, 0.82);
             color: #1d4ed8;
             font-size: 13px;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 8px 22px rgba(37, 99, 235, 0.08);
-            backdrop-filter: blur(12px);
-            margin-bottom: 14px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86), 0 8px 18px rgba(37, 99, 235, 0.06);
+            backdrop-filter: blur(8px);
             white-space: nowrap;
         }
 
@@ -348,15 +373,15 @@
             height: 8px;
             border-radius: 999px;
             background: #10b981;
-            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12), 0 0 14px rgba(16, 185, 129, 0.68);
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12), 0 0 12px rgba(16, 185, 129, 0.55);
         }
 
         h1 {
             margin: 0;
-            font-size: clamp(32px, 4.7vw, 56px);
-            line-height: 1.05;
-            letter-spacing: -0.055em;
             color: #0f172a;
+            font-size: clamp(30px, 4.4vw, 54px);
+            line-height: 1.08;
+            letter-spacing: -0.052em;
             word-break: keep-all;
         }
 
@@ -376,6 +401,10 @@
             flex: 0 1 320px;
         }
 
+        /* ================================
+Controls
+================================ */
+
         .select-wrap,
         .input-wrap {
             position: relative;
@@ -386,15 +415,15 @@
         input {
             width: 100%;
             min-height: 46px;
+            padding: 12px 14px;
             border: 1px solid rgba(37, 99, 235, 0.18);
             border-radius: 14px;
             outline: none;
             background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 251, 255, 0.92));
             color: var(--text);
             font-size: 14px;
-            padding: 12px 14px;
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 10px 24px rgba(37, 99, 235, 0.07);
-            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, background 0.2s ease;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 8px 18px rgba(37, 99, 235, 0.06);
+            transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
         }
 
         select {
@@ -425,19 +454,22 @@
 
         select:focus,
         input:focus {
-            border-color: rgba(37, 99, 235, 0.72);
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12), 0 12px 28px rgba(37, 99, 235, 0.1);
+            border-color: rgba(37, 99, 235, 0.68);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1), 0 10px 22px rgba(37, 99, 235, 0.08);
         }
 
         select:hover,
         input:hover {
-            transform: translateY(-1px);
             background: #ffffff;
         }
 
         .hero select {
             min-width: 270px;
         }
+
+        /* ================================
+Stats
+================================ */
 
         .stats {
             display: grid;
@@ -449,14 +481,14 @@
         .stat-card {
             position: relative;
             overflow: hidden;
+            min-width: 0;
+            padding: 18px;
             border: 1px solid rgba(37, 99, 235, 0.12);
             border-radius: var(--radius);
-            padding: 18px;
             background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 251, 255, 0.82));
             box-shadow: var(--shadow-soft);
-            backdrop-filter: blur(18px);
-            animation: fadeUp 0.42s ease both;
-            min-width: 0;
+            backdrop-filter: blur(10px);
+            animation: fadeUp 0.28s ease both;
             isolation: isolate;
         }
 
@@ -465,13 +497,12 @@
             position: absolute;
             inset: 0;
             z-index: -1;
-            background:
-                linear-gradient(90deg, rgba(37, 99, 235, 0.045) 1px, transparent 1px),
-                linear-gradient(rgba(37, 99, 235, 0.04) 1px, transparent 1px),
-                radial-gradient(circle at 24% 0%, rgba(14, 165, 233, 0.13), transparent 38%),
-                linear-gradient(135deg, rgba(255, 255, 255, 0.7), transparent 45%);
-            background-size: 22px 22px, 22px 22px, auto, auto;
             pointer-events: none;
+            background:
+                linear-gradient(90deg, rgba(37, 99, 235, 0.035) 1px, transparent 1px),
+                linear-gradient(rgba(37, 99, 235, 0.03) 1px, transparent 1px),
+                radial-gradient(circle at 24% 0%, rgba(14, 165, 233, 0.1), transparent 38%);
+            background-size: 22px 22px, 22px 22px, auto;
         }
 
         .stat-card::after {
@@ -481,37 +512,36 @@
             right: 18px;
             bottom: 0;
             height: 2px;
-            background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.58), rgba(14, 165, 233, 0.56), transparent);
-            opacity: 0.75;
+            opacity: 0.65;
+            background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.54), rgba(14, 165, 233, 0.5), transparent);
         }
 
         .stat-card.stat-elder {
-            border-color: rgba(245, 158, 11, 0.24);
-            background: linear-gradient(180deg, rgba(255, 251, 235, 0.94), rgba(236, 254, 255, 0.78));
+            border-color: rgba(245, 158, 11, 0.22);
+            background: linear-gradient(180deg, rgba(255, 251, 235, 0.92), rgba(236, 254, 255, 0.74));
         }
 
         .stat-card.stat-elder::after {
-            background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.72), rgba(14, 165, 233, 0.56), transparent);
+            background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.68), rgba(14, 165, 233, 0.5), transparent);
         }
 
         .stat-top {
             position: relative;
+            z-index: 1;
             display: grid;
             grid-template-columns: minmax(0, 1fr) auto;
             align-items: center;
             gap: 12px;
-            z-index: 1;
             min-width: 0;
         }
 
         .stat-label {
+            margin-bottom: 10px;
             color: var(--muted);
             font-size: 13px;
-            margin-bottom: 10px;
         }
 
         .stat-icon {
-            flex: 0 0 auto;
             width: 40px;
             height: 40px;
             display: inline-flex;
@@ -519,33 +549,37 @@
             justify-content: center;
             justify-self: end;
             border-radius: 14px;
+            border: 1px solid rgba(37, 99, 235, 0.16);
             background: linear-gradient(135deg, rgba(239, 246, 255, 0.95), rgba(236, 254, 255, 0.85));
             color: var(--primary);
-            border: 1px solid rgba(37, 99, 235, 0.16);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 10px 18px rgba(37, 99, 235, 0.08);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86), 0 8px 14px rgba(37, 99, 235, 0.06);
         }
 
         .stat-card.stat-elder .stat-icon {
             color: var(--elder-gold-strong);
             background: linear-gradient(135deg, #fffbeb, #fed7aa, #ecfeff);
-            border-color: rgba(245, 158, 11, 0.28);
+            border-color: rgba(245, 158, 11, 0.26);
         }
 
         .stat-value {
             position: relative;
             z-index: 1;
+            min-width: 0;
+            max-width: 100%;
+            overflow: hidden;
             color: #0f172a;
             font-weight: 950;
             font-size: clamp(20px, 2.1vw, 30px);
             line-height: 1.08;
             letter-spacing: -0.04em;
             font-variant-numeric: tabular-nums;
-            min-width: 0;
-            max-width: 100%;
-            overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+
+        /* ================================
+Panel / Toolbar / Table
+================================ */
 
         .panel {
             position: relative;
@@ -555,36 +589,37 @@
             border: 1px solid rgba(37, 99, 235, 0.14);
             background: rgba(255, 255, 255, 0.86);
             box-shadow: var(--glow);
-            backdrop-filter: blur(18px);
+            backdrop-filter: blur(10px);
             isolation: isolate;
+            contain: layout paint;
         }
 
         .panel::before {
             content: "";
             position: absolute;
             inset: 0;
-            pointer-events: none;
             z-index: -1;
+            pointer-events: none;
             background:
-                linear-gradient(90deg, rgba(37, 99, 235, 0.035) 1px, transparent 1px),
-                linear-gradient(rgba(37, 99, 235, 0.03) 1px, transparent 1px),
-                radial-gradient(circle at 18% 0%, rgba(14, 165, 233, 0.07), transparent 30%),
-                radial-gradient(circle at 82% 0%, rgba(124, 58, 237, 0.055), transparent 32%);
+                linear-gradient(90deg, rgba(37, 99, 235, 0.025) 1px, transparent 1px),
+                linear-gradient(rgba(37, 99, 235, 0.025) 1px, transparent 1px),
+                radial-gradient(circle at 18% 0%, rgba(14, 165, 233, 0.055), transparent 30%),
+                radial-gradient(circle at 82% 0%, rgba(124, 58, 237, 0.045), transparent 32%);
             background-size: 28px 28px, 28px 28px, auto, auto;
         }
 
         .toolbar {
             position: relative;
             z-index: 2;
-            padding: 16px;
             display: flex;
             gap: 12px;
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
+            padding: 16px;
             border-bottom: 1px solid rgba(37, 99, 235, 0.12);
             background: rgba(248, 251, 255, 0.78);
-            backdrop-filter: blur(16px);
+            backdrop-filter: blur(10px);
         }
 
         .toolbar-left,
@@ -604,14 +639,14 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            color: #334155;
-            font-size: 13px;
             padding: 10px 12px;
             border-radius: 999px;
             border: 1px solid rgba(37, 99, 235, 0.18);
             background: linear-gradient(135deg, rgba(239, 246, 255, 0.92), rgba(236, 254, 255, 0.72));
+            color: #334155;
+            font-size: 13px;
             line-height: 1.4;
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.88);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.84);
         }
 
         .hint::before {
@@ -621,7 +656,7 @@
             height: 7px;
             border-radius: 999px;
             background: var(--primary);
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12), 0 0 14px rgba(37, 99, 235, 0.45);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1), 0 0 12px rgba(37, 99, 235, 0.35);
         }
 
         .table-wrap {
@@ -629,10 +664,11 @@
             z-index: 1;
             overflow: auto;
             max-height: 72vh;
-            scrollbar-color: rgba(37, 99, 235, 0.45) #eaf2ff;
+            background: rgba(255, 255, 255, 0.86);
+            scrollbar-color: rgba(37, 99, 235, 0.42) #eaf2ff;
             scrollbar-width: thin;
             -webkit-overflow-scrolling: touch;
-            background: rgba(255, 255, 255, 0.86);
+            contain: layout paint;
         }
 
         .table-wrap::-webkit-scrollbar {
@@ -645,16 +681,16 @@
         }
 
         .table-wrap::-webkit-scrollbar-thumb {
-            background: linear-gradient(180deg, rgba(37, 99, 235, 0.58), rgba(14, 165, 233, 0.48));
             border-radius: 999px;
             border: 2px solid #eaf2ff;
+            background: linear-gradient(180deg, rgba(37, 99, 235, 0.54), rgba(14, 165, 233, 0.44));
         }
 
         table {
             width: 100%;
+            min-width: 1260px;
             border-collapse: separate;
             border-spacing: 0;
-            min-width: 1260px;
             font-size: 14px;
         }
 
@@ -670,7 +706,7 @@
             font-size: 12px;
             letter-spacing: 0.07em;
             white-space: nowrap;
-            backdrop-filter: blur(14px);
+            backdrop-filter: blur(8px);
         }
 
         thead th:first-child,
@@ -682,7 +718,7 @@
             max-width: 74px;
             text-align: center;
             background: rgba(255, 255, 255, 0.98);
-            box-shadow: 1px 0 0 rgba(37, 99, 235, 0.12);
+            box-shadow: 1px 0 0 rgba(37, 99, 235, 0.1);
         }
 
         thead th:nth-child(2),
@@ -690,12 +726,12 @@
             position: sticky;
             left: 74px;
             z-index: 4;
-            text-align: left;
             min-width: 132px;
             max-width: 132px;
             padding-left: 11px;
+            text-align: left;
             background: rgba(255, 255, 255, 0.98);
-            box-shadow: 1px 0 0 rgba(37, 99, 235, 0.12);
+            box-shadow: 1px 0 0 rgba(37, 99, 235, 0.1);
         }
 
         thead th:first-child,
@@ -705,112 +741,21 @@
         }
 
         tbody tr {
-            animation: fadeUp 0.28s ease both;
+            animation: fadeUp 0.16s ease both;
+        }
+
+        .row-no-animation {
+            animation: none !important;
         }
 
         tbody td {
             padding: 13px 11px;
             border-bottom: 1px solid rgba(37, 99, 235, 0.08);
+            background: rgba(255, 255, 255, 0.9);
+            color: #334155;
             text-align: right;
             white-space: nowrap;
-            color: #334155;
-            background: rgba(255, 255, 255, 0.9);
-            transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
-        }
-
-        /* ================================
-        重點欄位：距離合格分數 / 距離長老分數
-        ================================ */
-
-        /* 距離合格分數：整欄橘色提示 */
-        thead th.col-pass-distance,
-        tbody td.col-pass-distance {
-            background: linear-gradient(180deg, rgba(255, 247, 237, 0.98), rgba(255, 237, 213, 0.9)) !important;
-            color: #9a3412;
-            box-shadow:
-                inset 1px 0 0 rgba(251, 146, 60, 0.26),
-                inset -1px 0 0 rgba(251, 146, 60, 0.18);
-        }
-
-        /* 距離長老分數：整欄金色重點 */
-        thead th.col-elder-distance,
-        tbody td.col-elder-distance {
-            background: linear-gradient(180deg, rgba(255, 251, 235, 0.98), rgba(254, 243, 199, 0.92)) !important;
-            color: #92400e;
-            box-shadow:
-                inset 1px 0 0 rgba(245, 158, 11, 0.3),
-                inset -1px 0 0 rgba(245, 158, 11, 0.2);
-        }
-
-        /* 表頭文字加強 */
-        thead th.col-pass-distance,
-        thead th.col-elder-distance {
-            font-weight: 950;
-        }
-
-        /* 欄位數字加強 */
-        tbody td.col-pass-distance.score,
-        tbody td.col-elder-distance.score {
-            font-weight: 950;
-        }
-
-        /* 滑過列時，兩個重點欄位仍保留自己的顏色 */
-        tbody tr:hover td.col-pass-distance {
-            background: linear-gradient(180deg, rgba(255, 237, 213, 1), rgba(254, 215, 170, 0.94)) !important;
-            color: #9a3412;
-        }
-
-        tbody tr:hover td.col-elder-distance {
-            background: linear-gradient(180deg, rgba(254, 243, 199, 1), rgba(253, 230, 138, 0.94)) !important;
-            color: #92400e;
-        }
-
-        /* 長老列本身有特殊背景，所以重點欄位再提高辨識 */
-        .row-elder td.col-pass-distance {
-            background: linear-gradient(180deg, rgba(255, 237, 213, 0.98), rgba(254, 215, 170, 0.92)) !important;
-        }
-
-        .row-elder td.col-elder-distance {
-            background: linear-gradient(180deg, rgba(254, 243, 199, 1), rgba(253, 224, 71, 0.8)) !important;
-        }
-
-        /* 總計列也保留欄位色 */
-        .row-total td.col-pass-distance {
-            background: linear-gradient(180deg, rgba(255, 237, 213, 0.98), rgba(254, 215, 170, 0.92)) !important;
-            color: #9a3412 !important;
-        }
-
-        .row-total td.col-elder-distance {
-            background: linear-gradient(180deg, rgba(254, 243, 199, 1), rgba(253, 230, 138, 0.92)) !important;
-            color: #92400e !important;
-        }
-
-        /* 手機版卡片：重點欄位加左側色條 */
-        @media (max-width: 760px) {
-            tbody td.col-pass-distance {
-                background: rgba(255, 247, 237, 0.88) !important;
-                border-left: 4px solid #fb923c;
-            }
-
-            tbody td.col-elder-distance {
-                background: rgba(255, 251, 235, 0.92) !important;
-                border-left: 4px solid #f59e0b;
-            }
-
-            tbody td.col-pass-distance::before {
-                color: #c2410c;
-                font-weight: 950;
-            }
-
-            tbody td.col-elder-distance::before {
-                color: #92400e;
-                font-weight: 950;
-            }
-
-            .row-elder td.col-pass-distance,
-            .row-elder td.col-elder-distance {
-                background: rgba(255, 251, 235, 0.74) !important;
-            }
+            transition: background 0.16s ease, color 0.16s ease;
         }
 
         tbody tr:nth-child(even) td {
@@ -821,8 +766,63 @@
         tbody tr:hover td:first-child,
         tbody tr:hover td:nth-child(2) {
             background: #edf7ff;
-            box-shadow: inset 0 1px 0 rgba(14, 165, 233, 0.08), inset 0 -1px 0 rgba(14, 165, 233, 0.08);
+            box-shadow: none;
         }
+
+        /* ================================
+Important Columns
+================================ */
+
+        thead th.col-pass-distance,
+        tbody td.col-pass-distance {
+            background: linear-gradient(180deg, rgba(255, 247, 237, 0.98), rgba(255, 237, 213, 0.9)) !important;
+            color: #9a3412;
+            box-shadow:
+                inset 1px 0 0 rgba(251, 146, 60, 0.22),
+                inset -1px 0 0 rgba(251, 146, 60, 0.16);
+        }
+
+        thead th.col-elder-distance,
+        tbody td.col-elder-distance {
+            background: linear-gradient(180deg, rgba(255, 251, 235, 0.98), rgba(254, 243, 199, 0.92)) !important;
+            color: #92400e;
+            box-shadow:
+                inset 1px 0 0 rgba(245, 158, 11, 0.26),
+                inset -1px 0 0 rgba(245, 158, 11, 0.18);
+        }
+
+        thead th.col-pass-distance,
+        thead th.col-elder-distance,
+        tbody td.col-pass-distance.score,
+        tbody td.col-elder-distance.score {
+            font-weight: 950;
+        }
+
+        tbody tr:hover td.col-pass-distance {
+            background: linear-gradient(180deg, rgba(255, 237, 213, 1), rgba(254, 215, 170, 0.94)) !important;
+            color: #9a3412;
+        }
+
+        tbody tr:hover td.col-elder-distance {
+            background: linear-gradient(180deg, rgba(254, 243, 199, 1), rgba(253, 230, 138, 0.94)) !important;
+            color: #92400e;
+        }
+
+        .row-elder td.col-pass-distance,
+        .row-total td.col-pass-distance {
+            background: linear-gradient(180deg, rgba(255, 237, 213, 0.98), rgba(254, 215, 170, 0.92)) !important;
+            color: #9a3412 !important;
+        }
+
+        .row-elder td.col-elder-distance,
+        .row-total td.col-elder-distance {
+            background: linear-gradient(180deg, rgba(254, 243, 199, 1), rgba(253, 230, 138, 0.9)) !important;
+            color: #92400e !important;
+        }
+
+        /* ================================
+Role Rows
+================================ */
 
         .row-elder td,
         .row-elder td:first-child,
@@ -833,7 +833,7 @@
 
         .row-elder td:first-child {
             box-shadow:
-                1px 0 0 rgba(245, 158, 11, 0.18),
+                1px 0 0 rgba(245, 158, 11, 0.16),
                 inset 4px 0 0 var(--elder-gold-line);
         }
 
@@ -843,160 +843,42 @@
             background: linear-gradient(90deg, rgba(255, 247, 237, 0.98), rgba(236, 254, 255, 0.96)) !important;
         }
 
-        .name {
-            font-weight: 850;
-            color: #0f172a;
+        .row-captain td,
+        .row-captain td:first-child,
+        .row-captain td:nth-child(2) {
+            background: linear-gradient(90deg, rgba(239, 246, 255, 0.98), rgba(236, 254, 255, 0.9)) !important;
+            border-bottom-color: rgba(37, 99, 235, 0.2);
         }
 
-        .score {
-            font-variant-numeric: tabular-nums;
-            font-weight: 760;
-            color: #1e293b;
+        .row-captain td:first-child {
+            box-shadow:
+                1px 0 0 rgba(37, 99, 235, 0.16),
+                inset 4px 0 0 var(--captain-blue-line);
         }
 
-        .rank-cell {
-            text-align: center;
-            font-variant-numeric: tabular-nums;
+        .row-captain:hover td,
+        .row-captain:hover td:first-child,
+        .row-captain:hover td:nth-child(2) {
+            background: linear-gradient(90deg, rgba(219, 234, 254, 0.98), rgba(236, 254, 255, 0.96)) !important;
         }
 
-        .rank-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 34px;
-            height: 28px;
-            padding: 0 9px;
-            border-radius: 999px;
-            color: #1d4ed8;
-            background: linear-gradient(135deg, rgba(239, 246, 255, 0.98), rgba(236, 254, 255, 0.88));
-            border: 1px solid rgba(37, 99, 235, 0.22);
-            font-size: 13px;
-            font-weight: 950;
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 8px 18px rgba(37, 99, 235, 0.08);
+        .row-vice td,
+        .row-vice td:first-child,
+        .row-vice td:nth-child(2) {
+            background: linear-gradient(90deg, rgba(245, 243, 255, 0.98), rgba(239, 246, 255, 0.9)) !important;
+            border-bottom-color: rgba(124, 58, 237, 0.18);
         }
 
-        .rank-badge-elder {
-            color: var(--elder-gold-strong);
-            background: linear-gradient(135deg, #fffbeb, #ecfeff);
-            border-color: rgba(245, 158, 11, 0.34);
+        .row-vice td:first-child {
+            box-shadow:
+                1px 0 0 rgba(124, 58, 237, 0.16),
+                inset 4px 0 0 var(--vice-purple-line);
         }
 
-        .badge,
-        .trend-badge,
-        .history-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 66px;
-            padding: 6px 10px;
-            border-radius: 999px;
-            font-weight: 850;
-            font-size: 12px;
-            letter-spacing: 0.02em;
-            border: 1px solid transparent;
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
-            font-variant-numeric: tabular-nums;
-        }
-
-        .trend-badge,
-        .history-badge {
-            min-width: 88px;
-        }
-
-        .badge-pass {
-            color: #166534;
-            background: var(--green-soft);
-            border-color: var(--green-border);
-        }
-
-        .badge-out {
-            color: #be123c;
-            background: var(--red-soft);
-            border-color: var(--red-border);
-        }
-
-        .badge-return {
-            color: #6d28d9;
-            background: var(--purple-soft);
-            border-color: var(--purple-border);
-        }
-
-        .badge-leader {
-            color: #1d4ed8;
-            background: var(--primary-soft);
-            border-color: var(--primary-border);
-        }
-
-        .badge-elder {
-            position: relative;
-            overflow: hidden;
-            min-width: 78px;
-            color: var(--elder-gold-strong);
-            background:
-                radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.95), transparent 28%),
-                linear-gradient(135deg, rgba(255, 251, 235, 0.98), rgba(254, 215, 170, 0.72), rgba(236, 254, 255, 0.82));
-            border-color: rgba(245, 158, 11, 0.38);
-            animation: elderAura 3.4s ease-in-out infinite;
-        }
-
-        .badge-elder::before {
-            content: "✦";
-            margin-right: 2px;
-            color: var(--elder-gold);
-            font-size: 11px;
-            line-height: 1;
-        }
-
-        .badge-elder::after {
-            content: "";
-            position: absolute;
-            inset: -30% auto -30% -55%;
-            width: 44%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
-            animation: elderSheen 3.8s ease-in-out infinite;
-        }
-
-        .badge-other {
-            color: #475569;
-            background: var(--gray-soft);
-            border-color: var(--gray-border);
-        }
-
-        .trend-up {
-            color: #166534;
-            background: var(--green-soft);
-            border-color: var(--green-border);
-        }
-
-        .trend-down {
-            color: #be123c;
-            background: var(--red-soft);
-            border-color: var(--red-border);
-        }
-
-        .trend-same,
-        .history-none {
-            color: #475569;
-            background: var(--gray-soft);
-            border-color: var(--gray-border);
-        }
-
-        .trend-new {
-            color: #1d4ed8;
-            background: var(--primary-soft);
-            border-color: var(--primary-border);
-        }
-
-        .history-risk {
-            color: #be123c;
-            background: var(--red-soft);
-            border-color: var(--red-border);
-        }
-
-        .history-watch {
-            color: #c2410c;
-            background: var(--orange-soft);
-            border-color: var(--orange-border);
+        .row-vice:hover td,
+        .row-vice:hover td:first-child,
+        .row-vice:hover td:nth-child(2) {
+            background: linear-gradient(90deg, rgba(237, 233, 254, 0.98), rgba(239, 246, 255, 0.96)) !important;
         }
 
         .row-total td,
@@ -1017,69 +899,231 @@
             letter-spacing: 0.02em;
         }
 
-        .empty-state {
-            padding: 32px !important;
-            color: #64748b;
-            text-align: left !important;
-            line-height: 1.8;
-            background: rgba(255, 255, 255, 0.9) !important;
+        /* ================================
+Cells / Badges
+================================ */
+
+        .name {
+            color: #0f172a;
+            font-weight: 850;
         }
 
-        .loading-row td {
-            padding: 30px !important;
-            color: var(--muted);
-            text-align: left !important;
-            background: rgba(255, 255, 255, 0.9) !important;
+        .score {
+            color: #1e293b;
+            font-weight: 760;
+            font-variant-numeric: tabular-nums;
         }
 
-        .cyber-loader {
+        .rank-cell {
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .rank-badge {
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-        }
-
-        .cyber-loader span {
-            width: 9px;
-            height: 9px;
+            justify-content: center;
+            min-width: 34px;
+            height: 28px;
+            padding: 0 9px;
             border-radius: 999px;
-            background: var(--primary);
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12), 0 0 14px rgba(37, 99, 235, 0.45);
-            animation: loaderPulse 0.9s ease-in-out infinite alternate;
+            border: 1px solid rgba(37, 99, 235, 0.22);
+            background: linear-gradient(135deg, rgba(239, 246, 255, 0.98), rgba(236, 254, 255, 0.88));
+            color: #1d4ed8;
+            font-size: 13px;
+            font-weight: 950;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86), 0 6px 14px rgba(37, 99, 235, 0.06);
         }
 
-        .cyber-loader span:nth-child(2) {
-            animation-delay: 0.15s;
+        .rank-badge-elder {
+            color: var(--elder-gold-strong);
+            background: linear-gradient(135deg, #fffbeb, #ecfeff);
+            border-color: rgba(245, 158, 11, 0.32);
         }
 
-        .cyber-loader span:nth-child(3) {
-            animation-delay: 0.3s;
+        .rank-badge-captain {
+            color: var(--captain-blue-strong);
+            background: linear-gradient(135deg, #eff6ff, #dbeafe, #ecfeff);
+            border-color: rgba(37, 99, 235, 0.34);
         }
+
+        .rank-badge-vice {
+            color: var(--vice-purple-strong);
+            background: linear-gradient(135deg, #f5f3ff, #ede9fe, #eff6ff);
+            border-color: rgba(124, 58, 237, 0.32);
+        }
+
+        .badge,
+        .trend-badge,
+        .history-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 66px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid transparent;
+            font-size: 12px;
+            font-weight: 850;
+            letter-spacing: 0.02em;
+            font-variant-numeric: tabular-nums;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
+        }
+
+        .trend-badge,
+        .history-badge {
+            min-width: 88px;
+        }
+
+        .badge-pass,
+        .trend-up {
+            color: #166534;
+            background: var(--green-soft);
+            border-color: var(--green-border);
+        }
+
+        .badge-out,
+        .trend-down,
+        .history-risk {
+            color: #be123c;
+            background: var(--red-soft);
+            border-color: var(--red-border);
+        }
+
+        .badge-return {
+            color: #6d28d9;
+            background: var(--purple-soft);
+            border-color: var(--purple-border);
+        }
+
+        .badge-leader,
+        .trend-new {
+            color: #1d4ed8;
+            background: var(--primary-soft);
+            border-color: var(--primary-border);
+        }
+
+        .badge-other,
+        .trend-same,
+        .history-none {
+            color: #475569;
+            background: var(--gray-soft);
+            border-color: var(--gray-border);
+        }
+
+        .history-watch {
+            color: #c2410c;
+            background: var(--orange-soft);
+            border-color: var(--orange-border);
+        }
+
+        /* Role badges: static glow + lightweight sheen */
+        .badge-elder,
+        .badge-captain,
+        .badge-vice {
+            position: relative;
+            overflow: hidden;
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.88),
+                0 8px 18px rgba(15, 23, 42, 0.06);
+        }
+
+        .badge-elder {
+            min-width: 78px;
+            color: var(--elder-gold-strong);
+            border-color: rgba(245, 158, 11, 0.38);
+            background:
+                radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.95), transparent 28%),
+                linear-gradient(135deg, rgba(255, 251, 235, 0.98), rgba(254, 215, 170, 0.72), rgba(236, 254, 255, 0.82));
+        }
+
+        .badge-captain {
+            min-width: 78px;
+            color: var(--captain-blue-strong);
+            border-color: rgba(37, 99, 235, 0.38);
+            background:
+                radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.95), transparent 28%),
+                linear-gradient(135deg, rgba(239, 246, 255, 0.98), rgba(191, 219, 254, 0.8), rgba(236, 254, 255, 0.86));
+        }
+
+        .badge-vice {
+            min-width: 88px;
+            color: var(--vice-purple-strong);
+            border-color: rgba(124, 58, 237, 0.36);
+            background:
+                radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.95), transparent 28%),
+                linear-gradient(135deg, rgba(245, 243, 255, 0.98), rgba(221, 214, 254, 0.82), rgba(239, 246, 255, 0.86));
+        }
+
+        .badge-elder::before,
+        .badge-captain::before {
+            content: "✦";
+            margin-right: 3px;
+            font-size: 11px;
+            line-height: 1;
+        }
+
+        .badge-elder::before {
+            color: var(--elder-gold);
+        }
+
+        .badge-captain::before {
+            color: var(--captain-blue);
+        }
+
+        .badge-vice::before {
+            content: "◆";
+            margin-right: 3px;
+            color: var(--vice-purple);
+            font-size: 10px;
+            line-height: 1;
+        }
+
+        .badge-elder::after,
+        .badge-captain::after,
+        .badge-vice::after {
+            content: "";
+            position: absolute;
+            inset: -30% auto -30% -55%;
+            width: 44%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.72), transparent);
+            animation: leaderSheen 5.5s ease-in-out infinite;
+            will-change: transform;
+        }
+
+        .badge-elder::after {
+            animation-name: elderSheen;
+        }
+
+        /* ================================
+Person Link
+================================ */
 
         .person-link {
             appearance: none;
-            border: 0;
-            padding: 0;
-            margin: 0;
-            background: transparent;
-            color: #0f172a;
-            font: inherit;
-            font-weight: 900;
-            cursor: pointer;
-            text-align: left;
-            border-radius: 8px;
             display: inline-flex;
             align-items: center;
             justify-content: flex-start;
             max-width: 100%;
+            margin: 0;
+            padding: 0;
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
+            color: #0f172a;
+            font: inherit;
+            font-weight: 900;
             line-height: 1.2;
+            text-align: left;
             white-space: nowrap;
-            transition: color 0.18s ease, text-shadow 0.18s ease, transform 0.18s ease;
+            cursor: pointer;
+            transition: color 0.16s ease, text-shadow 0.16s ease, transform 0.16s ease;
         }
 
         .person-link:hover,
         .person-link:focus-visible {
             color: var(--primary);
-            text-shadow: 0 0 18px rgba(37, 99, 235, 0.18);
+            text-shadow: 0 0 14px rgba(37, 99, 235, 0.16);
             outline: none;
             transform: translateX(2px);
         }
@@ -1096,14 +1140,82 @@
 
         .person-link.elder-link {
             color: #78350f;
-            text-shadow: 0 0 18px rgba(245, 158, 11, 0.15);
+            text-shadow: 0 0 14px rgba(245, 158, 11, 0.12);
         }
 
         .person-link.elder-link:hover,
         .person-link.elder-link:focus-visible {
             color: #b45309;
-            text-shadow: 0 0 18px rgba(245, 158, 11, 0.28), 0 0 22px rgba(14, 165, 233, 0.18);
+            text-shadow: 0 0 16px rgba(245, 158, 11, 0.24), 0 0 18px rgba(14, 165, 233, 0.14);
         }
+
+        .person-link.captain-link {
+            color: #1e3a8a;
+            text-shadow: 0 0 14px rgba(37, 99, 235, 0.12);
+        }
+
+        .person-link.captain-link:hover,
+        .person-link.captain-link:focus-visible {
+            color: #2563eb;
+            text-shadow: 0 0 16px rgba(37, 99, 235, 0.24), 0 0 18px rgba(14, 165, 233, 0.14);
+        }
+
+        .person-link.vice-link {
+            color: #5b21b6;
+            text-shadow: 0 0 14px rgba(124, 58, 237, 0.12);
+        }
+
+        .person-link.vice-link:hover,
+        .person-link.vice-link:focus-visible {
+            color: #7c3aed;
+            text-shadow: 0 0 16px rgba(124, 58, 237, 0.24), 0 0 18px rgba(14, 165, 233, 0.12);
+        }
+
+        /* ================================
+Empty / Loading
+================================ */
+
+        .empty-state {
+            padding: 32px !important;
+            background: rgba(255, 255, 255, 0.9) !important;
+            color: #64748b;
+            text-align: left !important;
+            line-height: 1.8;
+        }
+
+        .loading-row td {
+            padding: 30px !important;
+            background: rgba(255, 255, 255, 0.9) !important;
+            color: var(--muted);
+            text-align: left !important;
+        }
+
+        .cyber-loader {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cyber-loader span {
+            width: 9px;
+            height: 9px;
+            border-radius: 999px;
+            background: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1), 0 0 12px rgba(37, 99, 235, 0.35);
+            animation: loaderPulse 0.9s ease-in-out infinite alternate;
+        }
+
+        .cyber-loader span:nth-child(2) {
+            animation-delay: 0.15s;
+        }
+
+        .cyber-loader span:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        /* ================================
+Profile Modal
+================================ */
 
         body.profile-open {
             overflow: hidden;
@@ -1126,10 +1238,10 @@
             position: absolute;
             inset: 0;
             background:
-                radial-gradient(circle at 20% 10%, rgba(14, 165, 233, 0.18), transparent 34%),
-                radial-gradient(circle at 88% 12%, rgba(124, 58, 237, 0.16), transparent 34%),
+                radial-gradient(circle at 20% 10%, rgba(14, 165, 233, 0.16), transparent 34%),
+                radial-gradient(circle at 88% 12%, rgba(124, 58, 237, 0.14), transparent 34%),
                 rgba(15, 23, 42, 0.42);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(8px);
         }
 
         .profile-dialog {
@@ -1140,9 +1252,10 @@
             border-radius: 28px;
             border: 1px solid rgba(37, 99, 235, 0.18);
             background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 251, 255, 0.92));
-            box-shadow: 0 30px 90px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.68) inset;
-            animation: fadeUp 0.24s ease both;
+            box-shadow: 0 22px 64px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.62) inset;
+            animation: fadeUp 0.2s ease both;
             isolation: isolate;
+            contain: layout paint;
         }
 
         .profile-dialog::before {
@@ -1150,22 +1263,21 @@
             position: absolute;
             inset: 0;
             z-index: -1;
-            background:
-                linear-gradient(90deg, rgba(37, 99, 235, 0.045) 1px, transparent 1px),
-                linear-gradient(rgba(37, 99, 235, 0.04) 1px, transparent 1px),
-                radial-gradient(circle at 20% 0%, rgba(14, 165, 233, 0.12), transparent 34%),
-                radial-gradient(circle at 82% 8%, rgba(124, 58, 237, 0.08), transparent 34%);
-            background-size: 28px 28px, 28px 28px, auto, auto;
             pointer-events: none;
+            background:
+                linear-gradient(90deg, rgba(37, 99, 235, 0.035) 1px, transparent 1px),
+                linear-gradient(rgba(37, 99, 235, 0.03) 1px, transparent 1px),
+                radial-gradient(circle at 20% 0%, rgba(14, 165, 233, 0.1), transparent 34%),
+                radial-gradient(circle at 82% 8%, rgba(124, 58, 237, 0.07), transparent 34%);
+            background-size: 28px 28px, 28px 28px, auto, auto;
         }
 
         .profile-dialog.profile-elder {
-            border-color: rgba(245, 158, 11, 0.28);
+            border-color: rgba(245, 158, 11, 0.26);
             box-shadow:
-                0 30px 90px rgba(15, 23, 42, 0.22),
-                0 0 0 1px rgba(255, 255, 255, 0.72) inset,
-                0 0 42px rgba(245, 158, 11, 0.12),
-                0 0 38px rgba(14, 165, 233, 0.08);
+                0 22px 64px rgba(15, 23, 42, 0.18),
+                0 0 0 1px rgba(255, 255, 255, 0.68) inset,
+                0 0 28px rgba(245, 158, 11, 0.1);
         }
 
         .profile-head {
@@ -1179,7 +1291,7 @@
             padding: 22px 22px 16px;
             border-bottom: 1px solid rgba(37, 99, 235, 0.12);
             background: rgba(248, 251, 255, 0.88);
-            backdrop-filter: blur(18px);
+            backdrop-filter: blur(10px);
         }
 
         .profile-kicker {
@@ -1200,15 +1312,15 @@
             height: 8px;
             border-radius: 999px;
             background: #10b981;
-            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12), 0 0 16px rgba(16, 185, 129, 0.55);
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1), 0 0 12px rgba(16, 185, 129, 0.42);
         }
 
         .profile-title {
             margin: 0;
+            color: #0f172a;
             font-size: clamp(26px, 4vw, 42px);
             line-height: 1.08;
             letter-spacing: -0.05em;
-            color: #0f172a;
         }
 
         .profile-meta {
@@ -1232,12 +1344,12 @@
             cursor: pointer;
             font-size: 22px;
             box-shadow: var(--shadow-soft);
-            transition: transform 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+            transition: transform 0.16s ease, border-color 0.16s ease, color 0.16s ease;
         }
 
         .profile-close:hover {
             transform: translateY(-1px);
-            border-color: rgba(37, 99, 235, 0.45);
+            border-color: rgba(37, 99, 235, 0.42);
             color: var(--primary);
         }
 
@@ -1248,11 +1360,11 @@
         .profile-loading,
         .profile-empty {
             padding: 26px;
-            color: var(--muted);
-            line-height: 1.8;
             border: 1px solid rgba(37, 99, 235, 0.12);
             border-radius: 18px;
             background: rgba(255, 255, 255, 0.76);
+            color: var(--muted);
+            line-height: 1.8;
         }
 
         .profile-grid {
@@ -1262,15 +1374,19 @@
             margin-bottom: 16px;
         }
 
+        .profile-stat,
+        .profile-section {
+            border: 1px solid rgba(37, 99, 235, 0.12);
+            background: rgba(255, 255, 255, 0.78);
+            box-shadow: var(--shadow-soft);
+        }
+
         .profile-stat {
             position: relative;
             overflow: hidden;
             min-width: 0;
-            border: 1px solid rgba(37, 99, 235, 0.12);
             border-radius: 18px;
             padding: 14px;
-            background: rgba(255, 255, 255, 0.78);
-            box-shadow: var(--shadow-soft);
         }
 
         .profile-stat::after {
@@ -1280,24 +1396,24 @@
             right: 14px;
             bottom: 0;
             height: 2px;
-            background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.52), transparent);
+            background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.48), transparent);
         }
 
         .profile-stat-label {
+            margin-bottom: 8px;
             color: var(--muted);
             font-size: 12px;
-            margin-bottom: 8px;
         }
 
         .profile-stat-value {
+            overflow: hidden;
             color: #0f172a;
             font-size: clamp(19px, 2vw, 27px);
             font-weight: 950;
             letter-spacing: -0.04em;
             font-variant-numeric: tabular-nums;
-            white-space: nowrap;
-            overflow: hidden;
             text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .profile-stat-note {
@@ -1320,9 +1436,9 @@
             border: 1px solid rgba(245, 158, 11, 0.24);
             background:
                 radial-gradient(circle at 10% 10%, rgba(255, 255, 255, 0.95), transparent 28%),
-                radial-gradient(circle at 86% 18%, rgba(14, 165, 233, 0.13), transparent 34%),
+                radial-gradient(circle at 86% 18%, rgba(14, 165, 233, 0.11), transparent 34%),
                 linear-gradient(135deg, rgba(255, 251, 235, 0.96), rgba(236, 254, 255, 0.84));
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.94), 0 12px 32px rgba(245, 158, 11, 0.1);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 8px 20px rgba(245, 158, 11, 0.08);
         }
 
         .elder-profile-banner::after {
@@ -1330,8 +1446,9 @@
             position: absolute;
             inset: -40% auto -40% -50%;
             width: 38%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.72), transparent);
-            animation: elderSheen 4.6s ease-in-out infinite;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.62), transparent);
+            animation: elderSheen 6s ease-in-out infinite;
+            will-change: transform;
         }
 
         .elder-profile-icon {
@@ -1343,53 +1460,51 @@
             align-items: center;
             justify-content: center;
             border-radius: 18px;
+            border: 1px solid rgba(245, 158, 11, 0.28);
+            background: linear-gradient(135deg, #fffbeb, #fed7aa, #cffafe);
             color: var(--elder-gold-strong);
             font-size: 26px;
-            background: linear-gradient(135deg, #fffbeb, #fed7aa, #cffafe);
-            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .elder-profile-title,
+        .elder-profile-text,
+        .elder-profile-tag {
+            position: relative;
+            z-index: 1;
         }
 
         .elder-profile-title {
-            position: relative;
-            z-index: 1;
             color: #78350f;
-            font-weight: 950;
             font-size: 16px;
+            font-weight: 950;
             letter-spacing: -0.02em;
         }
 
         .elder-profile-text {
-            position: relative;
-            z-index: 1;
             margin-top: 4px;
             color: #64748b;
-            line-height: 1.6;
             font-size: 13px;
+            line-height: 1.6;
         }
 
         .elder-profile-tag {
-            position: relative;
-            z-index: 1;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             padding: 8px 11px;
             border-radius: 999px;
-            color: #0e7490;
-            background: rgba(236, 254, 255, 0.8);
             border: 1px solid rgba(14, 165, 233, 0.2);
+            background: rgba(236, 254, 255, 0.8);
+            color: #0e7490;
             font-size: 12px;
             font-weight: 900;
             white-space: nowrap;
         }
 
         .profile-section {
-            border: 1px solid rgba(37, 99, 235, 0.12);
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.78);
-            box-shadow: var(--shadow-soft);
             overflow: hidden;
             margin-top: 14px;
+            border-radius: 20px;
         }
 
         .profile-section-head {
@@ -1417,6 +1532,7 @@
         .profile-chart {
             padding: 14px;
             overflow-x: auto;
+            contain: content;
         }
 
         .profile-chart svg {
@@ -1442,12 +1558,12 @@
             stroke-width: 4;
             stroke-linecap: round;
             stroke-linejoin: round;
-            filter: drop-shadow(0 8px 12px rgba(37, 99, 235, 0.18));
+            filter: drop-shadow(0 6px 8px rgba(37, 99, 235, 0.14));
         }
 
         .chart-area {
             fill: url(#scoreAreaGradient);
-            opacity: 0.9;
+            opacity: 0.85;
         }
 
         .chart-dot {
@@ -1478,9 +1594,10 @@
         .profile-timeline {
             display: grid;
             gap: 8px;
-            padding: 14px;
             max-height: 260px;
             overflow: auto;
+            padding: 14px;
+            contain: content;
         }
 
         .profile-week-row {
@@ -1501,25 +1618,29 @@
         }
 
         .profile-week-small {
+            margin-top: 2px;
             color: var(--muted);
             font-size: 12px;
-            margin-top: 2px;
         }
 
         .profile-week-score {
-            text-align: right;
             color: #1e293b;
             font-weight: 900;
+            text-align: right;
             font-variant-numeric: tabular-nums;
         }
 
         .profile-week-caption {
             display: block;
+            margin-bottom: 3px;
             color: var(--muted);
             font-size: 11px;
             font-weight: 700;
-            margin-bottom: 3px;
         }
+
+        /* ================================
+Responsive
+================================ */
 
         @media (max-width: 960px) {
             .page {
@@ -1528,8 +1649,8 @@
             }
 
             .hero-inner {
-                padding: 24px;
                 min-height: auto;
+                padding: 24px;
             }
 
             .hero-content {
@@ -1575,15 +1696,52 @@
         }
 
         @media (max-width: 760px) {
-            body::before {
-                background-size: 34px 34px, 34px 34px, 10px 10px, 10px 10px;
-                opacity: 0.55;
+
+            body::before,
+            body::after {
+                animation: none !important;
+                opacity: 0.12;
             }
 
-            .orb {
-                width: 260px;
-                height: 260px;
-                opacity: 0.22;
+            .ambient {
+                display: none;
+            }
+
+            .hero::before,
+            .hero-inner::after,
+            .badge-elder::after,
+            .badge-captain::after,
+            .badge-vice::after,
+            .elder-profile-banner::after {
+                display: none;
+                animation: none !important;
+            }
+
+            .hero::after,
+            .stat-card,
+            .panel,
+            .toolbar,
+            .table-wrap,
+            .profile-dialog,
+            .profile-head,
+            .profile-backdrop {
+                backdrop-filter: none !important;
+            }
+
+            .badge-elder,
+            .badge-captain,
+            .badge-vice,
+            tbody tr {
+                animation: none !important;
+            }
+
+            .stat-card,
+            .panel,
+            tbody tr,
+            .profile-dialog,
+            .profile-section,
+            .profile-stat {
+                box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
             }
 
             .page {
@@ -1608,11 +1766,11 @@
                 height: 110px;
                 right: 16px;
                 top: 18px;
-                opacity: 0.35;
+                opacity: 0.28;
             }
 
             h1 {
-                font-size: clamp(30px, 10vw, 42px);
+                font-size: clamp(28px, 9.5vw, 42px);
                 letter-spacing: -0.05em;
             }
 
@@ -1643,6 +1801,7 @@
                 max-height: none;
                 padding: 12px;
                 background: transparent;
+                contain: none;
             }
 
             table {
@@ -1665,12 +1824,10 @@
             tbody tr {
                 display: block;
                 width: 100%;
+                overflow: hidden;
                 border: 1px solid rgba(37, 99, 235, 0.12);
                 border-radius: 16px;
-                overflow: hidden;
                 background: rgba(255, 255, 255, 0.9);
-                box-shadow: var(--shadow-soft);
-                backdrop-filter: blur(14px);
             }
 
             tbody td,
@@ -1689,13 +1846,13 @@
                 min-width: 0;
                 max-width: none;
                 padding: 12px 14px;
+                border-bottom: 1px solid rgba(37, 99, 235, 0.08);
+                background: transparent;
+                box-shadow: none;
                 text-align: right;
                 white-space: normal;
                 word-break: break-word;
                 overflow-wrap: anywhere;
-                background: transparent;
-                box-shadow: none;
-                border-bottom: 1px solid rgba(37, 99, 235, 0.08);
             }
 
             tbody td:last-child {
@@ -1722,7 +1879,13 @@
 
             .row-elder td,
             .row-elder td:first-child,
-            .row-elder td:nth-child(2) {
+            .row-elder td:nth-child(2),
+            .row-captain td,
+            .row-captain td:first-child,
+            .row-captain td:nth-child(2),
+            .row-vice td,
+            .row-vice td:first-child,
+            .row-vice td:nth-child(2) {
                 background: transparent !important;
             }
 
@@ -1731,18 +1894,56 @@
                 background: linear-gradient(180deg, rgba(255, 251, 235, 0.96), rgba(236, 254, 255, 0.88)) !important;
             }
 
+            .row-captain {
+                border-color: rgba(37, 99, 235, 0.26);
+                background: linear-gradient(180deg, rgba(239, 246, 255, 0.97), rgba(236, 254, 255, 0.88)) !important;
+            }
+
+            .row-vice {
+                border-color: rgba(124, 58, 237, 0.24);
+                background: linear-gradient(180deg, rgba(245, 243, 255, 0.97), rgba(239, 246, 255, 0.88)) !important;
+            }
+
             .row-elder td:first-child {
                 box-shadow: inset 4px 0 0 var(--elder-gold-line);
+            }
+
+            .row-captain td:first-child {
+                box-shadow: inset 4px 0 0 var(--captain-blue-line);
+            }
+
+            .row-vice td:first-child {
+                box-shadow: inset 4px 0 0 var(--vice-purple-line);
+            }
+
+            tbody td.col-pass-distance {
+                background: rgba(255, 247, 237, 0.88) !important;
+                border-left: 4px solid #fb923c;
+            }
+
+            tbody td.col-elder-distance {
+                background: rgba(255, 251, 235, 0.92) !important;
+                border-left: 4px solid #f59e0b;
+            }
+
+            tbody td.col-pass-distance::before {
+                color: #c2410c;
+                font-weight: 950;
+            }
+
+            tbody td.col-elder-distance::before {
+                color: #92400e;
+                font-weight: 950;
             }
 
             .section-row td {
                 display: block;
                 width: 100%;
                 padding: 14px !important;
-                text-align: left !important;
                 border-bottom: 0;
                 border-radius: 16px;
                 background: linear-gradient(90deg, rgba(226, 232, 240, 0.95), rgba(239, 246, 255, 0.82)) !important;
+                text-align: left !important;
             }
 
             .section-row td::before,
@@ -1755,9 +1956,9 @@
             .row-total td,
             .row-total td:first-child,
             .row-total td:nth-child(2) {
+                border-bottom: 1px solid #dbeafe;
                 background: transparent !important;
                 box-shadow: none;
-                border-bottom: 1px solid #dbeafe;
             }
 
             .empty-state,
@@ -1768,13 +1969,14 @@
             }
 
             .profile-modal {
-                padding: 10px;
                 align-items: end;
+                padding: 10px;
             }
 
             .profile-dialog {
                 max-height: 92vh;
                 border-radius: 22px;
+                contain: none;
             }
 
             .profile-head {
@@ -1816,8 +2018,8 @@
             select,
             input {
                 min-height: 44px;
-                font-size: 14px;
                 border-radius: 13px;
+                font-size: 14px;
             }
 
             .toolbar,
@@ -1827,8 +2029,8 @@
 
             tbody td,
             tbody td:first-child {
-                padding: 11px 12px;
                 gap: 12px;
+                padding: 11px 12px;
             }
 
             tbody td::before {
@@ -1845,6 +2047,10 @@
             }
         }
 
+        /* ================================
+        Accessibility
+        ================================ */
+
         @media (prefers-reduced-motion: reduce) {
 
             *,
@@ -1857,6 +2063,7 @@
             }
         }
     </style>
+
 </head>
 
 <body>
@@ -1876,7 +2083,7 @@
                             Weekly Score Dashboard
                         </div>
 
-                        <h1>每週成績總覽</h1>
+                        <h1>Coin999-長長久久 隊伍 每週成績總覽</h1>
 
                         <p class="hero-subtitle">
                             檢視每週活動分數、與上週比較，以及本月最後五名。
@@ -1944,12 +2151,56 @@
     </section>
 
     <script>
+        /* ================================
+           Config / Constants
+        ================================ */
+
         const WEEK_INDEX_URL = "./data/weeks.csv";
 
         const HISTORY_MIN_WEEKS = 2;
         const HISTORY_MODE = "appeared";
 
-        const EXCLUDED_STATUSES = ["回歸", "副隊長", "隊長"];
+        const STATUS = {
+            ALL: "全部",
+            PASS: "PASS",
+            OUT: "淘汰",
+            RETURN: "回歸",
+            DOWNGRADE: "降級",
+            ELDER: "長老",
+            CAPTAIN: "隊長",
+            VICE_CAPTAIN: "副隊長",
+            NO_DATA: "無資料"
+        };
+
+        const ROW_TYPE = {
+            PERSON: "person",
+            SECTION: "section",
+            TOTAL: "total"
+        };
+
+        const SPECIAL_CM = {
+            RETURN_SECTION: "【回歸帳號】",
+            TOTAL: "總計"
+        };
+
+        const TREND = {
+            UP: "up",
+            DOWN: "down",
+            SAME: "same",
+            NEW: "new"
+        };
+
+        const HISTORY_LEVEL = {
+            NONE: "none",
+            WATCH: "watch",
+            RISK: "risk"
+        };
+
+        const EXCLUDED_STATUSES = [
+            STATUS.RETURN,
+            STATUS.VICE_CAPTAIN,
+            STATUS.CAPTAIN
+        ];
 
         const RANK_COLUMN = "編號";
         const MONTH_TOTAL_COLUMN = "本月總分";
@@ -1957,7 +2208,7 @@
 
         const SPECIAL_STATUS_FILTERS = {
             EVER_BOTTOM_FIVE: "__everBottomFive",
-            MONTH_LOW_SCORE_SORT: "__monthLowScoreSort"
+            MONTH_TOTAL_SCORE_SORT: "__monthTotalScoreSort"
         };
 
         const DISPLAY_HEADERS = [
@@ -1975,6 +2226,48 @@
             "狀態"
         ];
 
+        const ROLE_META = {
+            [STATUS.ELDER]: {
+                rowClass: "row-elder",
+                rankBadgeClass: "rank-badge rank-badge-elder",
+                personLinkClass: "person-link elder-link",
+                badgeClass: "badge-elder",
+                title: "長老"
+            },
+            [STATUS.CAPTAIN]: {
+                rowClass: "row-captain",
+                rankBadgeClass: "rank-badge rank-badge-captain",
+                personLinkClass: "person-link captain-link",
+                badgeClass: "badge-captain",
+                title: "隊長"
+            },
+            [STATUS.VICE_CAPTAIN]: {
+                rowClass: "row-vice",
+                rankBadgeClass: "rank-badge rank-badge-vice",
+                personLinkClass: "person-link vice-link",
+                badgeClass: "badge-vice",
+                title: "副隊長"
+            }
+        };
+
+        const STATUS_BADGE_CLASS = {
+            [STATUS.PASS]: "badge-pass",
+            [STATUS.OUT]: "badge-out",
+            [STATUS.RETURN]: "badge-return",
+            [STATUS.ELDER]: ROLE_META[STATUS.ELDER].badgeClass,
+            [STATUS.CAPTAIN]: ROLE_META[STATUS.CAPTAIN].badgeClass,
+            [STATUS.VICE_CAPTAIN]: ROLE_META[STATUS.VICE_CAPTAIN].badgeClass
+        };
+
+        const STATUS_TITLE = {
+            [STATUS.ELDER]: "長老",
+            [STATUS.CAPTAIN]: "隊長",
+            [STATUS.VICE_CAPTAIN]: "副隊長",
+            [STATUS.PASS]: "本週合格",
+            [STATUS.OUT]: "本週淘汰",
+            [STATUS.DOWNGRADE]: "本週降級"
+        };
+
         const els = {
             weekSelect: document.getElementById("weekSelect"),
             stats: document.getElementById("stats"),
@@ -1987,17 +2280,27 @@
             profileClose: document.getElementById("profileClose"),
             profileName: document.getElementById("profileName"),
             profileMeta: document.getElementById("profileMeta"),
-            profileBody: document.getElementById("profileBody")
+            profileBody: document.getElementById("profileBody"),
+            get profileDialog() {
+                return document.querySelector(".profile-dialog");
+            }
         };
 
-        let weeks = [];
-        let currentWeek = null;
-        let currentRows = [];
-        let historySummaryMap = new Map();
-        let monthlyTotalMap = new Map();
-        let historyScopeWeekCount = 0;
-        let historyScopeLabel = "本月";
-        let weekRowsCache = new Map();
+        const state = {
+            weeks: [],
+            currentWeek: null,
+            currentRows: [],
+            historySummaryMap: new Map(),
+            monthlyTotalMap: new Map(),
+            historyScopeWeekCount: 0,
+            historyScopeLabel: "本月",
+            weekRowsCache: new Map(),
+            hasRenderedTableOnce: false
+        };
+
+        /* ================================
+           Utilities
+        ================================ */
 
         function escapeHTML(value) {
             return String(value ?? "")
@@ -2011,6 +2314,86 @@
         function cleanText(value) {
             return String(value ?? "").replace(/\s+/g, " ").trim();
         }
+
+        function createClassName(...classes) {
+            return classes.filter(Boolean).join(" ");
+        }
+
+        function debounce(fn, delay = 180) {
+            let timer = null;
+
+            return (...args) => {
+                clearTimeout(timer);
+
+                timer = setTimeout(() => {
+                    fn(...args);
+                }, delay);
+            };
+        }
+
+        function parseNumber(value) {
+            if (!value) return 0;
+
+            return Number(String(value).replaceAll(",", "").trim()) || 0;
+        }
+
+        function formatNumber(value) {
+            return Number(value || 0).toLocaleString("zh-TW");
+        }
+
+        function formatCompactNumber(value) {
+            const number = Number(value || 0);
+            const abs = Math.abs(number);
+
+            if (abs >= 100000000) {
+                return `${(number / 100000000).toLocaleString("zh-TW", {
+                    maximumFractionDigits: 1
+                })}億`;
+            }
+
+            if (abs >= 10000) {
+                return `${(number / 10000).toLocaleString("zh-TW", {
+                    maximumFractionDigits: 1
+                })}萬`;
+            }
+
+            return formatNumber(number);
+        }
+
+        function calculateAverage(values) {
+            const validValues = values.filter(Number.isFinite);
+
+            if (!validValues.length) return 0;
+
+            return Math.round(
+                validValues.reduce((sum, value) => sum + value, 0) / validValues.length
+            );
+        }
+
+        function formatDelta(delta) {
+            if (delta === null || delta === undefined) return "無資料";
+            if (delta > 0) return `▲ ${formatNumber(delta)}`;
+            if (delta < 0) return `▼ ${formatNumber(Math.abs(delta))}`;
+
+            return "— 0";
+        }
+
+        function cloneRows(rows) {
+            return rows.map(row => ({ ...row }));
+        }
+
+        function getRowAnimationDelay(index) {
+            return Math.min(index * 0.015, 0.3);
+        }
+
+        function showLoading(message = "資料同步中...") {
+            els.resultHint.textContent = message;
+            renderLoading(message);
+        }
+
+        /* ================================
+           Data Fetching / CSV
+        ================================ */
 
         async function fetchText(url) {
             const response = await fetch(url, { cache: "no-store" });
@@ -2080,7 +2463,7 @@
 
             if (!rows.length) return [];
 
-            const headers = rows[0].map(header => cleanText(header));
+            const headers = rows[0].map(cleanText);
 
             return rows.slice(1).map(cols => {
                 const obj = {};
@@ -2093,37 +2476,34 @@
             });
         }
 
-        function parseNumber(value) {
-            if (!value) return 0;
-            return Number(String(value).replaceAll(",", "").trim()) || 0;
+        async function loadWeeks() {
+            const csvText = await fetchText(WEEK_INDEX_URL);
+
+            state.weeks = csvToObjects(csvText).sort((a, b) => {
+                return String(b.startDate || "").localeCompare(String(a.startDate || ""));
+            });
+
+            renderWeekSelect();
         }
 
-        function formatNumber(value) {
-            return Number(value || 0).toLocaleString("zh-TW");
-        }
+        async function getWeekRows(week) {
+            if (!week) return [];
 
-        function formatCompactNumber(value) {
-            const number = Number(value || 0);
-            const abs = Math.abs(number);
-
-            if (abs >= 100000000) {
-                const result = number / 100000000;
-
-                return `${result.toLocaleString("zh-TW", {
-                    maximumFractionDigits: 1
-                })}億`;
+            if (state.weekRowsCache.has(week.id)) {
+                return state.weekRowsCache.get(week.id);
             }
 
-            if (abs >= 10000) {
-                const result = number / 10000;
+            const csvText = await fetchText(week.file);
+            const rows = normalizeRows(csvToObjects(csvText));
 
-                return `${result.toLocaleString("zh-TW", {
-                    maximumFractionDigits: 1
-                })}萬`;
-            }
+            state.weekRowsCache.set(week.id, rows);
 
-            return formatNumber(number);
+            return rows;
         }
+
+        /* ================================
+           Week Helpers
+        ================================ */
 
         function getWeekMonthKey(week) {
             const startDate = cleanText(week?.startDate || "");
@@ -2156,11 +2536,9 @@
         function getWeeksInSameMonth(targetWeek) {
             const targetMonthKey = getWeekMonthKey(targetWeek);
 
-            if (!targetMonthKey) {
-                return [];
-            }
+            if (!targetMonthKey) return [];
 
-            return weeks.filter(week => getWeekMonthKey(week) === targetMonthKey);
+            return state.weeks.filter(week => getWeekMonthKey(week) === targetMonthKey);
         }
 
         function getWeekShortLabel(week) {
@@ -2170,30 +2548,154 @@
             return parts[0] || label;
         }
 
-        async function getWeekRows(week) {
-            if (!week) return [];
+        function findWeekById(weekId) {
+            const week = state.weeks.find(item => item.id === weekId) || state.weeks[0];
 
-            if (weekRowsCache.has(week.id)) {
-                return weekRowsCache.get(week.id);
+            if (!week) {
+                throw new Error("找不到週別資料");
             }
 
-            const csvText = await fetchText(week.file);
-            const rows = normalizeRows(csvToObjects(csvText));
-
-            weekRowsCache.set(week.id, rows);
-
-            return rows;
+            return week;
         }
 
-        function cloneRows(rows) {
-            return rows.map(row => ({ ...row }));
+        async function getPreviousRows(currentWeekId) {
+            const currentIndex = state.weeks.findIndex(week => week.id === currentWeekId);
+            const previousWeek = state.weeks[currentIndex + 1];
+
+            if (!previousWeek) return [];
+
+            try {
+                const rows = await getWeekRows(previousWeek);
+
+                return cloneRows(rows);
+            } catch (error) {
+                console.warn("上一週資料讀取失敗：", error);
+
+                return [];
+            }
         }
+
+        /* ================================
+           Row Helpers
+        ================================ */
 
         function getRowType(row) {
+            const cm = cleanText(row["CM"]);
+
             if (row.type) return row.type;
-            if (cleanText(row["CM"]) === "【回歸帳號】") return "section";
-            if (cleanText(row["CM"]) === "總計") return "total";
-            return "person";
+            if (cm === SPECIAL_CM.RETURN_SECTION) return ROW_TYPE.SECTION;
+            if (cm === SPECIAL_CM.TOTAL) return ROW_TYPE.TOTAL;
+
+            return ROW_TYPE.PERSON;
+        }
+
+        function isPersonRow(row) {
+            return row?.__type === ROW_TYPE.PERSON;
+        }
+
+        function isSectionRow(row) {
+            return row?.__type === ROW_TYPE.SECTION;
+        }
+
+        function isTotalRow(row) {
+            return row?.__type === ROW_TYPE.TOTAL;
+        }
+
+        function getRowStatus(row) {
+            return cleanText(row?.["狀態"]);
+        }
+
+        function isStatus(row, status) {
+            return isPersonRow(row) && getRowStatus(row) === status;
+        }
+
+        function isElder(row) {
+            return isStatus(row, STATUS.ELDER);
+        }
+
+        function isCaptain(row) {
+            return isStatus(row, STATUS.CAPTAIN);
+        }
+
+        function isViceCaptain(row) {
+            return isStatus(row, STATUS.VICE_CAPTAIN);
+        }
+
+        function normalizeCmName(value) {
+            return cleanText(value).toLowerCase();
+        }
+
+        function getCmKey(row) {
+            const cm = normalizeCmName(row["CM"]);
+
+            return cm ? `cm:${cm}` : "";
+        }
+
+        function getPersonKey(row) {
+            if (isExcludedFromCalculation(row)) return "";
+
+            return getCmKey(row);
+        }
+
+        function hasMatchingProfileKey(row, keySet) {
+            const cmKey = getCmKey(row);
+
+            return Boolean(cmKey && keySet.has(cmKey));
+        }
+
+        function isReturnAccount(row) {
+            const cm = cleanText(row["CM"]);
+            const status = getRowStatus(row);
+
+            return (
+                row.__isReturnAccount === true ||
+                cm === SPECIAL_CM.RETURN_SECTION ||
+                status === STATUS.RETURN
+            );
+        }
+
+        function isExcludedFromCalculation(row) {
+            return (
+                isReturnAccount(row) ||
+                EXCLUDED_STATUSES.includes(getRowStatus(row))
+            );
+        }
+
+        function isCalculablePerson(row) {
+            return isPersonRow(row) && !isExcludedFromCalculation(row);
+        }
+
+        function getCalculablePeople(rows) {
+            return rows.filter(isCalculablePerson);
+        }
+
+        function getExcludedPeople(rows) {
+            return rows.filter(row => isPersonRow(row) && isExcludedFromCalculation(row));
+        }
+
+        function getTotalRow(rows) {
+            return rows.find(row => {
+                return (
+                    isTotalRow(row) ||
+                    cleanText(row["CM"]) === SPECIAL_CM.TOTAL
+                );
+            }) || null;
+        }
+
+        function getWeeklyTotalScore(rows) {
+            const totalRow = getTotalRow(rows);
+
+            if (totalRow) {
+                return parseNumber(totalRow["一週總分"]);
+            }
+
+            return rows
+                .filter(isPersonRow)
+                .reduce((sum, row) => sum + parseNumber(row["一週總分"]), 0);
+        }
+
+        function countByStatus(rows, status) {
+            return rows.filter(row => getRowStatus(row) === status).length;
         }
 
         function normalizeRows(rows) {
@@ -2209,20 +2711,19 @@
 
                     normalized["CM"] = cleanText(normalized["CM"]);
                     normalized["狀態"] = cleanText(normalized["狀態"]);
-
                     normalized.__type = getRowType(normalized);
 
                     const cm = cleanText(normalized["CM"]);
-                    const status = cleanText(normalized["狀態"]);
+                    const status = getRowStatus(normalized);
 
-                    if (cm === "【回歸帳號】") {
+                    if (cm === SPECIAL_CM.RETURN_SECTION) {
                         inReturnSection = true;
                         normalized.__isReturnAccount = true;
-                    } else if (normalized.__type === "section") {
+                    } else if (isSectionRow(normalized)) {
                         inReturnSection = false;
                         normalized.__isReturnAccount = false;
-                    } else if (normalized.__type === "person") {
-                        normalized.__isReturnAccount = inReturnSection || status === "回歸";
+                    } else if (isPersonRow(normalized)) {
+                        normalized.__isReturnAccount = inReturnSection || status === STATUS.RETURN;
                     } else {
                         normalized.__isReturnAccount = false;
                     }
@@ -2230,205 +2731,96 @@
                     return normalized;
                 })
                 .filter(row => {
-                    if (row.__type !== "person") return true;
+                    if (!isPersonRow(row)) return true;
 
-                    return (
-                        cleanText(row["CM"]) ||
-                        cleanText(row["LINE名稱"])
-                    );
+                    return cleanText(row["CM"]) || cleanText(row["LINE名稱"]);
                 });
         }
 
-        function isReturnAccount(row) {
-            const cm = cleanText(row["CM"]);
-            const status = cleanText(row["狀態"]);
+        /* ================================
+           Role / Style Helpers
+        ================================ */
 
-            return (
-                row.__isReturnAccount === true ||
-                cm === "【回歸帳號】" ||
-                status === "回歸"
-            );
-        }
-
-        function isExcludedFromCalculation(row) {
-            const status = cleanText(row["狀態"]);
-
-            return (
-                isReturnAccount(row) ||
-                EXCLUDED_STATUSES.includes(status)
-            );
-        }
-
-        function isCalculablePerson(row) {
-            return row.__type === "person" && !isExcludedFromCalculation(row);
-        }
-
-        function getCalculablePeople(rows) {
-            return rows.filter(isCalculablePerson);
-        }
-
-        function getExcludedPeople(rows) {
-            return rows.filter(row => row.__type === "person" && isExcludedFromCalculation(row));
-        }
-
-        function getTotalRow(rows) {
-            return rows.find(row => {
-                return (
-                    row.__type === "total" ||
-                    cleanText(row["CM"]) === "總計"
-                );
-            }) || null;
-        }
-
-        function getWeeklyTotalScore(rows) {
-            const totalRow = getTotalRow(rows);
-
-            if (totalRow) {
-                return parseNumber(totalRow["一週總分"]);
-            }
-
-            return rows
-                .filter(row => row.__type === "person")
-                .reduce((sum, row) => {
-                    return sum + parseNumber(row["一週總分"]);
-                }, 0);
-        }
-
-        function normalizeCmName(value) {
-            return cleanText(value).toLowerCase();
-        }
-
-        function getCmKey(row) {
-            const cm = normalizeCmName(row["CM"]);
-
-            return cm ? `cm:${cm}` : "";
-        }
-
-        function hasMatchingProfileKey(row, keySet) {
-            const cmKey = getCmKey(row);
-
-            return Boolean(cmKey && keySet.has(cmKey));
-        }
-
-        function getPersonKey(row) {
-            if (isExcludedFromCalculation(row)) return "";
-
-            return getCmKey(row);
-        }
-
-        function isElder(row) {
-            return row && row.__type === "person" && cleanText(row["狀態"]) === "長老";
+        function getRoleMeta(row) {
+            return ROLE_META[getRowStatus(row)] || null;
         }
 
         function getRowRewardClass(row) {
-            return isElder(row) ? "row-elder" : "";
+            return getRoleMeta(row)?.rowClass || "";
         }
 
         function getRankBadgeClass(row) {
-            return isElder(row) ? "rank-badge rank-badge-elder" : "rank-badge";
+            return getRoleMeta(row)?.rankBadgeClass || "rank-badge";
         }
 
         function getPersonLinkClass(row) {
-            return isElder(row) ? "person-link elder-link" : "person-link";
+            return getRoleMeta(row)?.personLinkClass || "person-link";
+        }
+
+        function getStatusTitle(status) {
+            return STATUS_TITLE[status] || status || "";
+        }
+
+        function getBadgeClass(status) {
+            return STATUS_BADGE_CLASS[status] || "badge-other";
+        }
+
+        function getColumnClass(header) {
+            if (header === "距離合格分數") return "col-pass-distance";
+            if (header === "距離長老分數") return "col-elder-distance";
+
+            return "";
+        }
+
+        function getCellClass(header, extraClass = "") {
+            return createClassName(extraClass, getColumnClass(header));
+        }
+
+        function getCellLabelAttr(header) {
+            return `data-label="${escapeHTML(header)}"`;
         }
 
         function getDisplayName(value) {
             return escapeHTML(cleanText(value) || "-");
         }
 
-        function getStatusTitle(status) {
-            if (status === "長老") {
-                return "長老獎勵身份｜本週達成高階標準";
-            }
-
-            if (status === "PASS") {
-                return "本週合格";
-            }
-
-            if (status === "淘汰") {
-                return "本週淘汰";
-            }
-
-            if (status === "降級") {
-                return "本週降級";
-            }
-
-            return status || "";
-        }
-
-        function getBadgeClass(status) {
-            if (status === "PASS") return "badge-pass";
-            if (status === "淘汰") return "badge-out";
-            if (status === "回歸") return "badge-return";
-            if (status === "隊長" || status === "副隊長") return "badge-leader";
-            if (status === "長老") return "badge-elder";
-            return "badge-other";
-        }
-
-        function getColumnClass(header) {
-            if (header === "距離合格分數") return "col-pass-distance";
-            if (header === "距離長老分數") return "col-elder-distance";
-            return "";
-        }
-
-        function isEverBottomFive(row) {
-            return (
-                isCalculablePerson(row) &&
-                (
-                    row.__historyLevel === "watch" ||
-                    row.__historyLevel === "risk"
-                )
-            );
-        }
+        /* ================================
+           Comparison / History / Monthly
+        ================================ */
 
         function buildPreviousScoreMap(rows) {
             const map = new Map();
 
-            rows
-                .filter(isCalculablePerson)
-                .forEach(row => {
-                    const key = getPersonKey(row);
+            rows.filter(isCalculablePerson).forEach(row => {
+                const key = getPersonKey(row);
 
-                    if (!key) return;
+                if (!key) return;
 
-                    map.set(key, parseNumber(row["一週總分"]));
-                });
+                map.set(key, parseNumber(row["一週總分"]));
+            });
 
             return map;
-        }
-
-        async function getPreviousRows(currentWeekId) {
-            const currentIndex = weeks.findIndex(week => week.id === currentWeekId);
-            const previousWeek = weeks[currentIndex + 1];
-
-            if (!previousWeek) return [];
-
-            try {
-                const rows = await getWeekRows(previousWeek);
-                return cloneRows(rows);
-            } catch (error) {
-                console.warn("上一週資料讀取失敗：", error);
-                return [];
-            }
         }
 
         function applyWeekComparison(rows, previousRows) {
             const previousScoreMap = buildPreviousScoreMap(previousRows);
 
             return rows.map(row => {
-                if (row.__type !== "person") {
+                if (!isPersonRow(row)) {
                     row["較上週"] = "";
                     row.__trend = "";
                     row.__delta = null;
                     row.__prevScore = null;
+
                     return row;
                 }
 
                 if (isExcludedFromCalculation(row)) {
                     row["較上週"] = "不計算";
-                    row.__trend = "same";
+                    row.__trend = TREND.SAME;
                     row.__delta = null;
                     row.__prevScore = null;
+
                     return row;
                 }
 
@@ -2437,9 +2829,10 @@
 
                 if (!key || !previousScoreMap.has(key)) {
                     row["較上週"] = "新 / 無資料";
-                    row.__trend = "new";
+                    row.__trend = TREND.NEW;
                     row.__delta = null;
                     row.__prevScore = null;
+
                     return row;
                 }
 
@@ -2451,13 +2844,13 @@
 
                 if (delta > 0) {
                     row["較上週"] = `▲ ${formatNumber(delta)}`;
-                    row.__trend = "up";
+                    row.__trend = TREND.UP;
                 } else if (delta < 0) {
                     row["較上週"] = `▼ ${formatNumber(Math.abs(delta))}`;
-                    row.__trend = "down";
+                    row.__trend = TREND.DOWN;
                 } else {
                     row["較上週"] = "— 0";
-                    row.__trend = "same";
+                    row.__trend = TREND.SAME;
                 }
 
                 return row;
@@ -2492,166 +2885,54 @@
             const monthKey = getWeekMonthKey(targetWeek);
             const monthWeeks = getWeeksInSameMonth(targetWeek);
 
-            historyScopeWeekCount = monthWeeks.length;
-            historyScopeLabel = formatMonthLabel(monthKey);
+            state.historyScopeWeekCount = monthWeeks.length;
+            state.historyScopeLabel = formatMonthLabel(monthKey);
 
             for (const week of monthWeeks) {
                 try {
                     const rows = await getWeekRows(week);
                     const bottomKeys = getBottomFiveKeys(rows);
 
-                    rows
-                        .filter(isCalculablePerson)
-                        .forEach(row => {
-                            const key = getPersonKey(row);
+                    rows.filter(isCalculablePerson).forEach(row => {
+                        const key = getPersonKey(row);
 
-                            if (!key) return;
+                        if (!key) return;
 
-                            if (!summaryMap.has(key)) {
-                                summaryMap.set(key, {
-                                    key,
-                                    cm: row["CM"] || "",
-                                    lineName: row["LINE名稱"] || "",
-                                    weeksSeen: 0,
-                                    bottomWeeks: 0,
-                                    bottomWeekLabels: [],
-                                    monthKey,
-                                    totalWeeks: monthWeeks.length
-                                });
-                            }
+                        if (!summaryMap.has(key)) {
+                            summaryMap.set(key, {
+                                key,
+                                cm: row["CM"] || "",
+                                lineName: row["LINE名稱"] || "",
+                                weeksSeen: 0,
+                                bottomWeeks: 0,
+                                bottomWeekLabels: [],
+                                monthKey,
+                                totalWeeks: monthWeeks.length
+                            });
+                        }
 
-                            const item = summaryMap.get(key);
+                        const item = summaryMap.get(key);
 
-                            item.weeksSeen += 1;
+                        item.weeksSeen += 1;
 
-                            if (bottomKeys.has(key)) {
-                                item.bottomWeeks += 1;
-                                item.bottomWeekLabels.push(week.label || week.id);
-                            }
-                        });
+                        if (bottomKeys.has(key)) {
+                            item.bottomWeeks += 1;
+                            item.bottomWeekLabels.push(week.label || week.id);
+                        }
+                    });
                 } catch (error) {
                     console.warn(`本月後五資料讀取失敗：${week.file}`, error);
                 }
             }
 
-            historySummaryMap = summaryMap;
-        }
-
-        function getMonthlyTotalPersonKey(row) {
-            return getCmKey(row);
-        }
-
-        async function loadMonthlyPersonalTotals(targetWeek) {
-            const summaryMap = new Map();
-            const monthWeeks = getWeeksInSameMonth(targetWeek);
-
-            for (const week of monthWeeks) {
-                try {
-                    const rows = await getWeekRows(week);
-
-                    rows
-                        .filter(row => row.__type === "person")
-                        .forEach(row => {
-                            const key = getMonthlyTotalPersonKey(row);
-
-                            if (!key) return;
-
-                            if (!summaryMap.has(key)) {
-                                summaryMap.set(key, {
-                                    key,
-                                    cm: row["CM"] || "",
-                                    totalScore: 0,
-                                    weeksSeen: 0,
-                                    totalWeeks: monthWeeks.length,
-                                    weekLabels: [],
-                                    isReturnAccount: isReturnAccount(row)
-                                });
-                            }
-
-                            const item = summaryMap.get(key);
-
-                            item.totalScore += parseNumber(row["一週總分"]);
-                            item.weeksSeen += 1;
-                            item.weekLabels.push(week.label || week.id);
-
-                            if (isReturnAccount(row)) {
-                                item.isReturnAccount = true;
-                            }
-                        });
-                } catch (error) {
-                    console.warn(`本月個人總分讀取失敗：${week.file}`, error);
-                }
-            }
-
-            const rankedItems = Array.from(summaryMap.values())
-                .filter(item => !item.isReturnAccount)
-                .sort((a, b) => a.totalScore - b.totalScore);
-
-            let previousScore = null;
-            let previousRank = 0;
-
-            rankedItems.forEach((item, index) => {
-                const rank =
-                    previousScore !== null && item.totalScore === previousScore
-                        ? previousRank
-                        : index + 1;
-
-                item.lowRank = rank;
-
-                previousScore = item.totalScore;
-                previousRank = rank;
-            });
-
-            monthlyTotalMap = summaryMap;
-        }
-
-        function applyMonthlyPersonalTotals(rows) {
-            return rows.map(row => {
-                if (row.__type !== "person") {
-                    row[MONTH_TOTAL_COLUMN] = "";
-                    row.__monthTotal = null;
-                    row.__monthTotalLowRank = null;
-                    row.__monthTotalTitle = "";
-                    return row;
-                }
-
-                const key = getMonthlyTotalPersonKey(row);
-                const summary = monthlyTotalMap.get(key);
-
-                if (!summary) {
-                    row[MONTH_TOTAL_COLUMN] = "—";
-                    row.__monthTotal = null;
-                    row.__monthTotalLowRank = null;
-                    row.__monthTotalTitle = `${historyScopeLabel}沒有本月總分資料`;
-                    return row;
-                }
-
-                row.__monthTotal = summary.totalScore;
-                row.__monthTotalLowRank = summary.lowRank || null;
-                row[MONTH_TOTAL_COLUMN] = formatNumber(summary.totalScore);
-
-                if (summary.isReturnAccount || isReturnAccount(row)) {
-                    row.__monthTotalTitle =
-                        `${historyScopeLabel}總分：${formatNumber(summary.totalScore)}｜` +
-                        `回歸號不納入本月最低排序｜` +
-                        `出現 ${summary.weeksSeen}/${summary.totalWeeks} 週`;
-                } else {
-                    row.__monthTotalTitle =
-                        `${historyScopeLabel}總分：${formatNumber(summary.totalScore)}｜` +
-                        `低分排序第 ${summary.lowRank} 名｜` +
-                        `出現 ${summary.weeksSeen}/${summary.totalWeeks} 週`;
-                }
-
-                return row;
-            });
+            state.historySummaryMap = summaryMap;
         }
 
         function isAlwaysHistoricalBottomFive(summary) {
             if (!summary) return false;
             if (summary.weeksSeen < HISTORY_MIN_WEEKS) return false;
 
-            const totalWeeks = summary.totalWeeks || historyScopeWeekCount || 0;
-
+            const totalWeeks = summary.totalWeeks || state.historyScopeWeekCount || 0;
             const appearedModePass = summary.bottomWeeks === summary.weeksSeen;
 
             const allWeeksModePass =
@@ -2666,32 +2947,35 @@
 
         function applyHistoryBottomFive(rows) {
             return rows.map(row => {
-                if (row.__type !== "person") {
+                if (!isPersonRow(row)) {
                     row[HISTORY_COLUMN] = "";
                     row.__historyLevel = "";
                     row.__historyTitle = "";
                     row.__historyAlways = false;
+
                     return row;
                 }
 
                 if (isExcludedFromCalculation(row)) {
-                    const status = cleanText(row["狀態"]);
+                    const status = getRowStatus(row);
 
                     row[HISTORY_COLUMN] = "不計算";
-                    row.__historyLevel = "none";
-                    row.__historyTitle = `${status || "此帳號"}不納入${historyScopeLabel}後五名統計`;
+                    row.__historyLevel = HISTORY_LEVEL.NONE;
+                    row.__historyTitle = `${status || "此帳號"}不納入${state.historyScopeLabel}後五名統計`;
                     row.__historyAlways = false;
+
                     return row;
                 }
 
                 const key = getPersonKey(row);
-                const summary = historySummaryMap.get(key);
+                const summary = state.historySummaryMap.get(key);
 
                 if (!summary) {
                     row[HISTORY_COLUMN] = "—";
-                    row.__historyLevel = "none";
-                    row.__historyTitle = `${historyScopeLabel}沒有資料`;
+                    row.__historyLevel = HISTORY_LEVEL.NONE;
+                    row.__historyTitle = `${state.historyScopeLabel}沒有資料`;
                     row.__historyAlways = false;
+
                     return row;
                 }
 
@@ -2699,18 +2983,130 @@
 
                 row.__historyAlways = alwaysBottomFive;
                 row.__historyTitle = summary.bottomWeekLabels.length
-                    ? `${historyScopeLabel}曾在後五名週別：${summary.bottomWeekLabels.join("、")}`
-                    : `${historyScopeLabel}沒有進入最後五名`;
+                    ? `${state.historyScopeLabel}曾在後五名週別：${summary.bottomWeekLabels.join("、")}`
+                    : `${state.historyScopeLabel}沒有進入最後五名`;
 
                 if (alwaysBottomFive) {
                     row[HISTORY_COLUMN] = `都後五 ${summary.bottomWeeks}/${summary.weeksSeen}`;
-                    row.__historyLevel = "risk";
+                    row.__historyLevel = HISTORY_LEVEL.RISK;
                 } else if (summary.bottomWeeks > 0) {
                     row[HISTORY_COLUMN] = `曾後五 ${summary.bottomWeeks}/${summary.weeksSeen}`;
-                    row.__historyLevel = "watch";
+                    row.__historyLevel = HISTORY_LEVEL.WATCH;
                 } else {
                     row[HISTORY_COLUMN] = "—";
-                    row.__historyLevel = "none";
+                    row.__historyLevel = HISTORY_LEVEL.NONE;
+                }
+
+                return row;
+            });
+        }
+
+        function getMonthlyTotalPersonKey(row) {
+            return getCmKey(row);
+        }
+
+        async function loadMonthlyPersonalTotals(targetWeek) {
+            const summaryMap = new Map();
+            const monthWeeks = getWeeksInSameMonth(targetWeek);
+
+            for (const week of monthWeeks) {
+                try {
+                    const rows = await getWeekRows(week);
+
+                    rows.filter(isPersonRow).forEach(row => {
+                        const key = getMonthlyTotalPersonKey(row);
+
+                        if (!key) return;
+
+                        if (!summaryMap.has(key)) {
+                            summaryMap.set(key, {
+                                key,
+                                cm: row["CM"] || "",
+                                totalScore: 0,
+                                weeksSeen: 0,
+                                totalWeeks: monthWeeks.length,
+                                weekLabels: [],
+                                isReturnAccount: isReturnAccount(row)
+                            });
+                        }
+
+                        const item = summaryMap.get(key);
+
+                        item.totalScore += parseNumber(row["一週總分"]);
+                        item.weeksSeen += 1;
+                        item.weekLabels.push(week.label || week.id);
+
+                        if (isReturnAccount(row)) {
+                            item.isReturnAccount = true;
+                        }
+                    });
+                } catch (error) {
+                    console.warn(`本月個人總分讀取失敗：${week.file}`, error);
+                }
+            }
+
+            applyMonthlyTotalRank(summaryMap);
+            state.monthlyTotalMap = summaryMap;
+        }
+
+        function applyMonthlyTotalRank(summaryMap) {
+            const rankedItems = Array.from(summaryMap.values())
+                .filter(item => !item.isReturnAccount)
+                .sort((a, b) => b.totalScore - a.totalScore);
+
+            let previousScore = null;
+            let previousRank = 0;
+
+            rankedItems.forEach((item, index) => {
+                const rank =
+                    previousScore !== null && item.totalScore === previousScore
+                        ? previousRank
+                        : index + 1;
+
+                item.totalRank = rank;
+
+                previousScore = item.totalScore;
+                previousRank = rank;
+            });
+        }
+
+        function applyMonthlyPersonalTotals(rows) {
+            return rows.map(row => {
+                if (!isPersonRow(row)) {
+                    row[MONTH_TOTAL_COLUMN] = "";
+                    row.__monthTotal = null;
+                    row.__monthTotalRank = null;
+                    row.__monthTotalTitle = "";
+
+                    return row;
+                }
+
+                const key = getMonthlyTotalPersonKey(row);
+                const summary = state.monthlyTotalMap.get(key);
+
+                if (!summary) {
+                    row[MONTH_TOTAL_COLUMN] = "—";
+                    row.__monthTotal = null;
+                    row.__monthTotalRank = null;
+                    row.__monthTotalTitle = `${state.historyScopeLabel}沒有本月總分資料`;
+
+                    return row;
+                }
+
+                row.__monthTotal = summary.totalScore;
+                row.__monthTotalRank = summary.totalRank || null;
+                row[MONTH_TOTAL_COLUMN] = formatNumber(summary.totalScore);
+
+                if (summary.isReturnAccount || isReturnAccount(row)) {
+                    row.__monthTotalTitle =
+                        `${state.historyScopeLabel}總分：${formatNumber(summary.totalScore)}｜` +
+                        `回歸號不納入本月總分排序｜` +
+                        `出現 ${summary.weeksSeen}/${summary.totalWeeks} 週`;
+                } else {
+                    row.__monthTotalTitle =
+                        `${state.historyScopeLabel}總分：${formatNumber(summary.totalScore)}｜` +
+                        `本月總分第 ${summary.totalRank} 名｜` +
+                        `出現 ${summary.weeksSeen}/${summary.totalWeeks} 週`;
                 }
 
                 return row;
@@ -2723,10 +3119,10 @@
             let inReturnSection = false;
 
             return rows.map(row => {
-                if (row.__type === "section") {
+                if (isSectionRow(row)) {
                     const cm = cleanText(row["CM"]);
 
-                    if (cm === "【回歸帳號】") {
+                    if (cm === SPECIAL_CM.RETURN_SECTION) {
                         inReturnSection = true;
                         returnNumber = 0;
                     } else {
@@ -2740,7 +3136,7 @@
                     return row;
                 }
 
-                if (row.__type !== "person") {
+                if (!isPersonRow(row)) {
                     row.__rank = null;
                     row.__rankTitle = "";
                     row[RANK_COLUMN] = "";
@@ -2748,12 +3144,11 @@
                     return row;
                 }
 
-                const number = inReturnSection || isReturnAccount(row)
-                    ? ++returnNumber
-                    : ++normalNumber;
+                const isReturn = inReturnSection || isReturnAccount(row);
+                const number = isReturn ? ++returnNumber : ++normalNumber;
 
                 row.__rank = number;
-                row.__rankTitle = inReturnSection || isReturnAccount(row)
+                row.__rankTitle = isReturn
                     ? `回歸帳號編號 ${number}`
                     : `編號 ${number}`;
 
@@ -2763,128 +3158,170 @@
             });
         }
 
-        function renderHead() {
-            els.tableHead.innerHTML = `
-                <tr>
-                    ${DISPLAY_HEADERS.map(header => {
-                const columnClass = getColumnClass(header);
-
-                return `
-                            <th class="${escapeHTML(columnClass)}">
-                                ${escapeHTML(header)}
-                            </th>
-                        `;
-            }).join("")}
-                </tr>
-            `;
+        function prepareCurrentRows(rows, previousRows) {
+            return applyRowNumbers(
+                applyMonthlyPersonalTotals(
+                    applyHistoryBottomFive(
+                        applyWeekComparison(rows, previousRows)
+                    )
+                )
+            );
         }
 
-        function renderLoading(message = "資料同步中...") {
-            els.tableBody.innerHTML = `
-                                            <tr class="loading-row">
-                                                <td colspan="${DISPLAY_HEADERS.length}">
-                                                    <span class="cyber-loader">
-                                                        <span></span><span></span><span></span>
-                                                        <strong>${escapeHTML(message)}</strong>
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        `;
-        }
+        /* ================================
+           Filters
+        ================================ */
 
-        function renderWeekSelect() {
-            els.weekSelect.innerHTML = weeks
-                .map(week => `<option value="${escapeHTML(week.id)}">${escapeHTML(week.label)}</option>`)
-                .join("");
+        function isEverBottomFive(row) {
+            return (
+                isCalculablePerson(row) &&
+                (
+                    row.__historyLevel === HISTORY_LEVEL.WATCH ||
+                    row.__historyLevel === HISTORY_LEVEL.RISK
+                )
+            );
         }
 
         function getFilteredRows() {
             const keyword = els.searchInput.value.trim().toLowerCase();
             const status = els.statusFilter.value;
 
-            if (status === SPECIAL_STATUS_FILTERS.MONTH_LOW_SCORE_SORT) {
-                const peopleRows = currentRows
-                    .filter(row => row.__type === "person" && !isReturnAccount(row))
-                    .filter(row => !keyword || normalizeCmName(row["CM"]).includes(keyword))
-                    .slice()
-                    .sort((a, b) => {
-                        const aScore = Number.isFinite(a.__monthTotal)
-                            ? a.__monthTotal
-                            : Number.MAX_SAFE_INTEGER;
-
-                        const bScore = Number.isFinite(b.__monthTotal)
-                            ? b.__monthTotal
-                            : Number.MAX_SAFE_INTEGER;
-
-                        if (aScore !== bScore) {
-                            return aScore - bScore;
-                        }
-
-                        return normalizeCmName(a["CM"]).localeCompare(normalizeCmName(b["CM"]));
-                    })
-                    .map((row, index) => ({
-                        ...row,
-                        __displayRank: index + 1,
-                        __displayRankTitle: `本月總分最低排序第 ${index + 1} 名`
-                    }));
-
-                const totalRows = currentRows.filter(row => row.__type === "total");
-
-                return [
-                    ...peopleRows,
-                    ...totalRows
-                ];
+            if (status === SPECIAL_STATUS_FILTERS.MONTH_TOTAL_SCORE_SORT) {
+                return getMonthlyTotalScoreRows(keyword);
             }
 
-            return currentRows.filter(row => {
-                if (row.__type !== "person") return true;
+            return state.currentRows.filter(row => {
+                if (!isPersonRow(row)) return true;
 
                 const matchKeyword =
                     !keyword ||
                     normalizeCmName(row["CM"]).includes(keyword);
 
-                let matchStatus = false;
-
-                if (status === "全部") {
-                    matchStatus = true;
-                } else if (status === SPECIAL_STATUS_FILTERS.EVER_BOTTOM_FIVE) {
-                    matchStatus = isEverBottomFive(row);
-                } else {
-                    matchStatus = row["狀態"] === status;
-                }
+                const matchStatus = getStatusMatch(row, status);
 
                 return matchKeyword && matchStatus;
             });
+        }
+
+        function getMonthlyTotalScoreRows(keyword) {
+            const peopleRows = state.currentRows
+                .filter(row => isPersonRow(row) && !isReturnAccount(row))
+                .filter(row => !keyword || normalizeCmName(row["CM"]).includes(keyword))
+                .slice()
+                .sort(compareMonthlyTotalScoreDesc)
+                .map((row, index) => ({
+                    ...row,
+                    __displayRank: index + 1,
+                    __displayRankTitle: `本月總分排序第 ${index + 1} 名`
+                }));
+
+            const totalRows = state.currentRows.filter(isTotalRow);
+
+            return [
+                ...peopleRows,
+                ...totalRows
+            ];
+        }
+
+        function compareMonthlyTotalScoreDesc(a, b) {
+            const aScore = Number.isFinite(a.__monthTotal)
+                ? a.__monthTotal
+                : Number.NEGATIVE_INFINITY;
+
+            const bScore = Number.isFinite(b.__monthTotal)
+                ? b.__monthTotal
+                : Number.NEGATIVE_INFINITY;
+
+            if (aScore !== bScore) {
+                return bScore - aScore;
+            }
+
+            return normalizeCmName(a["CM"]).localeCompare(normalizeCmName(b["CM"]));
+        }
+
+        function getStatusMatch(row, status) {
+            if (status === STATUS.ALL) return true;
+
+            if (status === SPECIAL_STATUS_FILTERS.EVER_BOTTOM_FIVE) {
+                return isEverBottomFive(row);
+            }
+
+            return getRowStatus(row) === status;
+        }
+
+        /* ================================
+           Render: Common
+        ================================ */
+
+        function renderHead() {
+            els.tableHead.innerHTML = `
+            <tr>
+                ${DISPLAY_HEADERS.map(header => {
+                const columnClass = getColumnClass(header);
+
+                return `
+                        <th class="${escapeHTML(columnClass)}">
+                            ${escapeHTML(header)}
+                        </th>
+                    `;
+            }).join("")}
+            </tr>
+        `;
+        }
+
+        function renderLoading(message = "資料同步中...") {
+            els.tableBody.innerHTML = `
+            <tr class="loading-row">
+                <td colspan="${DISPLAY_HEADERS.length}">
+                    <span class="cyber-loader">
+                        <span></span><span></span><span></span>
+                        <strong>${escapeHTML(message)}</strong>
+                    </span>
+                </td>
+            </tr>
+        `;
+        }
+
+        function renderWeekSelect() {
+            els.weekSelect.innerHTML = state.weeks
+                .map(week => `<option value="${escapeHTML(week.id)}">${escapeHTML(week.label)}</option>`)
+                .join("");
         }
 
         function renderStatusFilter(rows) {
             const statuses = Array.from(
                 new Set(
                     rows
-                        .filter(row => row.__type === "person")
-                        .map(row => cleanText(row["狀態"]))
+                        .filter(isPersonRow)
+                        .map(getRowStatus)
                         .filter(Boolean)
                 )
             );
 
-            const current = els.statusFilter.value || "全部";
+            const current = els.statusFilter.value || STATUS.ALL;
 
             els.statusFilter.innerHTML = `
-                                            <option value="全部">全部狀態</option>
-                                            <option value="${SPECIAL_STATUS_FILTERS.EVER_BOTTOM_FIVE}">曾經最後五</option>
-                                            <option value="${SPECIAL_STATUS_FILTERS.MONTH_LOW_SCORE_SORT}">本月總分最低排序</option>
-                                            ${statuses.map(status => `<option value="${escapeHTML(status)}">${escapeHTML(status)}</option>`).join("")}
-                                        `;
+            <option value="${STATUS.ALL}">全部狀態</option>
+            <option value="${SPECIAL_STATUS_FILTERS.EVER_BOTTOM_FIVE}">曾經最後五</option>
+            <option value="${SPECIAL_STATUS_FILTERS.MONTH_TOTAL_SCORE_SORT}">本月總分排序</option>
+            ${statuses.map(status => `<option value="${escapeHTML(status)}">${escapeHTML(status)}</option>`).join("")}
+        `;
 
             const validValues = [
-                "全部",
+                STATUS.ALL,
                 SPECIAL_STATUS_FILTERS.EVER_BOTTOM_FIVE,
-                SPECIAL_STATUS_FILTERS.MONTH_LOW_SCORE_SORT,
+                SPECIAL_STATUS_FILTERS.MONTH_TOTAL_SCORE_SORT,
                 ...statuses
             ];
 
-            els.statusFilter.value = validValues.includes(current) ? current : "全部";
+            els.statusFilter.value = validValues.includes(current)
+                ? current
+                : STATUS.ALL;
         }
+
+        /* ================================
+           Render: Stats
+        ================================ */
 
         function animateNumber(element, target) {
             const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -2894,10 +3331,11 @@
             if (prefersReducedMotion) {
                 element.textContent = formatter(target);
                 element.title = formatNumber(target);
+
                 return;
             }
 
-            const duration = 850;
+            const duration = 650;
             const startTime = performance.now();
 
             function update(now) {
@@ -2926,253 +3364,318 @@
         function renderStats(rows) {
             const people = getCalculablePeople(rows);
 
-            const totalScore = getWeeklyTotalScore(rows);
-            const elderCount = people.filter(row => row["狀態"] === "長老").length;
-            const passCount = people.filter(row => row["狀態"] === "PASS").length;
-            const downgradeCount = people.filter(row => row["狀態"] === "降級").length;
-            const outCount = people.filter(row => row["狀態"] === "淘汰").length;
-
             const statItems = [
                 {
                     label: "一週總分加總",
-                    value: totalScore,
+                    value: getWeeklyTotalScore(rows),
                     icon: "⚡",
                     format: "compact",
                     className: ""
                 },
                 {
-                    label: "長老",
-                    value: elderCount,
+                    label: STATUS.ELDER,
+                    value: countByStatus(people, STATUS.ELDER),
                     icon: "♕",
                     format: "normal",
                     className: "stat-elder"
                 },
                 {
-                    label: "PASS",
-                    value: passCount,
+                    label: STATUS.PASS,
+                    value: countByStatus(people, STATUS.PASS),
                     icon: "✅",
                     format: "normal",
                     className: ""
                 },
                 {
-                    label: "降級",
-                    value: downgradeCount,
+                    label: STATUS.DOWNGRADE,
+                    value: countByStatus(people, STATUS.DOWNGRADE),
                     icon: "⚠️",
                     format: "normal",
                     className: ""
                 },
                 {
-                    label: "淘汰",
-                    value: outCount,
+                    label: STATUS.OUT,
+                    value: countByStatus(people, STATUS.OUT),
                     icon: "⛔",
                     format: "normal",
                     className: ""
                 }
             ];
 
-            els.stats.innerHTML = statItems
-                .map(item => `
-                                                <article class="stat-card ${escapeHTML(item.className || "")}">
-                                                    <div class="stat-top">
-                                                        <div>
-                                                            <div class="stat-label">${escapeHTML(item.label)}</div>
-                                                            <div class="stat-value" data-stat-value="${Number(item.value)}" data-format="${escapeHTML(item.format || "normal")}" title="${escapeHTML(formatNumber(item.value))}">0</div>
-                                                        </div>
-                                                        <div class="stat-icon" aria-hidden="true">${escapeHTML(item.icon)}</div>
-                                                    </div>
-                                                </article>
-                                            `)
-                .join("");
+            els.stats.innerHTML = statItems.map(renderStatCard).join("");
 
             animateStatCards();
         }
+
+        function renderStatCard(item) {
+            return `
+            <article class="stat-card ${escapeHTML(item.className || "")}">
+                <div class="stat-top">
+                    <div>
+                        <div class="stat-label">${escapeHTML(item.label)}</div>
+                        <div 
+                            class="stat-value" 
+                            data-stat-value="${Number(item.value)}" 
+                            data-format="${escapeHTML(item.format || "normal")}" 
+                            title="${escapeHTML(formatNumber(item.value))}"
+                        >0</div>
+                    </div>
+                    <div class="stat-icon" aria-hidden="true">${escapeHTML(item.icon)}</div>
+                </div>
+            </article>
+        `;
+        }
+
+        /* ================================
+           Render: Table Body
+        ================================ */
 
         function renderBody() {
             const filteredRows = getFilteredRows();
 
             if (!filteredRows.length) {
-                els.tableBody.innerHTML = `
+                renderEmptyBody();
+                els.resultHint.textContent = "目前顯示 0 筆成員資料";
+                state.hasRenderedTableOnce = true;
+
+                return;
+            }
+
+            els.tableBody.innerHTML = filteredRows
+                .map(renderTableRow)
+                .join("");
+
+            updateResultHint(filteredRows);
+
+            state.hasRenderedTableOnce = true;
+        }
+
+        function renderEmptyBody() {
+            els.tableBody.innerHTML = `
             <tr>
                 <td class="empty-state" colspan="${DISPLAY_HEADERS.length}">
                     找不到符合條件的資料。
                 </td>
             </tr>
         `;
+        }
 
-                els.resultHint.textContent = "目前顯示 0 筆成員資料";
-                return;
+        function renderTableRow(row, index) {
+            if (isSectionRow(row)) {
+                return renderSectionRow(row, index);
             }
 
-            els.tableBody.innerHTML = filteredRows.map((row, index) => {
-                if (row.__type === "section") {
-                    return `
-                <tr class="section-row" style="animation-delay: ${Math.min(index * 0.015, 0.3)}s">
-                    <td colspan="${DISPLAY_HEADERS.length}">📌 ${escapeHTML(cleanText(row["CM"]))}</td>
-                </tr>
-            `;
-                }
+            const rowClass = createClassName(
+                isTotalRow(row) ? "row-total" : "",
+                getRowRewardClass(row),
+                state.hasRenderedTableOnce ? "row-no-animation" : ""
+            );
 
-                const rowClass = [
-                    row.__type === "total" ? "row-total" : "",
-                    getRowRewardClass(row)
-                ].filter(Boolean).join(" ");
+            const animationStyle = state.hasRenderedTableOnce
+                ? ""
+                : `style="animation-delay: ${getRowAnimationDelay(index)}s"`;
 
-                const cells = DISPLAY_HEADERS.map(header => {
-                    const value = row[header] || "";
-                    const columnClass = getColumnClass(header);
-                    const columnClassHTML = escapeHTML(columnClass);
+            const cells = DISPLAY_HEADERS
+                .map(header => renderTableCell(row, header))
+                .join("");
 
-                    if (header === "CM") {
-                        const cmKey = getCmKey(row);
-                        const displayName = getDisplayName(value);
-                        const titleName = escapeHTML(cleanText(value) || "此成員");
-
-                        if (row.__type === "person" && cmKey) {
-                            return `
-                        <td class="name ${columnClassHTML}" data-label="${escapeHTML(header)}">
-                            <button 
-                                class="${getPersonLinkClass(row)}" 
-                                type="button" 
-                                data-profile-keys="${escapeHTML(cmKey)}" 
-                                title="查看 ${titleName} 的個人資料"
-                            >
-                                ${displayName}
-                            </button>
-                        </td>
-                    `;
-                        }
-
-                        return `
-                    <td class="name ${columnClassHTML}" data-label="${escapeHTML(header)}">
-                        ${displayName}
-                    </td>
-                `;
-                    }
-
-                    if (header === RANK_COLUMN) {
-                        const isMonthLowScoreSort =
-                            els.statusFilter.value === SPECIAL_STATUS_FILTERS.MONTH_LOW_SCORE_SORT;
-
-                        const numberValue = isMonthLowScoreSort
-                            ? row.__displayRank
-                            : row[RANK_COLUMN];
-
-                        const rankTitle = isMonthLowScoreSort
-                            ? row.__displayRankTitle
-                            : row.__rankTitle;
-
-                        return `
-                    <td class="rank-cell ${columnClassHTML}" data-label="${escapeHTML(header)}">
-                        ${numberValue
-                                ? `<span class="${getRankBadgeClass(row)}" title="${escapeHTML(rankTitle || "")}">${escapeHTML(numberValue)}</span>`
-                                : ""
-                            }
-                    </td>
-                `;
-                    }
-
-                    if (header === MONTH_TOTAL_COLUMN) {
-                        const monthTotalValue = row[MONTH_TOTAL_COLUMN] || "";
-
-                        return `
-                    <td class="score ${columnClassHTML}" data-label="${escapeHTML(header)}">
-                        <span title="${escapeHTML(row.__monthTotalTitle || "")}">
-                            ${escapeHTML(monthTotalValue || "-")}
-                        </span>
-                    </td>
-                `;
-                    }
-
-                    if (header === "較上週") {
-                        const trendClass = row.__trend ? `trend-${row.__trend}` : "trend-same";
-
-                        const prevScoreText =
-                            row.__prevScore !== null && row.__prevScore !== undefined
-                                ? `上週：${formatNumber(row.__prevScore)}`
-                                : "上週無資料";
-
-                        return `
-                    <td class="score ${columnClassHTML}" data-label="${escapeHTML(header)}">
-                        <span class="trend-badge ${trendClass}" title="${escapeHTML(prevScoreText)}">
-                            ${escapeHTML(value || "-")}
-                        </span>
-                    </td>
-                `;
-                    }
-
-                    if (header === HISTORY_COLUMN) {
-                        const historyClass = row.__historyLevel
-                            ? `history-${row.__historyLevel}`
-                            : "history-none";
-
-                        return `
-                    <td class="score ${columnClassHTML}" data-label="${escapeHTML(header)}">
-                        <span class="history-badge ${historyClass}" title="${escapeHTML(row.__historyTitle || "")}">
-                            ${escapeHTML(value || "-")}
-                        </span>
-                    </td>
-                `;
-                    }
-
-                    if (header === "狀態") {
-                        const status = cleanText(value);
-                        const statusHTML = status
-                            ? `<span class="badge ${getBadgeClass(status)}" title="${escapeHTML(getStatusTitle(status))}">${escapeHTML(status)}</span>`
-                            : "-";
-
-                        return `
-                    <td class="${columnClassHTML}" data-label="${escapeHTML(header)}">
-                        ${statusHTML}
-                    </td>
-                `;
-                    }
-
-                    return `
-                <td class="score ${columnClassHTML}" data-label="${escapeHTML(header)}">
-                    ${escapeHTML(value || "-")}
-                </td>
-            `;
-                }).join("");
-
-                return `
-            <tr class="${rowClass}" style="animation-delay: ${Math.min(index * 0.015, 0.3)}s">
+            return `
+            <tr class="${rowClass}" ${animationStyle}>
                 ${cells}
             </tr>
         `;
-            }).join("");
+        }
 
-            const shownPeople = filteredRows.filter(isCalculablePerson).length;
-            const allPeople = getCalculablePeople(currentRows).length;
+        function renderSectionRow(row, index) {
+            const rowClass = createClassName(
+                "section-row",
+                state.hasRenderedTableOnce ? "row-no-animation" : ""
+            );
 
-            const shownExcludedCount = filteredRows.filter(row => {
-                return row.__type === "person" && isExcludedFromCalculation(row);
-            }).length;
+            const animationStyle = state.hasRenderedTableOnce
+                ? ""
+                : `style="animation-delay: ${getRowAnimationDelay(index)}s"`;
 
-            const allExcludedCount = getExcludedPeople(currentRows).length;
+            return `
+            <tr class="${rowClass}" ${animationStyle}>
+                <td colspan="${DISPLAY_HEADERS.length}">
+                    📌 ${escapeHTML(cleanText(row["CM"]))}
+                </td>
+            </tr>
+        `;
+        }
 
-            const historyRiskCount = currentRows.filter(row => {
-                return isCalculablePerson(row) && row.__historyAlways;
-            }).length;
+        function renderTableCell(row, header) {
+            if (header === "CM") return renderNameCell(row, header);
+            if (header === RANK_COLUMN) return renderRankCell(row, header);
+            if (header === MONTH_TOTAL_COLUMN) return renderMonthTotalCell(row, header);
+            if (header === "較上週") return renderTrendCell(row, header);
+            if (header === HISTORY_COLUMN) return renderHistoryCell(row, header);
+            if (header === "狀態") return renderStatusCell(row, header);
 
-            const historyEverCount = currentRows.filter(isEverBottomFive).length;
+            return renderScoreCell(row, header);
+        }
 
-            if (els.statusFilter.value === SPECIAL_STATUS_FILTERS.MONTH_LOW_SCORE_SORT) {
-                const sortedPeople = filteredRows.filter(row => {
-                    return row.__type === "person" && !isReturnAccount(row);
-                });
+        function renderNameCell(row, header) {
+            const cmKey = getCmKey(row);
+            const displayName = getDisplayName(row[header]);
+            const titleName = escapeHTML(cleanText(row[header]) || "此成員");
 
-                const lowestPerson = sortedPeople[0] || null;
+            if (isPersonRow(row) && cmKey) {
+                return `
+                <td class="${getCellClass(header, "name")}" ${getCellLabelAttr(header)}>
+                    <button 
+                        class="${getPersonLinkClass(row)}" 
+                        type="button" 
+                        data-profile-keys="${escapeHTML(cmKey)}" 
+                        title="查看 ${titleName} 的個人資料"
+                    >
+                        ${displayName}
+                    </button>
+                </td>
+            `;
+            }
 
-                els.resultHint.textContent = lowestPerson
-                    ? `${historyScopeLabel}本月總分最低：${lowestPerson["CM"] || "-"}｜${formatNumber(lowestPerson.__monthTotal || 0)} 分｜已排除回歸號｜目前依本月總分由低到高排序`
-                    : `目前沒有可排序的本月總分資料`;
+            return `
+            <td class="${getCellClass(header, "name")}" ${getCellLabelAttr(header)}>
+                ${displayName}
+            </td>
+        `;
+        }
+
+        function renderRankCell(row, header) {
+            const isMonthTotalScoreSort =
+                els.statusFilter.value === SPECIAL_STATUS_FILTERS.MONTH_TOTAL_SCORE_SORT;
+
+            const numberValue = isMonthTotalScoreSort
+                ? row.__displayRank
+                : row[RANK_COLUMN];
+
+            const rankTitle = isMonthTotalScoreSort
+                ? row.__displayRankTitle
+                : row.__rankTitle;
+
+            return `
+            <td class="${getCellClass(header, "rank-cell")}" ${getCellLabelAttr(header)}>
+                ${numberValue
+                    ? `<span class="${getRankBadgeClass(row)}" title="${escapeHTML(rankTitle || "")}">${escapeHTML(numberValue)}</span>`
+                    : ""
+                }
+            </td>
+        `;
+        }
+
+        function renderMonthTotalCell(row, header) {
+            const monthTotalValue = row[MONTH_TOTAL_COLUMN] || "";
+
+            return `
+            <td class="${getCellClass(header, "score")}" ${getCellLabelAttr(header)}>
+                <span title="${escapeHTML(row.__monthTotalTitle || "")}">
+                    ${escapeHTML(monthTotalValue || "-")}
+                </span>
+            </td>
+        `;
+        }
+
+        function renderTrendCell(row, header) {
+            const value = row[header] || "";
+            const trendClass = row.__trend ? `trend-${row.__trend}` : "trend-same";
+
+            const prevScoreText =
+                row.__prevScore !== null && row.__prevScore !== undefined
+                    ? `上週：${formatNumber(row.__prevScore)}`
+                    : "上週無資料";
+
+            return `
+            <td class="${getCellClass(header, "score")}" ${getCellLabelAttr(header)}>
+                <span class="trend-badge ${trendClass}" title="${escapeHTML(prevScoreText)}">
+                    ${escapeHTML(value || "-")}
+                </span>
+            </td>
+        `;
+        }
+
+        function renderHistoryCell(row, header) {
+            const value = row[header] || "";
+            const historyClass = row.__historyLevel
+                ? `history-${row.__historyLevel}`
+                : "history-none";
+
+            return `
+            <td class="${getCellClass(header, "score")}" ${getCellLabelAttr(header)}>
+                <span class="history-badge ${historyClass}" title="${escapeHTML(row.__historyTitle || "")}">
+                    ${escapeHTML(value || "-")}
+                </span>
+            </td>
+        `;
+        }
+
+        function renderStatusCell(row, header) {
+            const status = cleanText(row[header]);
+
+            const statusHTML = status
+                ? `<span class="badge ${getBadgeClass(status)}" title="${escapeHTML(getStatusTitle(status))}">${escapeHTML(status)}</span>`
+                : "-";
+
+            return `
+            <td class="${getCellClass(header)}" ${getCellLabelAttr(header)}>
+                ${statusHTML}
+            </td>
+        `;
+        }
+
+        function renderScoreCell(row, header) {
+            return `
+            <td class="${getCellClass(header, "score")}" ${getCellLabelAttr(header)}>
+                ${escapeHTML(row[header] || "-")}
+            </td>
+        `;
+        }
+
+        function updateResultHint(filteredRows) {
+            if (els.statusFilter.value === SPECIAL_STATUS_FILTERS.MONTH_TOTAL_SCORE_SORT) {
+                updateMonthlyTotalScoreHint(filteredRows);
 
                 return;
             }
 
+            const shownPeople = filteredRows.filter(isCalculablePerson).length;
+            const allPeople = getCalculablePeople(state.currentRows).length;
+
+            const shownExcludedCount = filteredRows.filter(row => {
+                return isPersonRow(row) && isExcludedFromCalculation(row);
+            }).length;
+
+            const allExcludedCount = getExcludedPeople(state.currentRows).length;
+
+            const historyRiskCount = state.currentRows.filter(row => {
+                return isCalculablePerson(row) && row.__historyAlways;
+            }).length;
+
+            const historyEverCount = state.currentRows.filter(isEverBottomFive).length;
+
             els.resultHint.textContent =
-                `目前顯示可計算 ${shownPeople} / ${allPeople} 筆｜不計算排除 ${shownExcludedCount} / ${allExcludedCount} 筆｜${historyScopeLabel}曾後五 ${historyEverCount} 人｜都後五 ${historyRiskCount} 人`;
+                `目前顯示可計算 ${shownPeople} / ${allPeople} 筆｜` +
+                `不計算排除 ${shownExcludedCount} / ${allExcludedCount} 筆｜` +
+                `${state.historyScopeLabel}曾後五 ${historyEverCount} 人｜` +
+                `都後五 ${historyRiskCount} 人`;
         }
+
+        function updateMonthlyTotalScoreHint(filteredRows) {
+            const sortedPeople = filteredRows.filter(row => {
+                return isPersonRow(row) && !isReturnAccount(row);
+            });
+
+            const topPerson = sortedPeople[0] || null;
+
+            els.resultHint.textContent = topPerson
+                ? `${state.historyScopeLabel}本月總分最高：${topPerson["CM"] || "-"}｜${formatNumber(topPerson.__monthTotal || 0)} 分｜已排除回歸號｜目前依本月總分由高到低排序`
+                : "目前沒有可排序的本月總分資料";
+        }
+
+        /* ================================
+           Profile Data
+        ================================ */
 
         function getScoreRecordsFromRows(row, week) {
             const activity1Raw = cleanText(row["活動1總分"] ?? "");
@@ -3231,40 +3734,27 @@
                     .filter(key => String(key).startsWith("cm:"))
             );
 
-            const records = [];
+            const selectedMonthKey = getWeekMonthKey(state.currentWeek);
+            const selectedMonthLabel = formatMonthLabel(selectedMonthKey);
+            const monthWeeks = getWeeksInSameMonth(state.currentWeek).reverse();
 
             if (!keySet.size) {
-                const selectedMonthKey = getWeekMonthKey(currentWeek);
-                const monthWeeks = getWeeksInSameMonth(currentWeek).reverse();
-
                 return {
                     records: [],
-                    monthRecords: monthWeeks.map(week => ({
-                        weekId: week.id,
-                        weekLabel: week.label || week.id,
-                        shortLabel: getWeekShortLabel(week),
-                        startDate: week.startDate || "",
-                        monthKey: getWeekMonthKey(week),
-                        cm: "",
-                        lineName: "",
-                        status: "無資料",
-                        activity1: null,
-                        activity2: null,
-                        activity3: null,
-                        score: null
-                    })),
+                    monthRecords: createEmptyMonthRecords(monthWeeks),
                     selectedMonthKey,
-                    selectedMonthLabel: formatMonthLabel(selectedMonthKey)
+                    selectedMonthLabel
                 };
             }
 
-            const chronologicalWeeks = [...weeks].reverse();
+            const records = [];
+            const chronologicalWeeks = [...state.weeks].reverse();
 
             for (const week of chronologicalWeeks) {
                 const rows = await getWeekRows(week);
 
                 const matchedRow = rows.find(row => {
-                    return row.__type === "person" && hasMatchingProfileKey(row, keySet);
+                    return isPersonRow(row) && hasMatchingProfileKey(row, keySet);
                 });
 
                 if (!matchedRow) continue;
@@ -3272,46 +3762,39 @@
                 records.push(getScoreRecordsFromRows(matchedRow, week));
             }
 
-            const selectedMonthKey = getWeekMonthKey(currentWeek);
-            const monthWeeks = getWeeksInSameMonth(currentWeek).reverse();
-
             const monthRecords = monthWeeks.map(week => {
                 const record = records.find(item => item.weekId === week.id);
 
-                if (record) return record;
-
-                return {
-                    weekId: week.id,
-                    weekLabel: week.label || week.id,
-                    shortLabel: getWeekShortLabel(week),
-                    startDate: week.startDate || "",
-                    monthKey: getWeekMonthKey(week),
-                    cm: "",
-                    lineName: "",
-                    status: "無資料",
-                    activity1: null,
-                    activity2: null,
-                    activity3: null,
-                    score: null
-                };
+                return record || createEmptyMonthRecord(week);
             });
 
             return {
                 records,
                 monthRecords,
                 selectedMonthKey,
-                selectedMonthLabel: formatMonthLabel(selectedMonthKey)
+                selectedMonthLabel
             };
         }
 
-        function calculateAverage(values) {
-            const validValues = values.filter(value => Number.isFinite(value));
+        function createEmptyMonthRecords(monthWeeks) {
+            return monthWeeks.map(createEmptyMonthRecord);
+        }
 
-            if (!validValues.length) return 0;
-
-            return Math.round(
-                validValues.reduce((sum, value) => sum + value, 0) / validValues.length
-            );
+        function createEmptyMonthRecord(week) {
+            return {
+                weekId: week.id,
+                weekLabel: week.label || week.id,
+                shortLabel: getWeekShortLabel(week),
+                startDate: week.startDate || "",
+                monthKey: getWeekMonthKey(week),
+                cm: "",
+                lineName: "",
+                status: STATUS.NO_DATA,
+                activity1: null,
+                activity2: null,
+                activity3: null,
+                score: null
+            };
         }
 
         function getProfileSummary(profile) {
@@ -3320,6 +3803,7 @@
 
             const bestRecord = records.reduce((best, record) => {
                 if (!best) return record;
+
                 return record.score > best.score ? record : best;
             }, null);
 
@@ -3355,16 +3839,43 @@
             };
         }
 
-        function formatDelta(delta) {
-            if (delta === null || delta === undefined) return "無資料";
-            if (delta > 0) return `▲ ${formatNumber(delta)}`;
-            if (delta < 0) return `▼ ${formatNumber(Math.abs(delta))}`;
-            return "— 0";
+        function getRecordActivities(record) {
+            if (Array.isArray(record.activities) && record.activities.length) {
+                return record.activities.filter(activity => activity.show !== false);
+            }
+
+            const activities = [
+                {
+                    label: "活動 1",
+                    value: record.activity1,
+                    show: true
+                },
+                {
+                    label: "活動 2",
+                    value: record.activity2,
+                    show: true
+                }
+            ];
+
+            if (Number.isFinite(record.activity3) && record.activity3 !== 0) {
+                activities.push({
+                    label: "活動 3",
+                    value: record.activity3,
+                    show: true
+                });
+            }
+
+            return activities;
         }
+
+        /* ================================
+           Profile Render
+        ================================ */
 
         function renderProfileChart(monthRecords) {
             const width = 760;
             const height = 280;
+
             const padding = {
                 top: 32,
                 right: 26,
@@ -3381,10 +3892,10 @@
 
             if (!validScores.length) {
                 return `
-                                                <div class="profile-empty">
-                                                    這個月份沒有可繪製的分數資料。
-                                                </div>
-                                            `;
+                <div class="profile-empty">
+                    這個月份沒有可繪製的分數資料。
+                </div>
+            `;
             }
 
             const maxScore = Math.max(...validScores, 1);
@@ -3429,146 +3940,116 @@
                 const value = Math.round(niceMax * (1 - ratio));
 
                 return `
-                                                <line class="chart-grid" x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}"></line>
-                                                <text class="chart-label" x="${padding.left - 12}" y="${y + 4}" text-anchor="end">
-                                                    ${formatCompactNumber(value)}
-                                                </text>
-                                            `;
+                <line class="chart-grid" x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}"></line>
+                <text class="chart-label" x="${padding.left - 12}" y="${y + 4}" text-anchor="end">
+                    ${formatCompactNumber(value)}
+                </text>
+            `;
             }).join("");
 
-            const dots = points.map(point => {
-                const label = escapeHTML(point.shortLabel);
-                const value = point.hasScore ? formatNumber(point.score) : "無資料";
-
-                if (!point.hasScore) {
-                    return `
-                                                    <circle class="chart-dot-empty" cx="${point.x}" cy="${point.y}" r="5">
-                                                        <title>${label}：無資料</title>
-                                                    </circle>
-                                                    <text class="chart-label" x="${point.x}" y="${height - 24}" text-anchor="middle">${label}</text>
-                                                `;
-                }
-
-                return `
-                                                <circle class="chart-dot" cx="${point.x}" cy="${point.y}" r="6">
-                                                    <title>${label}：${value}</title>
-                                                </circle>
-                                                <text class="chart-value" x="${point.x}" y="${point.y - 12}" text-anchor="middle">${formatCompactNumber(point.score)}</text>
-                                                <text class="chart-label" x="${point.x}" y="${height - 24}" text-anchor="middle">${label}</text>
-                                            `;
-            }).join("");
+            const dots = points.map(point => renderChartPoint(point, height)).join("");
 
             return `
-                                            <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="本月分數折線圖">
-                                                <defs>
-                                                    <linearGradient id="scoreAreaGradient" x1="0" x2="0" y1="0" y2="1">
-                                                        <stop offset="0%" stop-color="rgba(37, 99, 235, 0.22)"></stop>
-                                                        <stop offset="100%" stop-color="rgba(14, 165, 233, 0.02)"></stop>
-                                                    </linearGradient>
-                                                </defs>
-                            
-                                                ${gridLines}
-                            
-                                                <line class="chart-axis" x1="${padding.left}" y1="${padding.top + chartHeight}" x2="${width - padding.right}" y2="${padding.top + chartHeight}"></line>
-                                                <line class="chart-axis" x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${padding.top + chartHeight}"></line>
-                            
-                                                ${areaPath ? `<path class="chart-area" d="${areaPath}"></path>` : ""}
-                                                ${linePath ? `<path class="chart-line" d="${linePath}"></path>` : ""}
-                            
-                                                ${dots}
-                                            </svg>
-                                        `;
+            <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="本月分數折線圖">
+                <defs>
+                    <linearGradient id="scoreAreaGradient" x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0%" stop-color="rgba(37, 99, 235, 0.22)"></stop>
+                        <stop offset="100%" stop-color="rgba(14, 165, 233, 0.02)"></stop>
+                    </linearGradient>
+                </defs>
+
+                ${gridLines}
+
+                <line class="chart-axis" x1="${padding.left}" y1="${padding.top + chartHeight}" x2="${width - padding.right}" y2="${padding.top + chartHeight}"></line>
+                <line class="chart-axis" x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${padding.top + chartHeight}"></line>
+
+                ${areaPath ? `<path class="chart-area" d="${areaPath}"></path>` : ""}
+                ${linePath ? `<path class="chart-line" d="${linePath}"></path>` : ""}
+
+                ${dots}
+            </svg>
+        `;
         }
 
-        function getRecordActivities(record) {
-            if (Array.isArray(record.activities) && record.activities.length) {
-                return record.activities.filter(activity => activity.show !== false);
+        function renderChartPoint(point, height) {
+            const label = escapeHTML(point.shortLabel);
+            const value = point.hasScore ? formatNumber(point.score) : "無資料";
+
+            if (!point.hasScore) {
+                return `
+                <circle class="chart-dot-empty" cx="${point.x}" cy="${point.y}" r="5">
+                    <title>${label}：無資料</title>
+                </circle>
+                <text class="chart-label" x="${point.x}" y="${height - 24}" text-anchor="middle">${label}</text>
+            `;
             }
 
-            const activities = [
-                {
-                    label: "活動 1",
-                    value: record.activity1,
-                    show: true
-                },
-                {
-                    label: "活動 2",
-                    value: record.activity2,
-                    show: true
-                }
-            ];
-
-            if (Number.isFinite(record.activity3) && record.activity3 !== 0) {
-                activities.push({
-                    label: "活動 3",
-                    value: record.activity3,
-                    show: true
-                });
-            }
-
-            return activities;
+            return `
+            <circle class="chart-dot" cx="${point.x}" cy="${point.y}" r="6">
+                <title>${label}：${value}</title>
+            </circle>
+            <text class="chart-value" x="${point.x}" y="${point.y - 12}" text-anchor="middle">${formatCompactNumber(point.score)}</text>
+            <text class="chart-label" x="${point.x}" y="${height - 24}" text-anchor="middle">${label}</text>
+        `;
         }
 
         function renderProfileTimeline(records) {
             if (!records.length) {
                 return `
-                                                <div class="profile-empty">
-                                                    查無這位成員的週別紀錄。
-                                                </div>
-                                            `;
+                <div class="profile-empty">
+                    查無這位成員的週別紀錄。
+                </div>
+            `;
             }
 
             return records
                 .slice()
                 .reverse()
-                .map(record => {
-                    const activities = getRecordActivities(record);
-                    const dynamicColumnCount = activities.length + 2;
-
-                    const activityHTML = activities
-                        .map(activity => `
-                                                        <div class="profile-week-score">
-                                                            <span class="profile-week-caption">${escapeHTML(activity.label)}</span>
-                                                            ${formatNumber(activity.value)}
-                                                        </div>
-                                                    `)
-                        .join("");
-
-                    return `
-                                                    <div class="profile-week-row" style="--profile-week-columns: ${dynamicColumnCount}">
-                                                        <div>
-                                                            <div class="profile-week-label">${escapeHTML(record.weekLabel)}</div>
-                                                            <div class="profile-week-small">${escapeHTML(record.startDate || "未提供日期")}</div>
-                                                        </div>
-                            
-                                                        <div class="profile-week-score">
-                                                            <span class="profile-week-caption">一週總分</span>
-                                                            ${formatNumber(record.score)}
-                                                        </div>
-                            
-                                                        ${activityHTML}
-                            
-                                                        <div class="profile-week-score">
-                                                            <span class="profile-week-caption">狀態</span>
-                                                            <span class="badge ${getBadgeClass(record.status)}">${escapeHTML(record.status || "-")}</span>
-                                                        </div>
-                                                    </div>
-                                                `;
-                })
+                .map(renderProfileTimelineRow)
                 .join("");
+        }
+
+        function renderProfileTimelineRow(record) {
+            const activities = getRecordActivities(record);
+            const dynamicColumnCount = activities.length + 2;
+
+            const activityHTML = activities
+                .map(activity => `
+                <div class="profile-week-score">
+                    <span class="profile-week-caption">${escapeHTML(activity.label)}</span>
+                    ${formatNumber(activity.value)}
+                </div>
+            `)
+                .join("");
+
+            return `
+            <div class="profile-week-row" style="--profile-week-columns: ${dynamicColumnCount}">
+                <div>
+                    <div class="profile-week-label">${escapeHTML(record.weekLabel)}</div>
+                    <div class="profile-week-small">${escapeHTML(record.startDate || "未提供日期")}</div>
+                </div>
+
+                <div class="profile-week-score">
+                    <span class="profile-week-caption">一週總分</span>
+                    ${formatNumber(record.score)}
+                </div>
+
+                ${activityHTML}
+
+                <div class="profile-week-score">
+                    <span class="profile-week-caption">狀態</span>
+                    <span class="badge ${getBadgeClass(record.status)}">${escapeHTML(record.status || "-")}</span>
+                </div>
+            </div>
+        `;
         }
 
         function renderMemberProfile(profile) {
             const summary = getProfileSummary(profile);
 
             if (!profile.records.length) {
-                els.profileName.textContent = "查無成員資料";
-                els.profileMeta.textContent = "沒有找到對應的歷史紀錄。";
-                els.profileBody.innerHTML = `
-                                                <div class="profile-empty">
-                                                    找不到這位成員的歷史資料。
-                                                </div>
-                                            `;
+                renderEmptyMemberProfile();
+
                 return;
             }
 
@@ -3576,88 +4057,101 @@
             const bestRecord = summary.bestRecord;
 
             const displayName = latestRecord.cm || latestRecord.lineName || "未命名成員";
-            const isLatestElder = cleanText(latestRecord.status) === "長老";
-            const profileDialog = document.querySelector(".profile-dialog");
+            const isLatestElder = cleanText(latestRecord.status) === STATUS.ELDER;
 
-            if (profileDialog) {
-                profileDialog.classList.toggle("profile-elder", isLatestElder);
+            if (els.profileDialog) {
+                els.profileDialog.classList.toggle("profile-elder", isLatestElder);
             }
-
-            const elderBannerHTML = isLatestElder
-                ? `
-                                                <div class="elder-profile-banner">
-                                                    <div class="elder-profile-icon" aria-hidden="true">♕</div>
-                            
-                                                    <div>
-                                                        <div class="elder-profile-title">長老榮耀已啟用</div>
-                                                        <div class="elder-profile-text">
-                                                            此成員目前為長老身份，已達成本週高階標準。系統已套用專屬獎勵視覺與榮耀標記。
-                                                        </div>
-                                                    </div>
-                            
-                                                    <div class="elder-profile-tag">
-                                                        ELDER REWARD
-                                                    </div>
-                                                </div>
-                                            `
-                : "";
 
             els.profileName.textContent = displayName;
             els.profileMeta.textContent =
                 `共出現 ${summary.totalWeeks} 週｜最新狀態：${latestRecord.status || "未標記"}｜${profile.selectedMonthLabel}走勢分析`;
 
             els.profileBody.innerHTML = `
-                                            ${elderBannerHTML}
-                            
-                                            <div class="profile-grid">
-                                                <article class="profile-stat">
-                                                    <div class="profile-stat-label">歷史最高分</div>
-                                                    <div class="profile-stat-value">${formatNumber(bestRecord.score)}</div>
-                                                    <div class="profile-stat-note">${escapeHTML(bestRecord.weekLabel)}</div>
-                                                </article>
-                            
-                                                <article class="profile-stat">
-                                                    <div class="profile-stat-label">歷史平均分</div>
-                                                    <div class="profile-stat-value">${formatNumber(summary.averageScore)}</div>
-                                                    <div class="profile-stat-note">依出現週數平均</div>
-                                                </article>
-                            
-                                                <article class="profile-stat">
-                                                    <div class="profile-stat-label">${escapeHTML(profile.selectedMonthLabel)}總分</div>
-                                                    <div class="profile-stat-value">${formatNumber(summary.monthTotal)}</div>
-                                                    <div class="profile-stat-note">本月已出現週別加總</div>
-                                                </article>
-                            
-                                                <article class="profile-stat">
-                                                    <div class="profile-stat-label">本月走勢</div>
-                                                    <div class="profile-stat-value">${escapeHTML(formatDelta(summary.monthDelta))}</div>
-                                                    <div class="profile-stat-note">以本月第一筆與最後一筆比較</div>
-                                                </article>
-                                            </div>
-                            
-                                            <section class="profile-section">
-                                                <div class="profile-section-head">
-                                                    <h3 class="profile-section-title">${escapeHTML(profile.selectedMonthLabel)}分數折線圖</h3>
-                                                    <span class="profile-section-subtitle">顯示目前選取月份的每週總分</span>
-                                                </div>
-                            
-                                                <div class="profile-chart">
-                                                    ${renderProfileChart(profile.monthRecords)}
-                                                </div>
-                                            </section>
-                            
-                                            <section class="profile-section">
-                                                <div class="profile-section-head">
-                                                    <h3 class="profile-section-title">歷史週別紀錄</h3>
-                                                    <span class="profile-section-subtitle">最新週別在最上方</span>
-                                                </div>
-                            
-                                                <div class="profile-timeline">
-                                                    ${renderProfileTimeline(profile.records)}
-                                                </div>
-                                            </section>
-                                        `;
+            ${isLatestElder ? renderElderProfileBanner() : ""}
+
+            <div class="profile-grid">
+                <article class="profile-stat">
+                    <div class="profile-stat-label">歷史最高分</div>
+                    <div class="profile-stat-value">${formatNumber(bestRecord.score)}</div>
+                    <div class="profile-stat-note">${escapeHTML(bestRecord.weekLabel)}</div>
+                </article>
+
+                <article class="profile-stat">
+                    <div class="profile-stat-label">歷史平均分</div>
+                    <div class="profile-stat-value">${formatNumber(summary.averageScore)}</div>
+                    <div class="profile-stat-note">依出現週數平均</div>
+                </article>
+
+                <article class="profile-stat">
+                    <div class="profile-stat-label">${escapeHTML(profile.selectedMonthLabel)}總分</div>
+                    <div class="profile-stat-value">${formatNumber(summary.monthTotal)}</div>
+                    <div class="profile-stat-note">本月已出現週別加總</div>
+                </article>
+
+                <article class="profile-stat">
+                    <div class="profile-stat-label">本月走勢</div>
+                    <div class="profile-stat-value">${escapeHTML(formatDelta(summary.monthDelta))}</div>
+                    <div class="profile-stat-note">以本月第一筆與最後一筆比較</div>
+                </article>
+            </div>
+
+            <section class="profile-section">
+                <div class="profile-section-head">
+                    <h3 class="profile-section-title">${escapeHTML(profile.selectedMonthLabel)}分數折線圖</h3>
+                    <span class="profile-section-subtitle">顯示目前選取月份的每週總分</span>
+                </div>
+
+                <div class="profile-chart">
+                    ${renderProfileChart(profile.monthRecords)}
+                </div>
+            </section>
+
+            <section class="profile-section">
+                <div class="profile-section-head">
+                    <h3 class="profile-section-title">歷史週別紀錄</h3>
+                    <span class="profile-section-subtitle">最新週別在最上方</span>
+                </div>
+
+                <div class="profile-timeline">
+                    ${renderProfileTimeline(profile.records)}
+                </div>
+            </section>
+        `;
         }
+
+        function renderEmptyMemberProfile() {
+            els.profileName.textContent = "查無成員資料";
+            els.profileMeta.textContent = "沒有找到對應的歷史紀錄。";
+            els.profileBody.innerHTML = `
+            <div class="profile-empty">
+                找不到這位成員的歷史資料。
+            </div>
+        `;
+        }
+
+        function renderElderProfileBanner() {
+            return `
+            <div class="elder-profile-banner">
+                <div class="elder-profile-icon" aria-hidden="true">♕</div>
+
+                <div>
+                    <div class="elder-profile-title">長老榮耀已啟用</div>
+                    <div class="elder-profile-text">
+                        此成員目前為長老身份，已達成本週高階標準。系統已套用專屬獎勵視覺與榮耀標記。
+                    </div>
+                </div>
+
+                <div class="elder-profile-tag">
+                    ELDER REWARD
+                </div>
+            </div>
+        `;
+        }
+
+        /* ================================
+           Modal
+        ================================ */
 
         function openProfileModal() {
             els.profileModal.hidden = false;
@@ -3668,10 +4162,8 @@
             els.profileModal.hidden = true;
             document.body.classList.remove("profile-open");
 
-            const profileDialog = document.querySelector(".profile-dialog");
-
-            if (profileDialog) {
-                profileDialog.classList.remove("profile-elder");
+            if (els.profileDialog) {
+                els.profileDialog.classList.remove("profile-elder");
             }
         }
 
@@ -3688,13 +4180,14 @@
             els.profileName.textContent = "成員資料";
             els.profileMeta.textContent = "資料分析中...";
             els.profileBody.innerHTML = `
-                                            <div class="profile-loading">
-                                                正在彙整歷史最高分、本月折線圖與週別紀錄...
-                                            </div>
-                                        `;
+            <div class="profile-loading">
+                正在彙整歷史最高分、本月折線圖與週別紀錄...
+            </div>
+        `;
 
             try {
                 const profile = await buildMemberProfile(initialKeys);
+
                 renderMemberProfile(profile);
             } catch (error) {
                 console.error(error);
@@ -3702,54 +4195,39 @@
                 els.profileName.textContent = "資料讀取失敗";
                 els.profileMeta.textContent = "個人資料分析時發生錯誤。";
                 els.profileBody.innerHTML = `
-                                                <div class="profile-empty">
-                                                    個人資料讀取失敗，請確認每週 CSV 檔案是否都能正常讀取。
-                                                </div>
-                                            `;
+                <div class="profile-empty">
+                    個人資料讀取失敗，請確認每週 CSV 檔案是否都能正常讀取。
+                </div>
+            `;
             }
         }
 
-        async function loadWeeks() {
-            const csvText = await fetchText(WEEK_INDEX_URL);
-
-            weeks = csvToObjects(csvText).sort((a, b) => {
-                return String(b.startDate || "").localeCompare(String(a.startDate || ""));
-            });
-
-            renderWeekSelect();
-        }
+        /* ================================
+           App Loading
+        ================================ */
 
         async function loadWeek(weekId) {
-            const week = weeks.find(item => item.id === weekId) || weeks[0];
+            const week = findWeekById(weekId);
 
-            if (!week) {
-                throw new Error("找不到週別資料");
-            }
+            state.currentWeek = week;
+            state.hasRenderedTableOnce = false;
 
-            currentWeek = week;
-
-            els.resultHint.textContent = "資料載入中...";
-            renderLoading();
+            showLoading("資料載入中...");
 
             const rows = cloneRows(await getWeekRows(week));
             const previousRows = await getPreviousRows(week.id);
 
-            els.resultHint.textContent = "分析本月後五名中...";
-            renderLoading("分析本月後五名中...");
+            showLoading("分析本月後五名中...");
             await loadHistoryBottomFive(week);
 
-            els.resultHint.textContent = "計算本月個人總分中...";
-            renderLoading("計算本月個人總分中...");
+            showLoading("計算本月個人總分中...");
             await loadMonthlyPersonalTotals(week);
 
-            currentRows = applyWeekComparison(rows, previousRows);
-            currentRows = applyHistoryBottomFive(currentRows);
-            currentRows = applyMonthlyPersonalTotals(currentRows);
-            currentRows = applyRowNumbers(currentRows);
+            state.currentRows = prepareCurrentRows(rows, previousRows);
 
             renderHead();
-            renderStatusFilter(currentRows);
-            renderStats(currentRows);
+            renderStatusFilter(state.currentRows);
+            renderStats(state.currentRows);
             renderBody();
         }
 
@@ -3761,25 +4239,49 @@
             els.tableHead.innerHTML = "";
 
             els.tableBody.innerHTML = `
-                                            <tr>
-                                                <td class="empty-state" colspan="${DISPLAY_HEADERS.length}">
-                                                    資料讀取失敗，請確認 <strong>data/weeks.csv</strong> 與每週 CSV 檔案路徑是否正確。
-                                                </td>
-                                            </tr>
-                                        `;
+            <tr>
+                <td class="empty-state" colspan="${DISPLAY_HEADERS.length}">
+                    資料讀取失敗，請確認 <strong>data/weeks.csv</strong> 與每週 CSV 檔案路徑是否正確。
+                </td>
+            </tr>
+        `;
         }
+
+        async function initApp() {
+            try {
+                renderHead();
+                renderLoading("讀取週別資料中...");
+
+                await loadWeeks();
+
+                if (!state.weeks.length) {
+                    throw new Error("weeks.csv 沒有週別資料");
+                }
+
+                await loadWeek(state.weeks[0].id);
+            } catch (error) {
+                renderError(error);
+            }
+        }
+
+        /* ================================
+           Events
+        ================================ */
+
+        const debouncedRenderBody = debounce(renderBody, 180);
 
         els.weekSelect.addEventListener("change", async event => {
             try {
                 els.searchInput.value = "";
-                els.statusFilter.value = "全部";
+                els.statusFilter.value = STATUS.ALL;
+
                 await loadWeek(event.target.value);
             } catch (error) {
                 renderError(error);
             }
         });
 
-        els.searchInput.addEventListener("input", renderBody);
+        els.searchInput.addEventListener("input", debouncedRenderBody);
         els.statusFilter.addEventListener("change", renderBody);
 
         els.tableBody.addEventListener("click", event => {
@@ -3804,24 +4306,9 @@
             }
         });
 
-        async function initApp() {
-            try {
-                renderHead();
-                renderLoading("讀取週別資料中...");
-                await loadWeeks();
-
-                if (!weeks.length) {
-                    throw new Error("weeks.csv 沒有週別資料");
-                }
-
-                await loadWeek(weeks[0].id);
-            } catch (error) {
-                renderError(error);
-            }
-        }
-
         initApp();
     </script>
+
 </body>
 
 </html>
