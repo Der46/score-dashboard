@@ -73,6 +73,49 @@ const DISPLAY_HEADERS = [
     "狀態"
 ];
 
+const ACHIEVEMENT_BADGES = {
+    MVP: {
+        key: "mvp",
+        title: "本月 MVP",
+        subtitle: "本月總分最高",
+        icon: "🏆",
+        accent: "gold",
+        emptyText: "暫無本月總分資料"
+    },
+    IMPROVER: {
+        key: "improver",
+        title: "進步王",
+        subtitle: "最後一週 - 第一週最高",
+        icon: "🚀",
+        accent: "green",
+        emptyText: "週數不足，暫無進步資料"
+    },
+    STABLE: {
+        key: "stable",
+        title: "穩定王",
+        subtitle: "波動最小且平均高",
+        icon: "🛡️",
+        accent: "blue",
+        emptyText: "週數不足，暫無穩定資料"
+    },
+    BURST: {
+        key: "burst",
+        title: "爆發王",
+        subtitle: "單週最高分最高",
+        icon: "⚡",
+        accent: "orange",
+        emptyText: "暫無單週分數資料"
+    },
+    POTENTIAL: {
+        key: "potential",
+        title: "潛力股",
+        subtitle: "最近兩週連續上升",
+        icon: "🌱",
+        accent: "purple",
+        emptyText: "週數不足或無連續上升"
+    }
+};
+
 const ROLE_META = {
     [STATUS.ELDER]: {
         rowClass: "row-elder",
@@ -128,6 +171,9 @@ const els = {
     profileName: document.getElementById("profileName"),
     profileMeta: document.getElementById("profileMeta"),
     profileBody: document.getElementById("profileBody"),
+    get achievements() {
+        return document.getElementById("achievementsPodium");
+    },
     get profileDialog() {
         return document.querySelector(".profile-dialog");
     }
@@ -139,6 +185,8 @@ const state = {
     currentRows: [],
     historySummaryMap: new Map(),
     monthlyTotalMap: new Map(),
+    monthlyAchievementMap: new Map(),
+    achievements: [],
     historyScopeWeekCount: 0,
     historyScopeLabel: "本月",
     weekRowsCache: new Map(),
@@ -215,6 +263,19 @@ function calculateAverage(values) {
     return Math.round(
         validValues.reduce((sum, value) => sum + value, 0) / validValues.length
     );
+}
+
+function calculatePopulationStdDev(values) {
+    const validValues = values.filter(Number.isFinite);
+
+    if (!validValues.length) return 0;
+
+    const average = validValues.reduce((sum, value) => sum + value, 0) / validValues.length;
+    const variance =
+        validValues.reduce((sum, value) => sum + Math.pow(value - average, 2), 0) /
+        validValues.length;
+
+    return Math.sqrt(variance);
 }
 
 function formatDelta(delta) {
@@ -959,6 +1020,385 @@ function applyMonthlyPersonalTotals(rows) {
         return row;
     });
 }
+
+/* ================================
+   Achievements / Podium
+================================ */
+
+async function loadMonthlyAchievements(targetWeek) {
+    const monthWeeks = getWeeksInSameMonth(targetWeek).reverse();
+    const achievementMap = new Map();
+
+    for (const week of monthWeeks) {
+        try {
+            const rows = await getWeekRows(week);
+
+            rows.filter(isCalculablePerson).forEach(row => {
+                const key = getPersonKey(row);
+
+                if (!key) return;
+
+                if (!achievementMap.has(key)) {
+                    achievementMap.set(key, {
+                        key,
+                        cm: row["CM"] || "",
+                        lineName: row["LINE名稱"] || "",
+                        totalScore: 0,
+                        scores: [],
+                        weekLabels: [],
+                        bestScore: 0,
+                        bestWeekLabel: "",
+                        weeksSeen: 0,
+                        totalWeeks: monthWeeks.length
+                    });
+                }
+
+                const item = achievementMap.get(key);
+                const score = parseNumber(row["一週總分"]);
+
+                item.totalScore += score;
+                item.scores.push(score);
+                item.weekLabels.push(week.label || week.id);
+                item.weeksSeen += 1;
+
+                if (score > item.bestScore) {
+                    item.bestScore = score;
+                    item.bestWeekLabel = week.label || week.id;
+                }
+
+                if (!item.cm && row["CM"]) {
+                    item.cm = row["CM"];
+                }
+
+                if (!item.lineName && row["LINE名稱"]) {
+                    item.lineName = row["LINE名稱"];
+                }
+            });
+        } catch (error) {
+            console.warn(`本月成就徽章資料讀取失敗：${week.file}`, error);
+        }
+    }
+
+    state.monthlyAchievementMap = achievementMap;
+    state.achievements = calculateAchievements(achievementMap);
+}
+
+function calculateAchievements(achievementMap) {
+    const members = Array.from(achievementMap.values());
+
+    return [
+        calculateMvpAchievement(members),
+        calculateImproverAchievement(members),
+        calculateStableAchievement(members),
+        calculateBurstAchievement(members),
+        calculatePotentialAchievement(members)
+    ];
+}
+
+function calculateMvpAchievement(members) {
+    const winner = members
+        .filter(member => member.weeksSeen > 0)
+        .sort((a, b) => {
+            if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+            return getAchievementDisplayName(a).localeCompare(getAchievementDisplayName(b));
+        })[0] || null;
+
+    return createAchievementResult(ACHIEVEMENT_BADGES.MVP, winner, winner
+        ? {
+            metricLabel: "本月總分",
+            metricValue: formatNumber(winner.totalScore),
+            detail: `出現 ${winner.weeksSeen}/${winner.totalWeeks} 週`
+        }
+        : null
+    );
+}
+
+function calculateImproverAchievement(members) {
+    const candidates = members
+        .filter(member => member.scores.length >= 2)
+        .map(member => {
+            const firstScore = member.scores[0];
+            const lastScore = member.scores[member.scores.length - 1];
+            const improvement = lastScore - firstScore;
+
+            return {
+                ...member,
+                achievementScore: improvement,
+                firstScore,
+                lastScore
+            };
+        })
+        .sort((a, b) => {
+            if (b.achievementScore !== a.achievementScore) {
+                return b.achievementScore - a.achievementScore;
+            }
+
+            if (b.lastScore !== a.lastScore) {
+                return b.lastScore - a.lastScore;
+            }
+
+            return getAchievementDisplayName(a).localeCompare(getAchievementDisplayName(b));
+        });
+
+    const winner = candidates[0] || null;
+
+    return createAchievementResult(ACHIEVEMENT_BADGES.IMPROVER, winner, winner
+        ? {
+            metricLabel: "進步幅度",
+            metricValue: formatDelta(winner.achievementScore),
+            detail: `${formatNumber(winner.firstScore)} → ${formatNumber(winner.lastScore)}`
+        }
+        : null
+    );
+}
+
+function calculateStableAchievement(members) {
+    const candidates = members
+        .filter(member => member.scores.length >= 2)
+        .map(member => {
+            const average = calculateAverage(member.scores);
+            const volatility = calculatePopulationStdDev(member.scores);
+
+            return {
+                ...member,
+                averageScore: average,
+                volatility
+            };
+        });
+
+    if (!candidates.length) {
+        return createAchievementResult(ACHIEVEMENT_BADGES.STABLE, null, null);
+    }
+
+    const averageOfAverages = calculateAverage(candidates.map(member => member.averageScore));
+
+    const highAverageCandidates = candidates.filter(member => {
+        return member.averageScore >= averageOfAverages;
+    });
+
+    const pool = highAverageCandidates.length ? highAverageCandidates : candidates;
+
+    const winner = pool.sort((a, b) => {
+        if (a.volatility !== b.volatility) {
+            return a.volatility - b.volatility;
+        }
+
+        if (b.averageScore !== a.averageScore) {
+            return b.averageScore - a.averageScore;
+        }
+
+        return getAchievementDisplayName(a).localeCompare(getAchievementDisplayName(b));
+    })[0] || null;
+
+    return createAchievementResult(ACHIEVEMENT_BADGES.STABLE, winner, winner
+        ? {
+            metricLabel: "平均 / 波動",
+            metricValue: `${formatCompactNumber(winner.averageScore)} / ${formatCompactNumber(Math.round(winner.volatility))}`,
+            detail: `平均高於本月均值 ${formatCompactNumber(averageOfAverages)}`
+        }
+        : null
+    );
+}
+
+function calculateBurstAchievement(members) {
+    const winner = members
+        .filter(member => member.scores.length)
+        .sort((a, b) => {
+            if (b.bestScore !== a.bestScore) {
+                return b.bestScore - a.bestScore;
+            }
+
+            if (b.totalScore !== a.totalScore) {
+                return b.totalScore - a.totalScore;
+            }
+
+            return getAchievementDisplayName(a).localeCompare(getAchievementDisplayName(b));
+        })[0] || null;
+
+    return createAchievementResult(ACHIEVEMENT_BADGES.BURST, winner, winner
+        ? {
+            metricLabel: "單週最高",
+            metricValue: formatNumber(winner.bestScore),
+            detail: winner.bestWeekLabel || "本月週別"
+        }
+        : null
+    );
+}
+
+function calculatePotentialAchievement(members) {
+    const candidates = members
+        .filter(member => member.scores.length >= 3)
+        .map(member => {
+            const scores = member.scores;
+            const last3 = scores.slice(-3);
+            const firstDelta = last3[1] - last3[0];
+            const secondDelta = last3[2] - last3[1];
+            const totalRise = last3[2] - last3[0];
+
+            return {
+                ...member,
+                last3,
+                firstDelta,
+                secondDelta,
+                totalRise
+            };
+        })
+        .filter(member => member.firstDelta > 0 && member.secondDelta > 0)
+        .sort((a, b) => {
+            if (b.totalRise !== a.totalRise) {
+                return b.totalRise - a.totalRise;
+            }
+
+            if (b.secondDelta !== a.secondDelta) {
+                return b.secondDelta - a.secondDelta;
+            }
+
+            if (b.last3[2] !== a.last3[2]) {
+                return b.last3[2] - a.last3[2];
+            }
+
+            return getAchievementDisplayName(a).localeCompare(getAchievementDisplayName(b));
+        });
+
+    const winner = candidates[0] || null;
+
+    return createAchievementResult(ACHIEVEMENT_BADGES.POTENTIAL, winner, winner
+        ? {
+            metricLabel: "近三筆漲幅",
+            metricValue: formatDelta(winner.totalRise),
+            detail: winner.last3.map(formatCompactNumber).join(" → ")
+        }
+        : null
+    );
+}
+
+function createAchievementResult(config, winner, metric) {
+    return {
+        ...config,
+        winner,
+        metric,
+        isEmpty: !winner
+    };
+}
+
+function getAchievementDisplayName(member) {
+    return cleanText(member?.cm || member?.lineName || "-");
+}
+
+function getAchievementProfileKeys(member) {
+    return member?.key || "";
+}
+
+function ensureAchievementsSection() {
+    if (els.achievements) return els.achievements;
+
+    const section = document.createElement("section");
+
+    section.className = "achievements-podium";
+    section.id = "achievementsPodium";
+    section.setAttribute("aria-labelledby", "achievementsTitle");
+
+    const hero = document.querySelector(".hero");
+
+    if (hero) {
+        hero.insertAdjacentElement("afterend", section);
+    } else {
+        const page = document.querySelector(".page");
+
+        if (page) {
+            page.prepend(section);
+        }
+    }
+
+    return section;
+}
+
+function renderAchievementsPodium() {
+    const section = ensureAchievementsSection();
+
+    if (!section) return;
+
+    const achievements = state.achievements || [];
+    const loadedText = state.historyScopeLabel || "本月";
+
+    section.innerHTML = `
+        <div class="achievements-head">
+            <div>
+                <div class="achievements-kicker">Achievement Podium</div>
+                <h2 class="achievements-title" id="achievementsTitle">${escapeHTML(loadedText)}成就徽章</h2>
+            </div>
+
+            <div class="achievements-note">
+                依本月每週分數自動計算
+            </div>
+        </div>
+
+        <div class="podium-row" role="list">
+            ${achievements.map(renderAchievementCard).join("")}
+        </div>
+    `;
+}
+
+function renderAchievementCard(achievement) {
+    const accent = escapeHTML(achievement.accent || "");
+    const title = escapeHTML(achievement.title || "");
+    const subtitle = escapeHTML(achievement.subtitle || "");
+    const icon = escapeHTML(achievement.icon || "🏅");
+
+    if (achievement.isEmpty || !achievement.winner) {
+        return `
+            <article class="podium-card podium-${accent} podium-empty" role="listitem">
+                <div class="podium-medal" aria-hidden="true">${icon}</div>
+
+                <div class="podium-content">
+                    <div class="podium-title">${title}</div>
+                    <div class="podium-subtitle">${subtitle}</div>
+                    <div class="podium-name">待產生</div>
+                    <div class="podium-metric">${escapeHTML(achievement.emptyText || "暫無資料")}</div>
+                </div>
+            </article>
+        `;
+    }
+
+    const member = achievement.winner;
+    const displayName = getAchievementDisplayName(member);
+    const profileKeys = getAchievementProfileKeys(member);
+    const metric = achievement.metric || {};
+    const metricLabel = metric.metricLabel || "";
+    const metricValue = metric.metricValue || "";
+    const detail = metric.detail || "";
+
+    return `
+        <article class="podium-card podium-${accent}" role="listitem">
+            <div class="podium-medal" aria-hidden="true">${icon}</div>
+
+            <div class="podium-content">
+                <div class="podium-title">${title}</div>
+                <div class="podium-subtitle">${subtitle}</div>
+
+                <button
+                    class="podium-name"
+                    type="button"
+                    data-profile-keys="${escapeHTML(profileKeys)}"
+                    title="查看 ${escapeHTML(displayName)} 的個人資料"
+                >
+                    ${escapeHTML(displayName)}
+                </button>
+
+                <div class="podium-metric">
+                    <span>${escapeHTML(metricLabel)}</span>
+                    <strong>${escapeHTML(metricValue)}</strong>
+                </div>
+
+                <div class="podium-detail">${escapeHTML(detail)}</div>
+            </div>
+        </article>
+    `;
+}
+
+/* ================================
+   Row Numbering
+================================ */
 
 function applyRowNumbers(rows) {
     let normalNumber = 0;
@@ -2070,16 +2510,26 @@ async function loadWeek(weekId) {
     showLoading("計算本月個人總分中...");
     await loadMonthlyPersonalTotals(week);
 
+    showLoading("產生成就徽章中...");
+    await loadMonthlyAchievements(week);
+
     state.currentRows = prepareCurrentRows(rows, previousRows);
 
     renderHead();
     renderStatusFilter(state.currentRows);
+    renderAchievementsPodium();
     renderStats(state.currentRows);
     renderBody();
 }
 
 function renderError(error) {
     console.error(error);
+
+    const achievementsSection = ensureAchievementsSection();
+
+    if (achievementsSection) {
+        achievementsSection.innerHTML = "";
+    }
 
     els.stats.innerHTML = "";
     els.resultHint.textContent = "資料讀取失敗";
@@ -2131,7 +2581,7 @@ els.weekSelect.addEventListener("change", async event => {
 els.searchInput.addEventListener("input", debouncedRenderBody);
 els.statusFilter.addEventListener("change", renderBody);
 
-els.tableBody.addEventListener("click", event => {
+document.addEventListener("click", event => {
     const button = event.target.closest("[data-profile-keys]");
 
     if (!button) return;
