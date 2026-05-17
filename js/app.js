@@ -1025,6 +1025,48 @@ function applyMonthlyPersonalTotals(rows) {
    Achievements / Podium
 ================================ */
 
+function isAchievementEligiblePerson(row) {
+    return isPersonRow(row) && Boolean(getAchievementPersonKey(row));
+}
+
+function getAchievementPersonKey(row) {
+    return getCmKey(row);
+}
+
+function getAchievementRoleLabel(row) {
+    const status = getRowStatus(row);
+
+    if (status === STATUS.RETURN || isReturnAccount(row)) {
+        return STATUS.RETURN;
+    }
+
+    if (status === STATUS.ELDER) {
+        return STATUS.ELDER;
+    }
+
+    if (status === STATUS.CAPTAIN) {
+        return STATUS.CAPTAIN;
+    }
+
+    if (status === STATUS.VICE_CAPTAIN) {
+        return STATUS.VICE_CAPTAIN;
+    }
+
+    return status || "";
+}
+
+function getAchievementIdentityFlags(row) {
+    const status = getRowStatus(row);
+
+    return {
+        isReturnAccount: isReturnAccount(row),
+        isElder: status === STATUS.ELDER,
+        isCaptain: status === STATUS.CAPTAIN,
+        isViceCaptain: status === STATUS.VICE_CAPTAIN,
+        latestStatus: status || ""
+    };
+}
+
 async function loadMonthlyAchievements(targetWeek) {
     const monthWeeks = getWeeksInSameMonth(targetWeek).reverse();
     const achievementMap = new Map();
@@ -1033,10 +1075,13 @@ async function loadMonthlyAchievements(targetWeek) {
         try {
             const rows = await getWeekRows(week);
 
-            rows.filter(isCalculablePerson).forEach(row => {
-                const key = getPersonKey(row);
+            rows.filter(isAchievementEligiblePerson).forEach(row => {
+                const key = getAchievementPersonKey(row);
 
                 if (!key) return;
+
+                const score = parseNumber(row["一週總分"]);
+                const identityFlags = getAchievementIdentityFlags(row);
 
                 if (!achievementMap.has(key)) {
                     achievementMap.set(key, {
@@ -1046,15 +1091,20 @@ async function loadMonthlyAchievements(targetWeek) {
                         totalScore: 0,
                         scores: [],
                         weekLabels: [],
-                        bestScore: 0,
+                        bestScore: Number.NEGATIVE_INFINITY,
                         bestWeekLabel: "",
                         weeksSeen: 0,
-                        totalWeeks: monthWeeks.length
+                        totalWeeks: monthWeeks.length,
+
+                        isReturnAccount: false,
+                        isElder: false,
+                        isCaptain: false,
+                        isViceCaptain: false,
+                        latestStatus: ""
                     });
                 }
 
                 const item = achievementMap.get(key);
-                const score = parseNumber(row["一週總分"]);
 
                 item.totalScore += score;
                 item.scores.push(score);
@@ -1073,11 +1123,23 @@ async function loadMonthlyAchievements(targetWeek) {
                 if (!item.lineName && row["LINE名稱"]) {
                     item.lineName = row["LINE名稱"];
                 }
+
+                item.isReturnAccount = item.isReturnAccount || identityFlags.isReturnAccount;
+                item.isElder = item.isElder || identityFlags.isElder;
+                item.isCaptain = item.isCaptain || identityFlags.isCaptain;
+                item.isViceCaptain = item.isViceCaptain || identityFlags.isViceCaptain;
+                item.latestStatus = identityFlags.latestStatus || item.latestStatus;
             });
         } catch (error) {
             console.warn(`本月成就徽章資料讀取失敗：${week.file}`, error);
         }
     }
+
+    achievementMap.forEach(item => {
+        if (item.bestScore === Number.NEGATIVE_INFINITY) {
+            item.bestScore = 0;
+        }
+    });
 
     state.monthlyAchievementMap = achievementMap;
     state.achievements = calculateAchievements(achievementMap);
@@ -1107,7 +1169,7 @@ function calculateMvpAchievement(members) {
         ? {
             metricLabel: "本月總分",
             metricValue: formatNumber(winner.totalScore),
-            detail: `出現 ${winner.weeksSeen}/${winner.totalWeeks} 週`
+            detail: `${getAchievementMemberTag(winner)}｜出現 ${winner.weeksSeen}/${winner.totalWeeks} 週`
         }
         : null
     );
@@ -1146,7 +1208,7 @@ function calculateImproverAchievement(members) {
         ? {
             metricLabel: "進步幅度",
             metricValue: formatDelta(winner.achievementScore),
-            detail: `${formatNumber(winner.firstScore)} → ${formatNumber(winner.lastScore)}`
+            detail: `${getAchievementMemberTag(winner)}｜${formatNumber(winner.firstScore)} → ${formatNumber(winner.lastScore)}`
         }
         : null
     );
@@ -1194,7 +1256,7 @@ function calculateStableAchievement(members) {
         ? {
             metricLabel: "平均 / 波動",
             metricValue: `${formatCompactNumber(winner.averageScore)} / ${formatCompactNumber(Math.round(winner.volatility))}`,
-            detail: `平均高於本月均值 ${formatCompactNumber(averageOfAverages)}`
+            detail: `${getAchievementMemberTag(winner)}｜平均高於本月均值 ${formatCompactNumber(averageOfAverages)}`
         }
         : null
     );
@@ -1219,7 +1281,7 @@ function calculateBurstAchievement(members) {
         ? {
             metricLabel: "單週最高",
             metricValue: formatNumber(winner.bestScore),
-            detail: winner.bestWeekLabel || "本月週別"
+            detail: `${getAchievementMemberTag(winner)}｜${winner.bestWeekLabel || "本月週別"}`
         }
         : null
     );
@@ -1266,7 +1328,7 @@ function calculatePotentialAchievement(members) {
         ? {
             metricLabel: "近三筆漲幅",
             metricValue: formatDelta(winner.totalRise),
-            detail: winner.last3.map(formatCompactNumber).join(" → ")
+            detail: `${getAchievementMemberTag(winner)}｜${winner.last3.map(formatCompactNumber).join(" → ")}`
         }
         : null
     );
@@ -1287,6 +1349,56 @@ function getAchievementDisplayName(member) {
 
 function getAchievementProfileKeys(member) {
     return member?.key || "";
+}
+
+function getAchievementMemberTag(member) {
+    if (!member) return "一般";
+
+    const tags = [];
+
+    if (member.isReturnAccount) {
+        tags.push("回歸");
+    }
+
+    if (member.isElder) {
+        tags.push("長老");
+    }
+
+    if (member.isCaptain) {
+        tags.push("隊長");
+    }
+
+    if (member.isViceCaptain) {
+        tags.push("副隊長");
+    }
+
+    if (!tags.length && member.latestStatus) {
+        tags.push(member.latestStatus);
+    }
+
+    return tags.length ? tags.join(" / ") : "一般";
+}
+
+function getAchievementMemberClass(member) {
+    if (!member) return "";
+
+    if (member.isElder) {
+        return "achievement-member-elder";
+    }
+
+    if (member.isCaptain) {
+        return "achievement-member-captain";
+    }
+
+    if (member.isViceCaptain) {
+        return "achievement-member-vice";
+    }
+
+    if (member.isReturnAccount) {
+        return "achievement-member-return";
+    }
+
+    return "";
 }
 
 function ensureAchievementsSection() {
@@ -1325,7 +1437,7 @@ function renderAchievementsPodium() {
         <div class="achievements-head">
             <div>
                 <div class="achievements-kicker">Achievement Podium</div>
-                <h2 class="achievements-title" id="achievementsTitle">${escapeHTML(loadedText)}成就徽章(不含職位以及回歸帳號)</h2>
+                <h2 class="achievements-title" id="achievementsTitle">${escapeHTML(loadedText)}成就徽章</h2>
             </div>
 
             <div class="achievements-note">
@@ -1367,6 +1479,7 @@ function renderAchievementCard(achievement) {
     const metricLabel = metric.metricLabel || "";
     const metricValue = metric.metricValue || "";
     const detail = metric.detail || "";
+    const memberClass = getAchievementMemberClass(member);
 
     return `
         <article class="podium-card podium-${accent}" role="listitem">
@@ -1377,7 +1490,7 @@ function renderAchievementCard(achievement) {
                 <div class="podium-subtitle">${subtitle}</div>
 
                 <button
-                    class="podium-name"
+                    class="podium-name ${escapeHTML(memberClass)}"
                     type="button"
                     data-profile-keys="${escapeHTML(profileKeys)}"
                     title="查看 ${escapeHTML(displayName)} 的個人資料"
