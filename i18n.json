@@ -1,0 +1,590 @@
+{
+    "zh-Hant": {
+        "page": {
+            "title": "每週成績總覽",
+            "htmlLang": "zh-Hant"
+        },
+        "hero": {
+            "eyebrow": "Weekly Score Dashboard",
+            "title": "Coin999-長長久久 隊伍 每週成績總覽",
+            "subtitle": "檢視每週活動分數、與上週比較，以及本月最後五名。"
+        },
+        "controls": {
+            "weekSelectAria": "選擇週別",
+            "searchPlaceholder": "搜尋 CM...",
+            "statusFilterAria": "篩選狀態"
+        },
+        "common": {
+            "loading": "載入中...",
+            "syncing": "資料同步中...",
+            "dataLoading": "資料載入中...",
+            "readingWeeks": "讀取週別資料中...",
+            "noData": "無資料",
+            "notCalculated": "不計算",
+            "newOrNoData": "新 / 無資料",
+            "noneSymbol": "—",
+            "notProvidedDate": "未提供日期",
+            "unnamedMember": "未命名成員",
+            "normal": "一般",
+            "points": "分"
+        },
+        "status": {
+            "all": "全部",
+            "allStatus": "全部狀態",
+            "pass": "PASS",
+            "out": "淘汰",
+            "return": "回歸",
+            "downgrade": "降級",
+            "elder": "長老",
+            "captain": "隊長",
+            "viceCaptain": "副隊長",
+            "noData": "無資料"
+        },
+        "statusTitle": {
+            "elder": "長老",
+            "captain": "隊長",
+            "viceCaptain": "副隊長",
+            "pass": "本週合格",
+            "out": "本週淘汰",
+            "downgrade": "本週降級"
+        },
+        "headers": {
+            "rank": "編號",
+            "cm": "CM",
+            "activity1Total": "活動1總分",
+            "activity2Total": "活動2總分",
+            "activity3Total": "活動3總分",
+            "weeklyTotal": "一週總分",
+            "monthTotal": "本月總分",
+            "passDistance": "距離合格分數",
+            "elderDistance": "距離長老分數",
+            "compareLastWeek": "較上週",
+            "bottomFiveThisMonth": "本月後五",
+            "status": "狀態"
+        },
+        "specialCm": {
+            "returnSection": "【回歸帳號】",
+            "total": "總計"
+        },
+        "filters": {
+            "everBottomFive": "曾經最後五",
+            "monthTotalScoreSort": "本月總分排序"
+        },
+        "stats": {
+            "weeklyTotalSum": "一週總分加總"
+        },
+        "month": {
+            "currentMonth": "本月",
+            "label": "{year}年{month}月"
+        },
+        "history": {
+            "noMonthData": "{scope}沒有資料",
+            "noBottomFive": "{scope}沒有進入最後五名",
+            "bottomFiveWeeks": "{scope}曾在後五名週別：{weeks}",
+            "excludedTitle": "{status}不納入{scope}後五名統計",
+            "alwaysBottomFive": "都後五 {bottomWeeks}/{weeksSeen}",
+            "everBottomFive": "曾後五 {bottomWeeks}/{weeksSeen}"
+        },
+        "monthlyTotal": {
+            "noData": "{scope}沒有本月總分資料",
+            "returnExcludedTitle": "{scope}總分：{score}｜回歸號不納入本月總分排序｜出現 {weeksSeen}/{totalWeeks} 週",
+            "rankTitle": "{scope}總分：{score}｜本月總分第 {rank} 名｜出現 {weeksSeen}/{totalWeeks} 週",
+            "displayRankTitle": "本月總分排序第 {rank} 名",
+            "hintTop": "{scope}本月總分最高：{name}｜{score} 分｜已排除回歸號｜目前依本月總分由高到低排序",
+            "hintEmpty": "目前沒有可排序的本月總分資料"
+        },
+        "achievement": {
+            "kicker": "Achievement Podium",
+            "title": "{scope}成就徽章",
+            "note": "依本月每週分數自動計算",
+            "pending": "待產生",
+            "viewProfileTitle": "查看 {name} 的個人資料",
+            "mvpTitle": "本月 MVP",
+            "mvpSubtitle": "本月總分最高",
+            "mvpEmpty": "暫無本月總分資料",
+            "improverTitle": "進步王",
+            "improverSubtitle": "最後一週 - 第一週最高",
+            "improverEmpty": "週數不足，暫無進步資料",
+            "stableTitle": "穩定王",
+            "stableSubtitle": "波動最小且平均高",
+            "stableEmpty": "週數不足，暫無穩定資料",
+            "burstTitle": "爆發王",
+            "burstSubtitle": "單週最高分最高",
+            "burstEmpty": "暫無單週分數資料",
+            "potentialTitle": "潛力股",
+            "potentialSubtitle": "最近兩週連續上升",
+            "potentialEmpty": "週數不足或無連續上升",
+            "metricMonthTotal": "本月總分",
+            "metricImprovement": "進步幅度",
+            "metricAverageVolatility": "平均 / 波動",
+            "metricBestWeek": "單週最高",
+            "metricRecentRise": "近三筆漲幅",
+            "detailAppeared": "{tag}｜出現 {weeksSeen}/{totalWeeks} 週",
+            "detailScoreChange": "{tag}｜{firstScore} → {lastScore}",
+            "detailStable": "{tag}｜平均高於本月均值 {average}",
+            "detailBestWeek": "{tag}｜{week}",
+            "detailRecentRise": "{tag}｜{scores}",
+            "fallbackWeek": "本月週別"
+        },
+        "table": {
+            "empty": "找不到符合條件的資料。",
+            "shownZero": "目前顯示 0 筆成員資料",
+            "hint": "目前顯示可計算 {shownPeople} / {allPeople} 筆｜不計算排除 {shownExcluded} / {allExcluded} 筆｜{scope}曾後五 {everCount} 人｜都後五 {riskCount} 人"
+        },
+        "rank": {
+            "returnAccountNumber": "回歸帳號編號 {number}",
+            "number": "編號 {number}"
+        },
+        "trend": {
+            "noData": "無資料",
+            "lastWeek": "上週：{score}",
+            "lastWeekNoData": "上週無資料"
+        },
+        "profile": {
+            "kicker": "Member Analytics",
+            "title": "成員資料",
+            "thisMember": "此成員",
+            "metaLoading": "載入中...",
+            "closeAria": "關閉個人資料",
+            "bodyLoading": "資料分析中...",
+            "analyzing": "資料分析中...",
+            "loadingDetail": "正在彙整歷史最高分、本月折線圖與週別紀錄...",
+            "emptyTitle": "查無成員資料",
+            "emptyMeta": "沒有找到對應的歷史紀錄。",
+            "emptyBody": "找不到這位成員的歷史資料。",
+            "readFailedTitle": "資料讀取失敗",
+            "readFailedMeta": "個人資料分析時發生錯誤。",
+            "readFailedBody": "個人資料讀取失敗，請確認每週 CSV 檔案是否都能正常讀取。",
+            "weeksAppearedMeta": "共出現 {weeks} 週｜最新狀態：{status}｜{month}走勢分析",
+            "latestStatusUnmarked": "未標記",
+            "bestScore": "歷史最高分",
+            "averageScore": "歷史平均分",
+            "averageNote": "依出現週數平均",
+            "monthTotal": "{month}總分",
+            "monthTotalNote": "本月已出現週別加總",
+            "monthTrend": "本月走勢",
+            "monthTrendNote": "以本月第一筆與最後一筆比較",
+            "chartTitle": "{month}分數折線圖",
+            "chartSubtitle": "顯示目前選取月份的每週總分",
+            "chartAria": "本月分數折線圖",
+            "chartNoData": "這個月份沒有可繪製的分數資料。",
+            "timelineTitle": "歷史週別紀錄",
+            "timelineSubtitle": "最新週別在最上方",
+            "timelineNoData": "查無這位成員的週別紀錄。",
+            "weeklyTotal": "一週總分",
+            "status": "狀態",
+            "activity": "活動 {number}",
+            "elderBannerTitle": "長老榮耀已啟用",
+            "elderBannerText": "此成員目前為長老身份，已達成本週高階標準。系統已套用專屬獎勵視覺與榮耀標記。",
+            "elderReward": "ELDER REWARD"
+        },
+        "error": {
+            "fetchFailed": "讀取失敗：{url}",
+            "weekNotFound": "找不到週別資料",
+            "previousWeekReadFailed": "上一週資料讀取失敗：",
+            "weeksCsvEmpty": "weeks.csv 沒有週別資料",
+            "dataReadFailed": "資料讀取失敗",
+            "dataReadFailedBody": "資料讀取失敗，請確認 <strong>data/weeks.csv</strong> 與每週 CSV 檔案路徑是否正確。",
+            "historyBottomFiveReadFailed": "本月後五資料讀取失敗：{file}",
+            "monthlyPersonalTotalReadFailed": "本月個人總分讀取失敗：{file}",
+            "monthlyAchievementReadFailed": "本月成就徽章資料讀取失敗：{file}"
+        },
+        "loadingSteps": {
+            "bottomFive": "分析本月後五名中...",
+            "monthlyTotal": "計算本月個人總分中...",
+            "achievements": "產生成就徽章中..."
+        }
+    },
+    "en": {
+        "page": {
+            "title": "Weekly Score Overview",
+            "htmlLang": "en"
+        },
+        "hero": {
+            "eyebrow": "Weekly Score Dashboard",
+            "title": "Coin999 Forever Team Weekly Score Overview",
+            "subtitle": "Review weekly activity scores, compare with last week, and track this month’s bottom five."
+        },
+        "controls": {
+            "weekSelectAria": "Select week",
+            "searchPlaceholder": "Search CM...",
+            "statusFilterAria": "Filter status"
+        },
+        "common": {
+            "loading": "Loading...",
+            "syncing": "Syncing data...",
+            "dataLoading": "Loading data...",
+            "readingWeeks": "Reading weekly data...",
+            "noData": "No data",
+            "notCalculated": "Excluded",
+            "newOrNoData": "New / No data",
+            "noneSymbol": "—",
+            "notProvidedDate": "Date not provided",
+            "unnamedMember": "Unnamed member",
+            "normal": "Normal",
+            "points": "pts"
+        },
+        "status": {
+            "all": "All",
+            "allStatus": "All statuses",
+            "pass": "PASS",
+            "out": "Eliminated",
+            "return": "Returned",
+            "downgrade": "Downgraded",
+            "elder": "Elder",
+            "captain": "Captain",
+            "viceCaptain": "Vice Captain",
+            "noData": "No data"
+        },
+        "statusTitle": {
+            "elder": "Elder",
+            "captain": "Captain",
+            "viceCaptain": "Vice Captain",
+            "pass": "Passed this week",
+            "out": "Eliminated this week",
+            "downgrade": "Downgraded this week"
+        },
+        "headers": {
+            "rank": "No.",
+            "cm": "CM",
+            "activity1Total": "Activity 1 Total",
+            "activity2Total": "Activity 2 Total",
+            "activity3Total": "Activity 3 Total",
+            "weeklyTotal": "Weekly Total",
+            "monthTotal": "Monthly Total",
+            "passDistance": "To Pass",
+            "elderDistance": "To Elder",
+            "compareLastWeek": "vs Last Week",
+            "bottomFiveThisMonth": "Monthly Bottom 5",
+            "status": "Status"
+        },
+        "specialCm": {
+            "returnSection": "【Returned Accounts】",
+            "total": "Total"
+        },
+        "filters": {
+            "everBottomFive": "Ever Bottom 5",
+            "monthTotalScoreSort": "Monthly Total Ranking"
+        },
+        "stats": {
+            "weeklyTotalSum": "Weekly Total Sum"
+        },
+        "month": {
+            "currentMonth": "This Month",
+            "label": "{year}-{month}"
+        },
+        "history": {
+            "noMonthData": "No data for {scope}",
+            "noBottomFive": "Never entered the bottom five in {scope}",
+            "bottomFiveWeeks": "Bottom-five weeks in {scope}: {weeks}",
+            "excludedTitle": "{status} is excluded from {scope} bottom-five statistics",
+            "alwaysBottomFive": "Always Bottom 5 {bottomWeeks}/{weeksSeen}",
+            "everBottomFive": "Ever Bottom 5 {bottomWeeks}/{weeksSeen}"
+        },
+        "monthlyTotal": {
+            "noData": "No monthly total data for {scope}",
+            "returnExcludedTitle": "{scope} total: {score}｜Returned accounts are excluded from monthly ranking｜Appeared {weeksSeen}/{totalWeeks} weeks",
+            "rankTitle": "{scope} total: {score}｜Monthly rank #{rank}｜Appeared {weeksSeen}/{totalWeeks} weeks",
+            "displayRankTitle": "Monthly total ranking #{rank}",
+            "hintTop": "Top monthly total in {scope}: {name}｜{score} pts｜Returned accounts excluded｜Sorted by monthly total descending",
+            "hintEmpty": "No monthly total data available for ranking"
+        },
+        "achievement": {
+            "kicker": "Achievement Podium",
+            "title": "{scope} Achievement Badges",
+            "note": "Automatically calculated from weekly scores this month",
+            "pending": "Pending",
+            "viewProfileTitle": "View {name}'s profile",
+            "mvpTitle": "Monthly MVP",
+            "mvpSubtitle": "Highest monthly total",
+            "mvpEmpty": "No monthly total data yet",
+            "improverTitle": "Most Improved",
+            "improverSubtitle": "Highest final-week minus first-week score",
+            "improverEmpty": "Not enough weeks for improvement data",
+            "stableTitle": "Most Stable",
+            "stableSubtitle": "Lowest fluctuation with high average",
+            "stableEmpty": "Not enough weeks for stability data",
+            "burstTitle": "Top Burst",
+            "burstSubtitle": "Highest single-week score",
+            "burstEmpty": "No weekly score data yet",
+            "potentialTitle": "Rising Star",
+            "potentialSubtitle": "Continuous growth in recent weeks",
+            "potentialEmpty": "Not enough weeks or no continuous growth",
+            "metricMonthTotal": "Monthly Total",
+            "metricImprovement": "Improvement",
+            "metricAverageVolatility": "Avg / Volatility",
+            "metricBestWeek": "Best Week",
+            "metricRecentRise": "Recent 3-Record Rise",
+            "detailAppeared": "{tag}｜Appeared {weeksSeen}/{totalWeeks} weeks",
+            "detailScoreChange": "{tag}｜{firstScore} → {lastScore}",
+            "detailStable": "{tag}｜Average above monthly mean {average}",
+            "detailBestWeek": "{tag}｜{week}",
+            "detailRecentRise": "{tag}｜{scores}",
+            "fallbackWeek": "Monthly week"
+        },
+        "table": {
+            "empty": "No matching data found.",
+            "shownZero": "Currently showing 0 member records",
+            "hint": "Showing calculable {shownPeople} / {allPeople}｜Excluded {shownExcluded} / {allExcluded}｜Ever Bottom 5 in {scope}: {everCount}｜Always Bottom 5: {riskCount}"
+        },
+        "rank": {
+            "returnAccountNumber": "Returned account No. {number}",
+            "number": "No. {number}"
+        },
+        "trend": {
+            "noData": "No data",
+            "lastWeek": "Last week: {score}",
+            "lastWeekNoData": "No data last week"
+        },
+        "profile": {
+            "kicker": "Member Analytics",
+            "title": "Member Profile",
+            "thisMember": "this member",
+            "metaLoading": "Loading...",
+            "closeAria": "Close profile",
+            "bodyLoading": "Analyzing data...",
+            "analyzing": "Analyzing data...",
+            "loadingDetail": "Compiling historical best score, monthly chart, and weekly records...",
+            "emptyTitle": "No member data",
+            "emptyMeta": "No matching historical records were found.",
+            "emptyBody": "No history was found for this member.",
+            "readFailedTitle": "Failed to read data",
+            "readFailedMeta": "An error occurred while analyzing this profile.",
+            "readFailedBody": "Failed to read profile data. Please confirm every weekly CSV file can be loaded correctly.",
+            "weeksAppearedMeta": "Appeared {weeks} weeks｜Latest status: {status}｜{month} trend analysis",
+            "latestStatusUnmarked": "Unmarked",
+            "bestScore": "Historical Best",
+            "averageScore": "Historical Average",
+            "averageNote": "Average based on appeared weeks",
+            "monthTotal": "{month} Total",
+            "monthTotalNote": "Sum of appeared weeks this month",
+            "monthTrend": "Monthly Trend",
+            "monthTrendNote": "Compared using the first and latest record this month",
+            "chartTitle": "{month} Score Line Chart",
+            "chartSubtitle": "Shows weekly total scores for the selected month",
+            "chartAria": "Monthly score line chart",
+            "chartNoData": "No score data available to draw for this month.",
+            "timelineTitle": "Historical Weekly Records",
+            "timelineSubtitle": "Latest week shown first",
+            "timelineNoData": "No weekly records found for this member.",
+            "weeklyTotal": "Weekly Total",
+            "status": "Status",
+            "activity": "Activity {number}",
+            "elderBannerTitle": "Elder honor activated",
+            "elderBannerText": "This member is currently an Elder and has met this week’s advanced standard. Exclusive reward visuals and honor markers are applied.",
+            "elderReward": "ELDER REWARD"
+        },
+        "error": {
+            "fetchFailed": "Failed to read: {url}",
+            "weekNotFound": "Weekly data not found",
+            "previousWeekReadFailed": "Failed to read previous week data:",
+            "weeksCsvEmpty": "weeks.csv has no weekly records",
+            "dataReadFailed": "Failed to read data",
+            "dataReadFailedBody": "Failed to read data. Please confirm <strong>data/weeks.csv</strong> and each weekly CSV file path are correct.",
+            "historyBottomFiveReadFailed": "Failed to read monthly bottom-five data: {file}",
+            "monthlyPersonalTotalReadFailed": "Failed to read monthly personal total data: {file}",
+            "monthlyAchievementReadFailed": "Failed to read monthly achievement badge data: {file}"
+        },
+        "loadingSteps": {
+            "bottomFive": "Analyzing this month’s bottom five...",
+            "monthlyTotal": "Calculating monthly personal totals...",
+            "achievements": "Generating achievement badges..."
+        }
+    },
+    "vi": {
+        "page": {
+            "title": "Tổng quan điểm hằng tuần",
+            "htmlLang": "vi"
+        },
+        "hero": {
+            "eyebrow": "Weekly Score Dashboard",
+            "title": "Tổng quan điểm hằng tuần của đội Coin999 Mãi Mãi Bền Lâu",
+            "subtitle": "Xem điểm hoạt động hằng tuần, so sánh với tuần trước và theo dõi 5 người cuối tháng này."
+        },
+        "controls": {
+            "weekSelectAria": "Chọn tuần",
+            "searchPlaceholder": "Tìm CM...",
+            "statusFilterAria": "Lọc trạng thái"
+        },
+        "common": {
+            "loading": "Đang tải...",
+            "syncing": "Đang đồng bộ dữ liệu...",
+            "dataLoading": "Đang tải dữ liệu...",
+            "readingWeeks": "Đang đọc dữ liệu tuần...",
+            "noData": "Không có dữ liệu",
+            "notCalculated": "Không tính",
+            "newOrNoData": "Mới / Không có dữ liệu",
+            "noneSymbol": "—",
+            "notProvidedDate": "Chưa có ngày",
+            "unnamedMember": "Thành viên chưa đặt tên",
+            "normal": "Thông thường",
+            "points": "điểm"
+        },
+        "status": {
+            "all": "Tất cả",
+            "allStatus": "Tất cả trạng thái",
+            "pass": "PASS",
+            "out": "Bị loại",
+            "return": "Quay lại",
+            "downgrade": "Hạ cấp",
+            "elder": "Trưởng lão",
+            "captain": "Đội trưởng",
+            "viceCaptain": "Đội phó",
+            "noData": "Không có dữ liệu"
+        },
+        "statusTitle": {
+            "elder": "Trưởng lão",
+            "captain": "Đội trưởng",
+            "viceCaptain": "Đội phó",
+            "pass": "Đạt tuần này",
+            "out": "Bị loại tuần này",
+            "downgrade": "Bị hạ cấp tuần này"
+        },
+        "headers": {
+            "rank": "STT",
+            "cm": "CM",
+            "activity1Total": "Tổng HĐ 1",
+            "activity2Total": "Tổng HĐ 2",
+            "activity3Total": "Tổng HĐ 3",
+            "weeklyTotal": "Tổng tuần",
+            "monthTotal": "Tổng tháng",
+            "passDistance": "Cách điểm đạt",
+            "elderDistance": "Cách điểm trưởng lão",
+            "compareLastWeek": "So với tuần trước",
+            "bottomFiveThisMonth": "5 cuối tháng",
+            "status": "Trạng thái"
+        },
+        "specialCm": {
+            "returnSection": "【Tài khoản quay lại】",
+            "total": "Tổng cộng"
+        },
+        "filters": {
+            "everBottomFive": "Từng ở 5 cuối",
+            "monthTotalScoreSort": "Xếp hạng tổng tháng"
+        },
+        "stats": {
+            "weeklyTotalSum": "Tổng điểm tuần"
+        },
+        "month": {
+            "currentMonth": "Tháng này",
+            "label": "{month}/{year}"
+        },
+        "history": {
+            "noMonthData": "Không có dữ liệu cho {scope}",
+            "noBottomFive": "Không vào nhóm 5 cuối trong {scope}",
+            "bottomFiveWeeks": "Các tuần ở nhóm 5 cuối trong {scope}: {weeks}",
+            "excludedTitle": "{status} không được tính vào thống kê 5 cuối của {scope}",
+            "alwaysBottomFive": "Luôn 5 cuối {bottomWeeks}/{weeksSeen}",
+            "everBottomFive": "Từng 5 cuối {bottomWeeks}/{weeksSeen}"
+        },
+        "monthlyTotal": {
+            "noData": "Không có dữ liệu tổng tháng cho {scope}",
+            "returnExcludedTitle": "Tổng {scope}: {score}｜Tài khoản quay lại không tính vào xếp hạng tháng｜Xuất hiện {weeksSeen}/{totalWeeks} tuần",
+            "rankTitle": "Tổng {scope}: {score}｜Xếp hạng tháng #{rank}｜Xuất hiện {weeksSeen}/{totalWeeks} tuần",
+            "displayRankTitle": "Xếp hạng tổng tháng #{rank}",
+            "hintTop": "Tổng tháng cao nhất trong {scope}: {name}｜{score} điểm｜Đã loại trừ tài khoản quay lại｜Đang sắp xếp theo tổng tháng giảm dần",
+            "hintEmpty": "Hiện không có dữ liệu tổng tháng để xếp hạng"
+        },
+        "achievement": {
+            "kicker": "Achievement Podium",
+            "title": "Huy hiệu thành tích {scope}",
+            "note": "Tự động tính theo điểm từng tuần trong tháng",
+            "pending": "Chưa có",
+            "viewProfileTitle": "Xem hồ sơ của {name}",
+            "mvpTitle": "MVP tháng",
+            "mvpSubtitle": "Tổng điểm tháng cao nhất",
+            "mvpEmpty": "Chưa có dữ liệu tổng tháng",
+            "improverTitle": "Tiến bộ nhất",
+            "improverSubtitle": "Tuần cuối - tuần đầu cao nhất",
+            "improverEmpty": "Chưa đủ số tuần để tính tiến bộ",
+            "stableTitle": "Ổn định nhất",
+            "stableSubtitle": "Dao động thấp và điểm trung bình cao",
+            "stableEmpty": "Chưa đủ số tuần để tính ổn định",
+            "burstTitle": "Bứt phá nhất",
+            "burstSubtitle": "Điểm đơn tuần cao nhất",
+            "burstEmpty": "Chưa có dữ liệu điểm tuần",
+            "potentialTitle": "Tiềm năng",
+            "potentialSubtitle": "Tăng liên tục trong các tuần gần đây",
+            "potentialEmpty": "Chưa đủ tuần hoặc chưa tăng liên tục",
+            "metricMonthTotal": "Tổng tháng",
+            "metricImprovement": "Mức tiến bộ",
+            "metricAverageVolatility": "TB / Dao động",
+            "metricBestWeek": "Tuần cao nhất",
+            "metricRecentRise": "Mức tăng 3 lần gần nhất",
+            "detailAppeared": "{tag}｜Xuất hiện {weeksSeen}/{totalWeeks} tuần",
+            "detailScoreChange": "{tag}｜{firstScore} → {lastScore}",
+            "detailStable": "{tag}｜Trung bình cao hơn mức TB tháng {average}",
+            "detailBestWeek": "{tag}｜{week}",
+            "detailRecentRise": "{tag}｜{scores}",
+            "fallbackWeek": "Tuần trong tháng"
+        },
+        "table": {
+            "empty": "Không tìm thấy dữ liệu phù hợp.",
+            "shownZero": "Hiện đang hiển thị 0 bản ghi thành viên",
+            "hint": "Đang hiển thị có thể tính {shownPeople} / {allPeople}｜Không tính {shownExcluded} / {allExcluded}｜Từng 5 cuối trong {scope}: {everCount} người｜Luôn 5 cuối: {riskCount} người"
+        },
+        "rank": {
+            "returnAccountNumber": "STT tài khoản quay lại {number}",
+            "number": "STT {number}"
+        },
+        "trend": {
+            "noData": "Không có dữ liệu",
+            "lastWeek": "Tuần trước: {score}",
+            "lastWeekNoData": "Tuần trước không có dữ liệu"
+        },
+        "profile": {
+            "kicker": "Member Analytics",
+            "title": "Hồ sơ thành viên",
+            "thisMember": "thành viên này",
+            "metaLoading": "Đang tải...",
+            "closeAria": "Đóng hồ sơ",
+            "bodyLoading": "Đang phân tích dữ liệu...",
+            "analyzing": "Đang phân tích dữ liệu...",
+            "loadingDetail": "Đang tổng hợp điểm cao nhất lịch sử, biểu đồ tháng và bản ghi tuần...",
+            "emptyTitle": "Không có dữ liệu thành viên",
+            "emptyMeta": "Không tìm thấy bản ghi lịch sử phù hợp.",
+            "emptyBody": "Không tìm thấy lịch sử của thành viên này.",
+            "readFailedTitle": "Đọc dữ liệu thất bại",
+            "readFailedMeta": "Đã xảy ra lỗi khi phân tích hồ sơ cá nhân.",
+            "readFailedBody": "Không đọc được dữ liệu hồ sơ. Vui lòng kiểm tra tất cả file CSV hằng tuần có thể tải bình thường.",
+            "weeksAppearedMeta": "Xuất hiện {weeks} tuần｜Trạng thái mới nhất: {status}｜Phân tích xu hướng {month}",
+            "latestStatusUnmarked": "Chưa đánh dấu",
+            "bestScore": "Điểm cao nhất lịch sử",
+            "averageScore": "Điểm trung bình lịch sử",
+            "averageNote": "Tính trung bình theo số tuần xuất hiện",
+            "monthTotal": "Tổng {month}",
+            "monthTotalNote": "Cộng các tuần đã xuất hiện trong tháng",
+            "monthTrend": "Xu hướng tháng",
+            "monthTrendNote": "So sánh bản ghi đầu tiên và mới nhất trong tháng",
+            "chartTitle": "Biểu đồ điểm {month}",
+            "chartSubtitle": "Hiển thị tổng điểm hằng tuần của tháng đã chọn",
+            "chartAria": "Biểu đồ đường điểm tháng",
+            "chartNoData": "Tháng này không có dữ liệu điểm để vẽ biểu đồ.",
+            "timelineTitle": "Bản ghi tuần lịch sử",
+            "timelineSubtitle": "Tuần mới nhất hiển thị ở trên cùng",
+            "timelineNoData": "Không tìm thấy bản ghi tuần của thành viên này.",
+            "weeklyTotal": "Tổng tuần",
+            "status": "Trạng thái",
+            "activity": "Hoạt động {number}",
+            "elderBannerTitle": "Đã kích hoạt vinh danh Trưởng lão",
+            "elderBannerText": "Thành viên này hiện là Trưởng lão và đã đạt tiêu chuẩn nâng cao của tuần này. Hệ thống đã áp dụng hiệu ứng phần thưởng và dấu vinh danh riêng.",
+            "elderReward": "ELDER REWARD"
+        },
+        "error": {
+            "fetchFailed": "Đọc thất bại: {url}",
+            "weekNotFound": "Không tìm thấy dữ liệu tuần",
+            "previousWeekReadFailed": "Đọc dữ liệu tuần trước thất bại:",
+            "weeksCsvEmpty": "weeks.csv không có dữ liệu tuần",
+            "dataReadFailed": "Đọc dữ liệu thất bại",
+            "dataReadFailedBody": "Đọc dữ liệu thất bại. Vui lòng xác nhận <strong>data/weeks.csv</strong> và đường dẫn từng file CSV hằng tuần là chính xác.",
+            "historyBottomFiveReadFailed": "Đọc dữ liệu 5 người cuối tháng thất bại: {file}",
+            "monthlyPersonalTotalReadFailed": "Đọc dữ liệu tổng điểm cá nhân trong tháng thất bại: {file}",
+            "monthlyAchievementReadFailed": "Đọc dữ liệu huy hiệu thành tích trong tháng thất bại: {file}"
+        },
+        "loadingSteps": {
+            "bottomFive": "Đang phân tích 5 người cuối tháng này...",
+            "monthlyTotal": "Đang tính tổng điểm cá nhân trong tháng...",
+            "achievements": "Đang tạo huy hiệu thành tích..."
+        }
+    }
+}

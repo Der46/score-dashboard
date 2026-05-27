@@ -1,4 +1,157 @@
 /* ================================
+   I18n
+================================ */
+
+const I18N_URL = "./i18n.json";
+const DEFAULT_LOCALE = "zh-Hant";
+const STORAGE_LOCALE_KEY = "score-dashboard-locale";
+
+const i18nState = {
+    locale: localStorage.getItem(STORAGE_LOCALE_KEY) || DEFAULT_LOCALE,
+    messages: {}
+};
+
+function getNestedValue(object, path) {
+    return String(path || "")
+        .split(".")
+        .reduce((current, key) => current?.[key], object);
+}
+
+function interpolate(template, params = {}) {
+    return String(template ?? "").replace(/\{(\w+)\}/g, (_, key) => {
+        return params[key] ?? "";
+    });
+}
+
+function t(path, params = {}) {
+    const localeMessages = i18nState.messages[i18nState.locale] || {};
+    const fallbackMessages = i18nState.messages[DEFAULT_LOCALE] || {};
+
+    const value =
+        getNestedValue(localeMessages, path) ??
+        getNestedValue(fallbackMessages, path) ??
+        path;
+
+    return interpolate(value, params);
+}
+
+function getCurrentLocale() {
+    return i18nState.locale || DEFAULT_LOCALE;
+}
+
+function getLocaleForNumber() {
+    const locale = getCurrentLocale();
+
+    if (locale === "zh-Hant") return "zh-TW";
+    if (locale === "vi") return "vi-VN";
+
+    return "en-US";
+}
+
+async function loadI18n() {
+    const response = await fetch(I18N_URL, { cache: "no-store" });
+
+    if (!response.ok) {
+        throw new Error(`Failed to read i18n file: ${I18N_URL}`);
+    }
+
+    i18nState.messages = await response.json();
+
+    if (!i18nState.messages[i18nState.locale]) {
+        i18nState.locale = DEFAULT_LOCALE;
+    }
+
+    applyStaticI18n();
+}
+
+async function setLocale(locale) {
+    if (!i18nState.messages[locale]) return;
+
+    i18nState.locale = locale;
+    localStorage.setItem(STORAGE_LOCALE_KEY, locale);
+
+    applyStaticI18n();
+    await rerenderAll();
+}
+
+function applyStaticI18n() {
+    document.documentElement.lang = t("page.htmlLang");
+    document.title = t("page.title");
+
+    document.querySelectorAll("[data-i18n]").forEach(element => {
+        element.textContent = t(element.dataset.i18n);
+    });
+
+    document.querySelectorAll("[data-i18n-attr]").forEach(element => {
+        const rules = element.dataset.i18nAttr
+            .split(";")
+            .map(rule => rule.trim())
+            .filter(Boolean);
+
+        rules.forEach(rule => {
+            const [attribute, path] = rule.split(":").map(part => part.trim());
+
+            if (!attribute || !path) return;
+
+            element.setAttribute(attribute, t(path));
+        });
+    });
+
+    if (els?.languageSelect) {
+        els.languageSelect.value = getCurrentLocale();
+    }
+}
+
+async function rerenderAll() {
+    if (!state.weeks.length) return;
+
+    const keyword = els.searchInput.value;
+    const status = els.statusFilter.value;
+
+    renderWeekSelect();
+
+    if (state.currentWeek) {
+        await loadWeek(state.currentWeek.id);
+
+        els.searchInput.value = keyword;
+
+        const optionValues = Array.from(els.statusFilter.options).map(option => option.value);
+        els.statusFilter.value = optionValues.includes(status) ? status : STATUS.ALL;
+
+        renderBody();
+    } else if (state.currentRows.length) {
+        renderHead();
+        renderStatusFilter(state.currentRows);
+        renderAchievementsPodium();
+        renderStats(state.currentRows);
+        renderBody();
+    }
+
+    if (!els.profileModal.hidden) {
+        closeProfileModal();
+    }
+}
+
+function tx(value) {
+    const map = {
+        "全部": t("status.all"),
+        "PASS": t("status.pass"),
+        "淘汰": t("status.out"),
+        "回歸": t("status.return"),
+        "降級": t("status.downgrade"),
+        "長老": t("status.elder"),
+        "隊長": t("status.captain"),
+        "副隊長": t("status.viceCaptain"),
+        "無資料": t("status.noData"),
+        "不計算": t("common.notCalculated"),
+        "總計": t("specialCm.total"),
+        "【回歸帳號】": t("specialCm.returnSection")
+    };
+
+    return map[value] || value;
+}
+
+/* ================================
    Config / Constants
 ================================ */
 
@@ -73,46 +226,76 @@ const DISPLAY_HEADERS = [
     "狀態"
 ];
 
+const HEADER_I18N_KEY = {
+    [RANK_COLUMN]: "headers.rank",
+    "CM": "headers.cm",
+    "活動1總分": "headers.activity1Total",
+    "活動2總分": "headers.activity2Total",
+    "活動3總分": "headers.activity3Total",
+    "一週總分": "headers.weeklyTotal",
+    [MONTH_TOTAL_COLUMN]: "headers.monthTotal",
+    "距離合格分數": "headers.passDistance",
+    "距離長老分數": "headers.elderDistance",
+    "較上週": "headers.compareLastWeek",
+    [HISTORY_COLUMN]: "headers.bottomFiveThisMonth",
+    "狀態": "headers.status"
+};
+
+function getHeaderLabel(header) {
+    return HEADER_I18N_KEY[header] ? t(HEADER_I18N_KEY[header]) : header;
+}
+function getAchievementTitle(achievement) {
+    return achievement.titleKey ? t(achievement.titleKey) : achievement.title || "";
+}
+
+function getAchievementSubtitle(achievement) {
+    return achievement.subtitleKey ? t(achievement.subtitleKey) : achievement.subtitle || "";
+}
+
+function getAchievementEmptyText(achievement) {
+    return achievement.emptyTextKey ? t(achievement.emptyTextKey) : achievement.emptyText || t("common.noData");
+}
+
 const ACHIEVEMENT_BADGES = {
     MVP: {
         key: "mvp",
-        title: "本月 MVP",
-        subtitle: "本月總分最高",
+        titleKey: "achievement.mvpTitle",
+        subtitleKey: "achievement.mvpSubtitle",
         icon: "🏆",
         accent: "gold",
-        emptyText: "暫無本月總分資料"
+        emptyTextKey: "achievement.mvpEmpty"
     },
     IMPROVER: {
         key: "improver",
-        title: "進步王",
-        subtitle: "最後一週 - 第一週最高",
+        titleKey: "achievement.improverTitle",
+        subtitleKey: "achievement.improverSubtitle",
         icon: "🚀",
         accent: "green",
-        emptyText: "週數不足，暫無進步資料"
+        emptyTextKey: "achievement.improverEmpty"
     },
     STABLE: {
         key: "stable",
-        title: "穩定王",
-        subtitle: "波動最小且平均高",
+        titleKey: "achievement.stableTitle",
+        subtitleKey: "achievement.stableSubtitle",
         icon: "🛡️",
         accent: "blue",
-        emptyText: "週數不足，暫無穩定資料"
+        emptyTextKey: "achievement.stableEmpty"
     },
     BURST: {
         key: "burst",
-        title: "爆發王",
-        subtitle: "單週最高分最高",
+        titleKey: "achievement.burstTitle",
+        subtitleKey: "achievement.burstSubtitle",
         icon: "⚡",
         accent: "orange",
-        emptyText: "暫無單週分數資料"
+        emptyTextKey: "achievement.burstEmpty"
     },
     POTENTIAL: {
         key: "potential",
-        title: "潛力股",
-        subtitle: "最近兩週連續上升",
+        titleKey: "achievement.potentialTitle",
+        subtitleKey: "achievement.potentialSubtitle",
         icon: "🌱",
         accent: "purple",
-        emptyText: "週數不足或無連續上升"
+        emptyTextKey: "achievement.potentialEmpty"
     }
 };
 
@@ -122,21 +305,18 @@ const ROLE_META = {
         rankBadgeClass: "rank-badge rank-badge-elder",
         personLinkClass: "person-link elder-link",
         badgeClass: "badge-elder",
-        title: "長老"
     },
     [STATUS.CAPTAIN]: {
         rowClass: "row-captain",
         rankBadgeClass: "rank-badge rank-badge-captain",
         personLinkClass: "person-link captain-link",
         badgeClass: "badge-captain",
-        title: "隊長"
     },
     [STATUS.VICE_CAPTAIN]: {
         rowClass: "row-vice",
         rankBadgeClass: "rank-badge rank-badge-vice",
         personLinkClass: "person-link vice-link",
         badgeClass: "badge-vice",
-        title: "副隊長"
     }
 };
 
@@ -149,16 +329,8 @@ const STATUS_BADGE_CLASS = {
     [STATUS.VICE_CAPTAIN]: ROLE_META[STATUS.VICE_CAPTAIN].badgeClass
 };
 
-const STATUS_TITLE = {
-    [STATUS.ELDER]: "長老",
-    [STATUS.CAPTAIN]: "隊長",
-    [STATUS.VICE_CAPTAIN]: "副隊長",
-    [STATUS.PASS]: "本週合格",
-    [STATUS.OUT]: "本週淘汰",
-    [STATUS.DOWNGRADE]: "本週降級"
-};
-
 const els = {
+    languageSelect: document.getElementById("languageSelect"),
     weekSelect: document.getElementById("weekSelect"),
     stats: document.getElementById("stats"),
     tableHead: document.getElementById("tableHead"),
@@ -188,7 +360,7 @@ const state = {
     monthlyAchievementMap: new Map(),
     achievements: [],
     historyScopeWeekCount: 0,
-    historyScopeLabel: "本月",
+    historyScopeLabel: "",
     weekRowsCache: new Map(),
     hasRenderedTableOnce: false
 };
@@ -233,26 +405,17 @@ function parseNumber(value) {
 }
 
 function formatNumber(value) {
-    return Number(value || 0).toLocaleString("zh-TW");
+    return Number(value || 0).toLocaleString(getLocaleForNumber());
 }
 
 function formatCompactNumber(value) {
     const number = Number(value || 0);
-    const abs = Math.abs(number);
+    const locale = getLocaleForNumber();
 
-    if (abs >= 100000000) {
-        return `${(number / 100000000).toLocaleString("zh-TW", {
-            maximumFractionDigits: 1
-        })}億`;
-    }
-
-    if (abs >= 10000) {
-        return `${(number / 10000).toLocaleString("zh-TW", {
-            maximumFractionDigits: 1
-        })}萬`;
-    }
-
-    return formatNumber(number);
+    return new Intl.NumberFormat(locale, {
+        notation: "compact",
+        maximumFractionDigits: 1
+    }).format(number);
 }
 
 function calculateAverage(values) {
@@ -279,7 +442,7 @@ function calculatePopulationStdDev(values) {
 }
 
 function formatDelta(delta) {
-    if (delta === null || delta === undefined) return "無資料";
+    if (delta === null || delta === undefined) return t("trend.noData");
     if (delta > 0) return `▲ ${formatNumber(delta)}`;
     if (delta < 0) return `▼ ${formatNumber(Math.abs(delta))}`;
 
@@ -294,7 +457,7 @@ function getRowAnimationDelay(index) {
     return Math.min(index * 0.015, 0.3);
 }
 
-function showLoading(message = "資料同步中...") {
+function showLoading(message = t("common.syncing")) {
     els.resultHint.textContent = message;
     renderLoading(message);
 }
@@ -307,7 +470,7 @@ async function fetchText(url) {
     const response = await fetch(url, { cache: "no-store" });
 
     if (!response.ok) {
-        throw new Error(`讀取失敗：${url}`);
+        throw new Error(t("error.fetchFailed", { url }));
     }
 
     return response.text();
@@ -435,10 +598,10 @@ function formatMonthLabel(monthKey) {
     const [year, month] = String(monthKey || "").split("-");
 
     if (!year || !month) {
-        return "本月";
+        return t("month.currentMonth");
     }
 
-    return `${year}年${month}月`;
+    return t("month.label", { year, month });
 }
 
 function getWeeksInSameMonth(targetWeek) {
@@ -460,7 +623,7 @@ function findWeekById(weekId) {
     const week = state.weeks.find(item => item.id === weekId) || state.weeks[0];
 
     if (!week) {
-        throw new Error("找不到週別資料");
+        throw new Error(t("error.weekNotFound"));
     }
 
     return week;
@@ -477,7 +640,7 @@ async function getPreviousRows(currentWeekId) {
 
         return cloneRows(rows);
     } catch (error) {
-        console.warn("上一週資料讀取失敗：", error);
+        console.warn(t("error.previousWeekReadFailed"), error);
 
         return [];
     }
@@ -515,18 +678,6 @@ function getRowStatus(row) {
 
 function isStatus(row, status) {
     return isPersonRow(row) && getRowStatus(row) === status;
-}
-
-function isElder(row) {
-    return isStatus(row, STATUS.ELDER);
-}
-
-function isCaptain(row) {
-    return isStatus(row, STATUS.CAPTAIN);
-}
-
-function isViceCaptain(row) {
-    return isStatus(row, STATUS.VICE_CAPTAIN);
 }
 
 function normalizeCmName(value) {
@@ -666,7 +817,16 @@ function getPersonLinkClass(row) {
 }
 
 function getStatusTitle(status) {
-    return STATUS_TITLE[status] || status || "";
+    const keyMap = {
+        [STATUS.ELDER]: "statusTitle.elder",
+        [STATUS.CAPTAIN]: "statusTitle.captain",
+        [STATUS.VICE_CAPTAIN]: "statusTitle.viceCaptain",
+        [STATUS.PASS]: "statusTitle.pass",
+        [STATUS.OUT]: "statusTitle.out",
+        [STATUS.DOWNGRADE]: "statusTitle.downgrade"
+    };
+
+    return keyMap[status] ? t(keyMap[status]) : tx(status) || "";
 }
 
 function getBadgeClass(status) {
@@ -685,7 +845,7 @@ function getCellClass(header, extraClass = "") {
 }
 
 function getCellLabelAttr(header) {
-    return `data-label="${escapeHTML(header)}"`;
+    return `data-label="${escapeHTML(getHeaderLabel(header))}"`;
 }
 
 function getDisplayName(value) {
@@ -724,7 +884,8 @@ function applyWeekComparison(rows, previousRows) {
         }
 
         if (isExcludedFromCalculation(row)) {
-            row["較上週"] = "不計算";
+            row["較上週"] = t("common.notCalculated");
+
             row.__trend = TREND.SAME;
             row.__delta = null;
             row.__prevScore = null;
@@ -736,7 +897,7 @@ function applyWeekComparison(rows, previousRows) {
         const currentScore = parseNumber(row["一週總分"]);
 
         if (!key || !previousScoreMap.has(key)) {
-            row["較上週"] = "新 / 無資料";
+            row["較上週"] = t("common.newOrNoData");
             row.__trend = TREND.NEW;
             row.__delta = null;
             row.__prevScore = null;
@@ -829,7 +990,7 @@ async function loadHistoryBottomFive(targetWeek) {
                 }
             });
         } catch (error) {
-            console.warn(`本月後五資料讀取失敗：${week.file}`, error);
+            console.warn(t("error.historyBottomFiveReadFailed", { file: week.file }), error);
         }
     }
 
@@ -867,9 +1028,12 @@ function applyHistoryBottomFive(rows) {
         if (isExcludedFromCalculation(row)) {
             const status = getRowStatus(row);
 
-            row[HISTORY_COLUMN] = "不計算";
+            row[HISTORY_COLUMN] = t("common.notCalculated");
             row.__historyLevel = HISTORY_LEVEL.NONE;
-            row.__historyTitle = `${status || "此帳號"}不納入${state.historyScopeLabel}後五名統計`;
+            row.__historyTitle = t("history.excludedTitle", {
+                status: tx(status || t("common.noData")),
+                scope: state.historyScopeLabel
+            });
             row.__historyAlways = false;
 
             return row;
@@ -881,7 +1045,9 @@ function applyHistoryBottomFive(rows) {
         if (!summary) {
             row[HISTORY_COLUMN] = "—";
             row.__historyLevel = HISTORY_LEVEL.NONE;
-            row.__historyTitle = `${state.historyScopeLabel}沒有資料`;
+            row.__historyTitle = t("history.noMonthData", {
+                scope: state.historyScopeLabel
+            });
             row.__historyAlways = false;
 
             return row;
@@ -891,14 +1057,25 @@ function applyHistoryBottomFive(rows) {
 
         row.__historyAlways = alwaysBottomFive;
         row.__historyTitle = summary.bottomWeekLabels.length
-            ? `${state.historyScopeLabel}曾在後五名週別：${summary.bottomWeekLabels.join("、")}`
-            : `${state.historyScopeLabel}沒有進入最後五名`;
+            ? t("history.bottomFiveWeeks", {
+                scope: state.historyScopeLabel,
+                weeks: summary.bottomWeekLabels.join("、")
+            })
+            : t("history.noBottomFive", {
+                scope: state.historyScopeLabel
+            });
 
         if (alwaysBottomFive) {
-            row[HISTORY_COLUMN] = `都後五 ${summary.bottomWeeks}/${summary.weeksSeen}`;
+            row[HISTORY_COLUMN] = t("history.alwaysBottomFive", {
+                bottomWeeks: summary.bottomWeeks,
+                weeksSeen: summary.weeksSeen
+            });
             row.__historyLevel = HISTORY_LEVEL.RISK;
         } else if (summary.bottomWeeks > 0) {
-            row[HISTORY_COLUMN] = `曾後五 ${summary.bottomWeeks}/${summary.weeksSeen}`;
+            row[HISTORY_COLUMN] = t("history.everBottomFive", {
+                bottomWeeks: summary.bottomWeeks,
+                weeksSeen: summary.weeksSeen
+            });
             row.__historyLevel = HISTORY_LEVEL.WATCH;
         } else {
             row[HISTORY_COLUMN] = "—";
@@ -949,7 +1126,7 @@ async function loadMonthlyPersonalTotals(targetWeek) {
                 }
             });
         } catch (error) {
-            console.warn(`本月個人總分讀取失敗：${week.file}`, error);
+            console.warn(t("error.monthlyPersonalTotalReadFailed", { file: week.file }), error);
         }
     }
 
@@ -996,7 +1173,9 @@ function applyMonthlyPersonalTotals(rows) {
             row[MONTH_TOTAL_COLUMN] = "—";
             row.__monthTotal = null;
             row.__monthTotalRank = null;
-            row.__monthTotalTitle = `${state.historyScopeLabel}沒有本月總分資料`;
+            row.__monthTotalTitle = t("monthlyTotal.noData", {
+                scope: state.historyScopeLabel
+            });
 
             return row;
         }
@@ -1006,15 +1185,20 @@ function applyMonthlyPersonalTotals(rows) {
         row[MONTH_TOTAL_COLUMN] = formatNumber(summary.totalScore);
 
         if (summary.isReturnAccount || isReturnAccount(row)) {
-            row.__monthTotalTitle =
-                `${state.historyScopeLabel}總分：${formatNumber(summary.totalScore)}｜` +
-                `回歸號不納入本月總分排序｜` +
-                `出現 ${summary.weeksSeen}/${summary.totalWeeks} 週`;
+            row.__monthTotalTitle = t("monthlyTotal.returnExcludedTitle", {
+                scope: state.historyScopeLabel,
+                score: formatNumber(summary.totalScore),
+                weeksSeen: summary.weeksSeen,
+                totalWeeks: summary.totalWeeks
+            });
         } else {
-            row.__monthTotalTitle =
-                `${state.historyScopeLabel}總分：${formatNumber(summary.totalScore)}｜` +
-                `本月總分第 ${summary.totalRank} 名｜` +
-                `出現 ${summary.weeksSeen}/${summary.totalWeeks} 週`;
+            row.__monthTotalTitle = t("monthlyTotal.rankTitle", {
+                scope: state.historyScopeLabel,
+                score: formatNumber(summary.totalScore),
+                rank: summary.totalRank,
+                weeksSeen: summary.weeksSeen,
+                totalWeeks: summary.totalWeeks
+            });
         }
 
         return row;
@@ -1031,28 +1215,6 @@ function isAchievementEligiblePerson(row) {
 
 function getAchievementPersonKey(row) {
     return getCmKey(row);
-}
-
-function getAchievementRoleLabel(row) {
-    const status = getRowStatus(row);
-
-    if (status === STATUS.RETURN || isReturnAccount(row)) {
-        return STATUS.RETURN;
-    }
-
-    if (status === STATUS.ELDER) {
-        return STATUS.ELDER;
-    }
-
-    if (status === STATUS.CAPTAIN) {
-        return STATUS.CAPTAIN;
-    }
-
-    if (status === STATUS.VICE_CAPTAIN) {
-        return STATUS.VICE_CAPTAIN;
-    }
-
-    return status || "";
 }
 
 function getAchievementIdentityFlags(row) {
@@ -1131,7 +1293,7 @@ async function loadMonthlyAchievements(targetWeek) {
                 item.latestStatus = identityFlags.latestStatus || item.latestStatus;
             });
         } catch (error) {
-            console.warn(`本月成就徽章資料讀取失敗：${week.file}`, error);
+            console.warn(t("error.monthlyAchievementReadFailed", { file: week.file }), error);
         }
     }
 
@@ -1167,9 +1329,13 @@ function calculateMvpAchievement(members) {
 
     return createAchievementResult(ACHIEVEMENT_BADGES.MVP, winner, winner
         ? {
-            metricLabel: "本月總分",
+            metricLabel: t("achievement.metricMonthTotal"),
             metricValue: formatNumber(winner.totalScore),
-            detail: `${getAchievementMemberTag(winner)}｜出現 ${winner.weeksSeen}/${winner.totalWeeks} 週`
+            detail: t("achievement.detailAppeared", {
+                tag: getAchievementMemberTag(winner),
+                weeksSeen: winner.weeksSeen,
+                totalWeeks: winner.totalWeeks
+            })
         }
         : null
     );
@@ -1206,9 +1372,13 @@ function calculateImproverAchievement(members) {
 
     return createAchievementResult(ACHIEVEMENT_BADGES.IMPROVER, winner, winner
         ? {
-            metricLabel: "進步幅度",
+            metricLabel: t("achievement.metricImprovement"),
             metricValue: formatDelta(winner.achievementScore),
-            detail: `${getAchievementMemberTag(winner)}｜${formatNumber(winner.firstScore)} → ${formatNumber(winner.lastScore)}`
+            detail: t("achievement.detailScoreChange", {
+                tag: getAchievementMemberTag(winner),
+                firstScore: formatNumber(winner.firstScore),
+                lastScore: formatNumber(winner.lastScore)
+            })
         }
         : null
     );
@@ -1254,9 +1424,12 @@ function calculateStableAchievement(members) {
 
     return createAchievementResult(ACHIEVEMENT_BADGES.STABLE, winner, winner
         ? {
-            metricLabel: "平均 / 波動",
+            metricLabel: t("achievement.metricAverageVolatility"),
             metricValue: `${formatCompactNumber(winner.averageScore)} / ${formatCompactNumber(Math.round(winner.volatility))}`,
-            detail: `${getAchievementMemberTag(winner)}｜平均高於本月均值 ${formatCompactNumber(averageOfAverages)}`
+            detail: t("achievement.detailStable", {
+                tag: getAchievementMemberTag(winner),
+                average: formatCompactNumber(averageOfAverages)
+            })
         }
         : null
     );
@@ -1279,9 +1452,12 @@ function calculateBurstAchievement(members) {
 
     return createAchievementResult(ACHIEVEMENT_BADGES.BURST, winner, winner
         ? {
-            metricLabel: "單週最高",
+            metricLabel: t("achievement.metricBestWeek"),
             metricValue: formatNumber(winner.bestScore),
-            detail: `${getAchievementMemberTag(winner)}｜${winner.bestWeekLabel || "本月週別"}`
+            detail: t("achievement.detailBestWeek", {
+                tag: getAchievementMemberTag(winner),
+                week: winner.bestWeekLabel || t("achievement.fallbackWeek")
+            })
         }
         : null
     );
@@ -1326,9 +1502,12 @@ function calculatePotentialAchievement(members) {
 
     return createAchievementResult(ACHIEVEMENT_BADGES.POTENTIAL, winner, winner
         ? {
-            metricLabel: "近三筆漲幅",
+            metricLabel: t("achievement.metricRecentRise"),
             metricValue: formatDelta(winner.totalRise),
-            detail: `${getAchievementMemberTag(winner)}｜${winner.last3.map(formatCompactNumber).join(" → ")}`
+            detail: t("achievement.detailRecentRise", {
+                tag: getAchievementMemberTag(winner),
+                scores: winner.last3.map(formatCompactNumber).join(" → ")
+            })
         }
         : null
     );
@@ -1352,31 +1531,31 @@ function getAchievementProfileKeys(member) {
 }
 
 function getAchievementMemberTag(member) {
-    if (!member) return "一般";
+    if (!member) return t("common.normal");
 
     const tags = [];
 
     if (member.isReturnAccount) {
-        tags.push("回歸");
+        tags.push(tx(STATUS.RETURN));
     }
 
     if (member.isElder) {
-        tags.push("長老");
+        tags.push(tx(STATUS.ELDER));
     }
 
     if (member.isCaptain) {
-        tags.push("隊長");
+        tags.push(tx(STATUS.CAPTAIN));
     }
 
     if (member.isViceCaptain) {
-        tags.push("副隊長");
+        tags.push(tx(STATUS.VICE_CAPTAIN));
     }
 
     if (!tags.length && member.latestStatus) {
-        tags.push(member.latestStatus);
+        tags.push(tx(member.latestStatus));
     }
 
-    return tags.length ? tags.join(" / ") : "一般";
+    return tags.length ? tags.join(" / ") : t("common.normal");
 }
 
 function getAchievementMemberClass(member) {
@@ -1431,17 +1610,19 @@ function renderAchievementsPodium() {
     if (!section) return;
 
     const achievements = state.achievements || [];
-    const loadedText = state.historyScopeLabel || "本月";
+    const loadedText = state.historyScopeLabel || t("month.currentMonth");
 
     section.innerHTML = `
         <div class="achievements-head">
             <div>
-                <div class="achievements-kicker">Achievement Podium</div>
-                <h2 class="achievements-title" id="achievementsTitle">${escapeHTML(loadedText)}成就徽章</h2>
+                <div class="achievements-kicker">${escapeHTML(t("achievement.kicker"))}</div>
+                <h2 class="achievements-title" id="achievementsTitle">
+                    ${escapeHTML(t("achievement.title", { scope: loadedText }))}
+                </h2>
             </div>
 
             <div class="achievements-note">
-                依本月每週分數自動計算
+                ${escapeHTML(t("achievement.note"))}
             </div>
         </div>
 
@@ -1453,8 +1634,8 @@ function renderAchievementsPodium() {
 
 function renderAchievementCard(achievement) {
     const accent = escapeHTML(achievement.accent || "");
-    const title = escapeHTML(achievement.title || "");
-    const subtitle = escapeHTML(achievement.subtitle || "");
+    const title = escapeHTML(getAchievementTitle(achievement));
+    const subtitle = escapeHTML(getAchievementSubtitle(achievement));
     const icon = escapeHTML(achievement.icon || "🏅");
 
     if (achievement.isEmpty || !achievement.winner) {
@@ -1465,8 +1646,8 @@ function renderAchievementCard(achievement) {
                 <div class="podium-content">
                     <div class="podium-title">${title}</div>
                     <div class="podium-subtitle">${subtitle}</div>
-                    <div class="podium-name">待產生</div>
-                    <div class="podium-metric">${escapeHTML(achievement.emptyText || "暫無資料")}</div>
+                    <div class="podium-name">${escapeHTML(t("achievement.pending"))}</div>
+                    <div class="podium-metric">${escapeHTML(getAchievementEmptyText(achievement))}</div>
                 </div>
             </article>
         `;
@@ -1493,7 +1674,7 @@ function renderAchievementCard(achievement) {
                     class="podium-name ${escapeHTML(memberClass)}"
                     type="button"
                     data-profile-keys="${escapeHTML(profileKeys)}"
-                    title="查看 ${escapeHTML(displayName)} 的個人資料"
+                    title="${escapeHTML(t("achievement.viewProfileTitle", { name: displayName }))}"
                 >
                     ${escapeHTML(displayName)}
                 </button>
@@ -1549,8 +1730,8 @@ function applyRowNumbers(rows) {
 
         row.__rank = number;
         row.__rankTitle = isReturn
-            ? `回歸帳號編號 ${number}`
-            : `編號 ${number}`;
+            ? t("rank.returnAccountNumber", { number })
+            : t("rank.number", { number });
 
         row[RANK_COLUMN] = String(number);
 
@@ -1612,7 +1793,7 @@ function getMonthlyTotalScoreRows(keyword) {
         .map((row, index) => ({
             ...row,
             __displayRank: index + 1,
-            __displayRankTitle: `本月總分排序第 ${index + 1} 名`
+            __displayRankTitle: t("monthlyTotal.displayRankTitle", { rank: index + 1 })
         }));
 
     const totalRows = state.currentRows.filter(isTotalRow);
@@ -1655,21 +1836,21 @@ function getStatusMatch(row, status) {
 
 function renderHead() {
     els.tableHead.innerHTML = `
-            <tr>
-                ${DISPLAY_HEADERS.map(header => {
+        <tr>
+            ${DISPLAY_HEADERS.map(header => {
         const columnClass = getColumnClass(header);
 
         return `
-                        <th class="${escapeHTML(columnClass)}">
-                            ${escapeHTML(header)}
-                        </th>
-                    `;
+                    <th class="${escapeHTML(columnClass)}">
+                        ${escapeHTML(getHeaderLabel(header))}
+                    </th>
+                `;
     }).join("")}
-            </tr>
-        `;
+        </tr>
+    `;
 }
 
-function renderLoading(message = "資料同步中...") {
+function renderLoading(message = t("common.syncing")) {
     els.tableBody.innerHTML = `
             <tr class="loading-row">
                 <td colspan="${DISPLAY_HEADERS.length}">
@@ -1683,9 +1864,15 @@ function renderLoading(message = "資料同步中...") {
 }
 
 function renderWeekSelect() {
+    const currentWeekId = state.currentWeek?.id || state.weeks[0]?.id || "";
+
     els.weekSelect.innerHTML = state.weeks
         .map(week => `<option value="${escapeHTML(week.id)}">${escapeHTML(week.label)}</option>`)
         .join("");
+
+    if (currentWeekId) {
+        els.weekSelect.value = currentWeekId;
+    }
 }
 
 function renderStatusFilter(rows) {
@@ -1701,11 +1888,13 @@ function renderStatusFilter(rows) {
     const current = els.statusFilter.value || STATUS.ALL;
 
     els.statusFilter.innerHTML = `
-            <option value="${STATUS.ALL}">全部狀態</option>
-            <option value="${SPECIAL_STATUS_FILTERS.EVER_BOTTOM_FIVE}">曾經最後五</option>
-            <option value="${SPECIAL_STATUS_FILTERS.MONTH_TOTAL_SCORE_SORT}">本月總分排序</option>
-            ${statuses.map(status => `<option value="${escapeHTML(status)}">${escapeHTML(status)}</option>`).join("")}
-        `;
+        <option value="${STATUS.ALL}">${escapeHTML(t("status.allStatus"))}</option>
+        <option value="${SPECIAL_STATUS_FILTERS.EVER_BOTTOM_FIVE}">${escapeHTML(t("filters.everBottomFive"))}</option>
+        <option value="${SPECIAL_STATUS_FILTERS.MONTH_TOTAL_SCORE_SORT}">${escapeHTML(t("filters.monthTotalScoreSort"))}</option>
+        ${statuses.map(status => `
+            <option value="${escapeHTML(status)}">${escapeHTML(tx(status))}</option>
+        `).join("")}
+    `;
 
     const validValues = [
         STATUS.ALL,
@@ -1766,35 +1955,35 @@ function renderStats(rows) {
 
     const statItems = [
         {
-            label: "一週總分加總",
+            label: t("stats.weeklyTotalSum"),
             value: getWeeklyTotalScore(rows),
             icon: "⚡",
             format: "compact",
             className: ""
         },
         {
-            label: STATUS.ELDER,
+            label: tx(STATUS.ELDER),
             value: countByStatus(people, STATUS.ELDER),
             icon: "♕",
             format: "normal",
             className: "stat-elder"
         },
         {
-            label: STATUS.PASS,
+            label: tx(STATUS.PASS),
             value: countByStatus(people, STATUS.PASS),
             icon: "✅",
             format: "normal",
             className: ""
         },
         {
-            label: STATUS.DOWNGRADE,
+            label: tx(STATUS.DOWNGRADE),
             value: countByStatus(people, STATUS.DOWNGRADE),
             icon: "⚠️",
             format: "normal",
             className: ""
         },
         {
-            label: STATUS.OUT,
+            label: tx(STATUS.OUT),
             value: countByStatus(people, STATUS.OUT),
             icon: "⛔",
             format: "normal",
@@ -1835,7 +2024,7 @@ function renderBody() {
 
     if (!filteredRows.length) {
         renderEmptyBody();
-        els.resultHint.textContent = "目前顯示 0 筆成員資料";
+        els.resultHint.textContent = t("table.shownZero");
         state.hasRenderedTableOnce = true;
 
         return;
@@ -1852,12 +2041,12 @@ function renderBody() {
 
 function renderEmptyBody() {
     els.tableBody.innerHTML = `
-            <tr>
-                <td class="empty-state" colspan="${DISPLAY_HEADERS.length}">
-                    找不到符合條件的資料。
-                </td>
-            </tr>
-        `;
+        <tr>
+            <td class="empty-state" colspan="${DISPLAY_HEADERS.length}">
+                ${escapeHTML(t("table.empty"))}
+            </td>
+        </tr>
+    `;
 }
 
 function renderTableRow(row, index) {
@@ -1897,12 +2086,12 @@ function renderSectionRow(row, index) {
         : `style="animation-delay: ${getRowAnimationDelay(index)}s"`;
 
     return `
-            <tr class="${rowClass}" ${animationStyle}>
-                <td colspan="${DISPLAY_HEADERS.length}">
-                    📌 ${escapeHTML(cleanText(row["CM"]))}
-                </td>
-            </tr>
-        `;
+        <tr class="${rowClass}" ${animationStyle}>
+            <td colspan="${DISPLAY_HEADERS.length}">
+                📌 ${escapeHTML(tx(cleanText(row["CM"])))}
+            </td>
+        </tr>
+    `;
 }
 
 function renderTableCell(row, header) {
@@ -1918,29 +2107,35 @@ function renderTableCell(row, header) {
 
 function renderNameCell(row, header) {
     const cmKey = getCmKey(row);
-    const displayName = getDisplayName(row[header]);
-    const titleName = escapeHTML(cleanText(row[header]) || "此成員");
+    const rawCellValue = cleanText(row[header]);
+    const rawName = rawCellValue || t("profile.thisMember");
+
+    const displayName = escapeHTML(
+        !isPersonRow(row)
+            ? tx(rawCellValue || "-")
+            : (rawCellValue || "-")
+    );
 
     if (isPersonRow(row) && cmKey) {
         return `
-                <td class="${getCellClass(header, "name")}" ${getCellLabelAttr(header)}>
-                    <button 
-                        class="${getPersonLinkClass(row)}" 
-                        type="button" 
-                        data-profile-keys="${escapeHTML(cmKey)}" 
-                        title="查看 ${titleName} 的個人資料"
-                    >
-                        ${displayName}
-                    </button>
-                </td>
-            `;
+            <td class="${getCellClass(header, "name")}" ${getCellLabelAttr(header)}>
+                <button 
+                    class="${getPersonLinkClass(row)}" 
+                    type="button" 
+                    data-profile-keys="${escapeHTML(cmKey)}" 
+                    title="${escapeHTML(t("achievement.viewProfileTitle", { name: rawName }))}"
+                >
+                    ${displayName}
+                </button>
+            </td>
+        `;
     }
 
     return `
-            <td class="${getCellClass(header, "name")}" ${getCellLabelAttr(header)}>
-                ${displayName}
-            </td>
-        `;
+        <td class="${getCellClass(header, "name")}" ${getCellLabelAttr(header)}>
+            ${displayName}
+        </td>
+    `;
 }
 
 function renderRankCell(row, header) {
@@ -1983,8 +2178,8 @@ function renderTrendCell(row, header) {
 
     const prevScoreText =
         row.__prevScore !== null && row.__prevScore !== undefined
-            ? `上週：${formatNumber(row.__prevScore)}`
-            : "上週無資料";
+            ? t("trend.lastWeek", { score: formatNumber(row.__prevScore) })
+            : t("trend.lastWeekNoData");
 
     return `
             <td class="${getCellClass(header, "score")}" ${getCellLabelAttr(header)}>
@@ -2014,14 +2209,14 @@ function renderStatusCell(row, header) {
     const status = cleanText(row[header]);
 
     const statusHTML = status
-        ? `<span class="badge ${getBadgeClass(status)}" title="${escapeHTML(getStatusTitle(status))}">${escapeHTML(status)}</span>`
+        ? `<span class="badge ${getBadgeClass(status)}" title="${escapeHTML(getStatusTitle(status))}">${escapeHTML(tx(status))}</span>`
         : "-";
 
     return `
-            <td class="${getCellClass(header)}" ${getCellLabelAttr(header)}>
-                ${statusHTML}
-            </td>
-        `;
+        <td class="${getCellClass(header)}" ${getCellLabelAttr(header)}>
+            ${statusHTML}
+        </td>
+    `;
 }
 
 function renderScoreCell(row, header) {
@@ -2054,11 +2249,15 @@ function updateResultHint(filteredRows) {
 
     const historyEverCount = state.currentRows.filter(isEverBottomFive).length;
 
-    els.resultHint.textContent =
-        `目前顯示可計算 ${shownPeople} / ${allPeople} 筆｜` +
-        `不計算排除 ${shownExcludedCount} / ${allExcludedCount} 筆｜` +
-        `${state.historyScopeLabel}曾後五 ${historyEverCount} 人｜` +
-        `都後五 ${historyRiskCount} 人`;
+    els.resultHint.textContent = t("table.hint", {
+        shownPeople,
+        allPeople,
+        shownExcluded: shownExcludedCount,
+        allExcluded: allExcludedCount,
+        scope: state.historyScopeLabel,
+        everCount: historyEverCount,
+        riskCount: historyRiskCount
+    });
 }
 
 function updateMonthlyTotalScoreHint(filteredRows) {
@@ -2069,8 +2268,12 @@ function updateMonthlyTotalScoreHint(filteredRows) {
     const topPerson = sortedPeople[0] || null;
 
     els.resultHint.textContent = topPerson
-        ? `${state.historyScopeLabel}本月總分最高：${topPerson["CM"] || "-"}｜${formatNumber(topPerson.__monthTotal || 0)} 分｜已排除回歸號｜目前依本月總分由高到低排序`
-        : "目前沒有可排序的本月總分資料";
+        ? t("monthlyTotal.hintTop", {
+            scope: state.historyScopeLabel,
+            name: topPerson["CM"] || "-",
+            score: formatNumber(topPerson.__monthTotal || 0)
+        })
+        : t("monthlyTotal.hintEmpty");
 }
 
 /* ================================
@@ -2088,13 +2291,13 @@ function getScoreRecordsFromRows(row, week) {
 
     const activities = [
         {
-            label: "活動 1",
+            label: t("profile.activity", { number: 1 }),
             value: activity1,
             raw: activity1Raw,
             show: true
         },
         {
-            label: "活動 2",
+            label: t("profile.activity", { number: 2 }),
             value: activity2,
             raw: activity2Raw,
             show: true
@@ -2103,7 +2306,7 @@ function getScoreRecordsFromRows(row, week) {
 
     if (activity3Raw !== "" && activity3 !== 0) {
         activities.push({
-            label: "活動 3",
+            label: t("profile.activity", { number: 3 }),
             value: activity3,
             raw: activity3Raw,
             show: true
@@ -2240,18 +2443,23 @@ function getProfileSummary(profile) {
 }
 
 function getRecordActivities(record) {
+
+    if (!Number.isFinite(record.score)) {
+        return [];
+    }
+
     if (Array.isArray(record.activities) && record.activities.length) {
         return record.activities.filter(activity => activity.show !== false);
     }
 
     const activities = [
         {
-            label: "活動 1",
+            label: t("profile.activity", { number: 1 }),
             value: record.activity1,
             show: true
         },
         {
-            label: "活動 2",
+            label: t("profile.activity", { number: 2 }),
             value: record.activity2,
             show: true
         }
@@ -2259,7 +2467,7 @@ function getRecordActivities(record) {
 
     if (Number.isFinite(record.activity3) && record.activity3 !== 0) {
         activities.push({
-            label: "活動 3",
+            label: t("profile.activity", { number: 3 }),
             value: record.activity3,
             show: true
         });
@@ -2292,10 +2500,10 @@ function renderProfileChart(monthRecords) {
 
     if (!validScores.length) {
         return `
-                <div class="profile-empty">
-                    這個月份沒有可繪製的分數資料。
-                </div>
-            `;
+            <div class="profile-empty">
+                ${escapeHTML(t("profile.chartNoData"))}
+            </div>
+        `;
     }
 
     const maxScore = Math.max(...validScores, 1);
@@ -2350,7 +2558,7 @@ function renderProfileChart(monthRecords) {
     const dots = points.map(point => renderChartPoint(point, height)).join("");
 
     return `
-            <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="本月分數折線圖">
+            <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHTML(t("profile.chartAria"))}">
                 <defs>
                     <linearGradient id="scoreAreaGradient" x1="0" x2="0" y1="0" y2="1">
                         <stop offset="0%" stop-color="rgba(37, 99, 235, 0.22)"></stop>
@@ -2373,15 +2581,15 @@ function renderProfileChart(monthRecords) {
 
 function renderChartPoint(point, height) {
     const label = escapeHTML(point.shortLabel);
-    const value = point.hasScore ? formatNumber(point.score) : "無資料";
+    const value = point.hasScore ? formatNumber(point.score) : t("common.noData");
 
     if (!point.hasScore) {
         return `
-                <circle class="chart-dot-empty" cx="${point.x}" cy="${point.y}" r="5">
-                    <title>${label}：無資料</title>
-                </circle>
-                <text class="chart-label" x="${point.x}" y="${height - 24}" text-anchor="middle">${label}</text>
-            `;
+        <circle class="chart-dot-empty" cx="${point.x}" cy="${point.y}" r="5">
+            <title>${label}：${escapeHTML(t("common.noData"))}</title>
+        </circle>
+        <text class="chart-label" x="${point.x}" y="${height - 24}" text-anchor="middle">${label}</text>
+    `;
     }
 
     return `
@@ -2396,10 +2604,10 @@ function renderChartPoint(point, height) {
 function renderProfileTimeline(records) {
     if (!records.length) {
         return `
-                <div class="profile-empty">
-                    查無這位成員的週別紀錄。
-                </div>
-            `;
+            <div class="profile-empty">
+                ${escapeHTML(t("profile.timelineNoData"))}
+            </div>
+        `;
     }
 
     return records
@@ -2409,36 +2617,40 @@ function renderProfileTimeline(records) {
         .join("");
 }
 
+function formatOptionalNumber(value) {
+    return Number.isFinite(value) ? formatNumber(value) : "-";
+}
+
 function renderProfileTimelineRow(record) {
     const activities = getRecordActivities(record);
     const dynamicColumnCount = activities.length + 2;
 
     const activityHTML = activities
         .map(activity => `
-                <div class="profile-week-score">
-                    <span class="profile-week-caption">${escapeHTML(activity.label)}</span>
-                    ${formatNumber(activity.value)}
-                </div>
-            `)
+        <div class="profile-week-score">
+            <span class="profile-week-caption">${escapeHTML(activity.label)}</span>
+            ${formatOptionalNumber(activity.value)}
+        </div>
+    `)
         .join("");
 
     return `
             <div class="profile-week-row" style="--profile-week-columns: ${dynamicColumnCount}">
                 <div>
                     <div class="profile-week-label">${escapeHTML(record.weekLabel)}</div>
-                    <div class="profile-week-small">${escapeHTML(record.startDate || "未提供日期")}</div>
+                    <div class="profile-week-small">${escapeHTML(record.startDate || t("common.notProvidedDate"))}</div>
                 </div>
 
                 <div class="profile-week-score">
-                    <span class="profile-week-caption">一週總分</span>
-                    ${formatNumber(record.score)}
+                    <span class="profile-week-caption">${escapeHTML(t("profile.weeklyTotal"))}</span>
+                    ${formatOptionalNumber(record.score)}
                 </div>
 
                 ${activityHTML}
 
                 <div class="profile-week-score">
-                    <span class="profile-week-caption">狀態</span>
-                    <span class="badge ${getBadgeClass(record.status)}">${escapeHTML(record.status || "-")}</span>
+                    <span class="profile-week-caption">${escapeHTML(t("profile.status"))}</span>
+                    <span class="badge ${getBadgeClass(record.status)}">${escapeHTML(tx(record.status) || "-")}</span>
                 </div>
             </div>
         `;
@@ -2456,7 +2668,7 @@ function renderMemberProfile(profile) {
     const latestRecord = summary.latestRecord;
     const bestRecord = summary.bestRecord;
 
-    const displayName = latestRecord.cm || latestRecord.lineName || "未命名成員";
+    const displayName = latestRecord.cm || latestRecord.lineName || t("common.unnamedMember");
     const isLatestElder = cleanText(latestRecord.status) === STATUS.ELDER;
 
     if (els.profileDialog) {
@@ -2464,42 +2676,45 @@ function renderMemberProfile(profile) {
     }
 
     els.profileName.textContent = displayName;
-    els.profileMeta.textContent =
-        `共出現 ${summary.totalWeeks} 週｜最新狀態：${latestRecord.status || "未標記"}｜${profile.selectedMonthLabel}走勢分析`;
+    els.profileMeta.textContent = t("profile.weeksAppearedMeta", {
+        weeks: summary.totalWeeks,
+        status: tx(latestRecord.status) || t("profile.latestStatusUnmarked"),
+        month: profile.selectedMonthLabel
+    });
 
     els.profileBody.innerHTML = `
             ${isLatestElder ? renderElderProfileBanner() : ""}
 
             <div class="profile-grid">
                 <article class="profile-stat">
-                    <div class="profile-stat-label">歷史最高分</div>
+                    <div class="profile-stat-label">${escapeHTML(t("profile.bestScore"))}</div>
                     <div class="profile-stat-value">${formatNumber(bestRecord.score)}</div>
                     <div class="profile-stat-note">${escapeHTML(bestRecord.weekLabel)}</div>
                 </article>
 
                 <article class="profile-stat">
-                    <div class="profile-stat-label">歷史平均分</div>
+                    <div class="profile-stat-label">${escapeHTML(t("profile.averageScore"))}</div>
                     <div class="profile-stat-value">${formatNumber(summary.averageScore)}</div>
-                    <div class="profile-stat-note">依出現週數平均</div>
+                    <div class="profile-stat-note">${escapeHTML(t("profile.averageNote"))}</div>
                 </article>
 
                 <article class="profile-stat">
-                    <div class="profile-stat-label">${escapeHTML(profile.selectedMonthLabel)}總分</div>
+                    <div class="profile-stat-label">${escapeHTML(t("profile.monthTotal", { month: profile.selectedMonthLabel }))}</div>
                     <div class="profile-stat-value">${formatNumber(summary.monthTotal)}</div>
-                    <div class="profile-stat-note">本月已出現週別加總</div>
+                    <div class="profile-stat-note">${escapeHTML(t("profile.monthTotalNote"))}</div>
                 </article>
 
                 <article class="profile-stat">
-                    <div class="profile-stat-label">本月走勢</div>
+                    <div class="profile-stat-label">${escapeHTML(t("profile.monthTrend"))}</div>
                     <div class="profile-stat-value">${escapeHTML(formatDelta(summary.monthDelta))}</div>
-                    <div class="profile-stat-note">以本月第一筆與最後一筆比較</div>
+                    <div class="profile-stat-note">${escapeHTML(t("profile.monthTrendNote"))}</div>
                 </article>
             </div>
 
             <section class="profile-section">
                 <div class="profile-section-head">
-                    <h3 class="profile-section-title">${escapeHTML(profile.selectedMonthLabel)}分數折線圖</h3>
-                    <span class="profile-section-subtitle">顯示目前選取月份的每週總分</span>
+                    <h3 class="profile-section-title">${escapeHTML(t("profile.chartTitle", { month: profile.selectedMonthLabel }))}</h3>
+                    <span class="profile-section-subtitle">${escapeHTML(t("profile.chartSubtitle"))}</span>
                 </div>
 
                 <div class="profile-chart">
@@ -2509,8 +2724,8 @@ function renderMemberProfile(profile) {
 
             <section class="profile-section">
                 <div class="profile-section-head">
-                    <h3 class="profile-section-title">歷史週別紀錄</h3>
-                    <span class="profile-section-subtitle">最新週別在最上方</span>
+                    <h3 class="profile-section-title">${escapeHTML(t("profile.timelineTitle"))}</h3>
+                    <span class="profile-section-subtitle">${escapeHTML(t("profile.timelineSubtitle"))}</span>
                 </div>
 
                 <div class="profile-timeline">
@@ -2521,32 +2736,32 @@ function renderMemberProfile(profile) {
 }
 
 function renderEmptyMemberProfile() {
-    els.profileName.textContent = "查無成員資料";
-    els.profileMeta.textContent = "沒有找到對應的歷史紀錄。";
+    els.profileName.textContent = t("profile.emptyTitle");
+    els.profileMeta.textContent = t("profile.emptyMeta");
     els.profileBody.innerHTML = `
-            <div class="profile-empty">
-                找不到這位成員的歷史資料。
-            </div>
-        `;
+        <div class="profile-empty">
+            ${escapeHTML(t("profile.emptyBody"))}
+        </div>
+    `;
 }
 
 function renderElderProfileBanner() {
     return `
-            <div class="elder-profile-banner">
-                <div class="elder-profile-icon" aria-hidden="true">♕</div>
+        <div class="elder-profile-banner">
+            <div class="elder-profile-icon" aria-hidden="true">♕</div>
 
-                <div>
-                    <div class="elder-profile-title">長老榮耀已啟用</div>
-                    <div class="elder-profile-text">
-                        此成員目前為長老身份，已達成本週高階標準。系統已套用專屬獎勵視覺與榮耀標記。
-                    </div>
-                </div>
-
-                <div class="elder-profile-tag">
-                    ELDER REWARD
+            <div>
+                <div class="elder-profile-title">${escapeHTML(t("profile.elderBannerTitle"))}</div>
+                <div class="elder-profile-text">
+                    ${escapeHTML(t("profile.elderBannerText"))}
                 </div>
             </div>
-        `;
+
+            <div class="elder-profile-tag">
+                ${escapeHTML(t("profile.elderReward"))}
+            </div>
+        </div>
+    `;
 }
 
 /* ================================
@@ -2577,13 +2792,13 @@ async function openMemberProfile(profileKeyValue) {
 
     openProfileModal();
 
-    els.profileName.textContent = "成員資料";
-    els.profileMeta.textContent = "資料分析中...";
+    els.profileName.textContent = t("profile.title");
+    els.profileMeta.textContent = t("profile.analyzing");
     els.profileBody.innerHTML = `
-            <div class="profile-loading">
-                正在彙整歷史最高分、本月折線圖與週別紀錄...
-            </div>
-        `;
+        <div class="profile-loading">
+            ${escapeHTML(t("profile.loadingDetail"))}
+        </div>
+    `;
 
     try {
         const profile = await buildMemberProfile(initialKeys);
@@ -2592,13 +2807,13 @@ async function openMemberProfile(profileKeyValue) {
     } catch (error) {
         console.error(error);
 
-        els.profileName.textContent = "資料讀取失敗";
-        els.profileMeta.textContent = "個人資料分析時發生錯誤。";
+        els.profileName.textContent = t("profile.readFailedTitle");
+        els.profileMeta.textContent = t("profile.readFailedMeta");
         els.profileBody.innerHTML = `
-                <div class="profile-empty">
-                    個人資料讀取失敗，請確認每週 CSV 檔案是否都能正常讀取。
-                </div>
-            `;
+            <div class="profile-empty">
+                ${escapeHTML(t("profile.readFailedBody"))}
+            </div>
+        `;
     }
 }
 
@@ -2612,18 +2827,18 @@ async function loadWeek(weekId) {
     state.currentWeek = week;
     state.hasRenderedTableOnce = false;
 
-    showLoading("資料載入中...");
+    showLoading(t("common.dataLoading"));
 
     const rows = cloneRows(await getWeekRows(week));
     const previousRows = await getPreviousRows(week.id);
 
-    showLoading("分析本月後五名中...");
+    showLoading(t("loadingSteps.bottomFive"));
     await loadHistoryBottomFive(week);
 
-    showLoading("計算本月個人總分中...");
+    showLoading(t("loadingSteps.monthlyTotal"));
     await loadMonthlyPersonalTotals(week);
 
-    showLoading("產生成就徽章中...");
+    showLoading(t("loadingSteps.achievements"));
     await loadMonthlyAchievements(week);
 
     state.currentRows = prepareCurrentRows(rows, previousRows);
@@ -2645,27 +2860,29 @@ function renderError(error) {
     }
 
     els.stats.innerHTML = "";
-    els.resultHint.textContent = "資料讀取失敗";
+    els.resultHint.textContent = t("error.dataReadFailed");
     els.tableHead.innerHTML = "";
 
     els.tableBody.innerHTML = `
-            <tr>
-                <td class="empty-state" colspan="${DISPLAY_HEADERS.length}">
-                    資料讀取失敗，請確認 <strong>data/weeks.csv</strong> 與每週 CSV 檔案路徑是否正確。
-                </td>
-            </tr>
-        `;
+        <tr>
+            <td class="empty-state" colspan="${DISPLAY_HEADERS.length}">
+                ${t("error.dataReadFailedBody")}
+            </td>
+        </tr>
+    `;
 }
 
 async function initApp() {
     try {
+        await loadI18n();
+
         renderHead();
-        renderLoading("讀取週別資料中...");
+        renderLoading(t("common.readingWeeks"));
 
         await loadWeeks();
 
         if (!state.weeks.length) {
-            throw new Error("weeks.csv 沒有週別資料");
+            throw new Error(t("error.weeksCsvEmpty"));
         }
 
         await loadWeek(state.weeks[0].id);
@@ -2673,6 +2890,7 @@ async function initApp() {
         renderError(error);
     }
 }
+
 
 /* ================================
    Events
@@ -2693,6 +2911,9 @@ els.weekSelect.addEventListener("change", async event => {
 
 els.searchInput.addEventListener("input", debouncedRenderBody);
 els.statusFilter.addEventListener("change", renderBody);
+els.languageSelect.addEventListener("change", event => {
+    setLocale(event.target.value);
+});
 
 document.addEventListener("click", event => {
     const button = event.target.closest("[data-profile-keys]");
