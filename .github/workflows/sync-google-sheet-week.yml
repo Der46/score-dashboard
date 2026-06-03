@@ -1,0 +1,69 @@
+name: Sync Google Sheet Weekly Score
+
+on:
+  workflow_dispatch:
+    inputs:
+      week_id:
+        description: "週別 ID，例如 2026-06-w2"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  sync-week:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas openpyxl requests
+
+      - name: Download Google Sheet week as XLSX
+        env:
+          GOOGLE_SPREADSHEET_ID: ${{ secrets.GOOGLE_SPREADSHEET_ID }}
+          GOOGLE_SHEETS_API_KEY: ${{ secrets.GOOGLE_SHEETS_API_KEY }}
+          WEEK_ID: ${{ inputs.week_id }}
+        run: |
+          python scripts/download_google_sheet_week.py
+
+      - name: Convert XLSX to dashboard CSV
+        env:
+          INPUT_XLSX: work/${{ inputs.week_id }}.xlsx
+          OUTPUT_CSV: data/${{ inputs.week_id }}.csv
+        run: |
+          python scripts/convert_excel_to_csv.py
+
+      - name: Update weeks.csv
+        env:
+          WEEK_ID: ${{ inputs.week_id }}
+        run: |
+          python scripts/update_weeks_csv.py
+
+      - name: Show changed files
+        run: |
+          git status --short
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add data/${{ inputs.week_id }}.csv data/weeks.csv
+
+          if git diff --cached --quiet; then
+            echo "沒有檔案需要提交"
+          else
+            git commit -m "Update weekly score ${{ inputs.week_id }}"
+            git push
+          fi

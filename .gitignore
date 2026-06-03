@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Temporary files
+work/
+*.xlsx
+~$*.xlsx
+
+# Secrets
+.env
+.env.*
+credentials.json
+service-account.json
+google-service-account.json
+*.key
