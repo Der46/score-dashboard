@@ -169,7 +169,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add "data/${WEEK_ID}.csv" data/weeks.csv
+          git add "data/${WEEK_ID}.csv" data/weeks.csv data/last-updated.json
 
           if git diff --cached --quiet; then
             echo "沒有檔案需要提交"
