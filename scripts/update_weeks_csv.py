@@ -6,6 +6,7 @@ from pathlib import Path
 
 
 WEEKS_CSV = Path("data/weeks.csv")
+DATA_FILE_PREFIX = "./data"
 
 
 def parse_week_id(week_id):
@@ -120,7 +121,7 @@ def main():
         "label": build_label(week_id),
         "startDate": start_date.isoformat(),
         "endDate": end_date.isoformat(),
-        "file": f"{week_id}.csv",
+        "file": f"{DATA_FILE_PREFIX}/{week_id}.csv",
     }
 
     rows = read_weeks()
