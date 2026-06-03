@@ -36,7 +36,6 @@ jobs:
           from zoneinfo import ZoneInfo
 
           input_week_id = os.environ.get("INPUT_WEEK_ID", "").strip()
-
           week_id_pattern = re.compile(r"^\d{4}-\d{2}-w\d+$")
 
           def first_monday_of_month(year, month):
@@ -50,7 +49,6 @@ jobs:
 
               first_monday = first_monday_of_month(year, month)
 
-              # 如果今天早於本月第一個星期一，歸到上個月最後一週
               if current_date < first_monday:
                   if month == 1:
                       year -= 1
@@ -106,17 +104,39 @@ jobs:
         run: |
           python scripts/convert_excel_to_csv.py
 
+      - name: Check CSV changes
+        id: check_changes
+        run: |
+          WEEK_ID="${{ steps.resolve_week.outputs.week_id }}"
+          CSV_FILE="data/${WEEK_ID}.csv"
+
+          if [ ! -f "$CSV_FILE" ]; then
+            echo "找不到 CSV 檔案：$CSV_FILE"
+            exit 1
+          fi
+
+          if git diff --quiet -- "$CSV_FILE"; then
+            echo "CSV 沒有變更：$CSV_FILE"
+            echo "csv_changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "CSV 有變更：$CSV_FILE"
+            echo "csv_changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Update weeks.csv
+        if: steps.check_changes.outputs.csv_changed == 'true'
         env:
           WEEK_ID: ${{ steps.resolve_week.outputs.week_id }}
         run: |
           python scripts/update_weeks_csv.py
 
       - name: Show changed files
+        if: steps.check_changes.outputs.csv_changed == 'true'
         run: |
           git status --short
 
       - name: Commit and push changes
+        if: steps.check_changes.outputs.csv_changed == 'true'
         run: |
           WEEK_ID="${{ steps.resolve_week.outputs.week_id }}"
 
@@ -131,3 +151,8 @@ jobs:
             git commit -m "Update weekly score ${WEEK_ID}"
             git push
           fi
+
+      - name: No changes summary
+        if: steps.check_changes.outputs.csv_changed == 'false'
+        run: |
+          echo "本次同步沒有資料變更，已略過 update_weeks_csv.py 與 commit。"
