@@ -16,6 +16,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: sync-google-sheet-week
+  cancel-in-progress: false
+
 jobs:
   sync-week:
     runs-on: ubuntu-latest
@@ -23,11 +27,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Resolve week id
         id: resolve_week
         env:
-          INPUT_WEEK_ID: ${{ inputs.week_id }}
+          INPUT_WEEK_ID: ${{ github.event.inputs.week_id || '' }}
         run: |
           python - <<'PY'
           import os
@@ -49,6 +55,7 @@ jobs:
 
               first_monday = first_monday_of_month(year, month)
 
+              # 如果今天早於本月第一個星期一，歸到上個月最後一週
               if current_date < first_monday:
                   if month == 1:
                       year -= 1
@@ -64,7 +71,9 @@ jobs:
 
           if input_week_id:
               if not week_id_pattern.match(input_week_id):
-                  raise ValueError(f"week_id 格式錯誤：{input_week_id}，應為 yyyy-MM-wN，例如 2026-06-w2")
+                  raise ValueError(
+                      f"week_id 格式錯誤：{input_week_id}，應為 yyyy-MM-wN，例如 2026-06-w2"
+                  )
 
               week_id = input_week_id
               source = "manual input"
@@ -104,39 +113,56 @@ jobs:
         run: |
           python scripts/convert_excel_to_csv.py
 
-      - name: Check CSV changes
+      - name: Check whether data needs update
         id: check_changes
         run: |
           WEEK_ID="${{ steps.resolve_week.outputs.week_id }}"
           CSV_FILE="data/${WEEK_ID}.csv"
+          WEEKS_FILE="data/weeks.csv"
+
+          NEED_UPDATE=false
 
           if [ ! -f "$CSV_FILE" ]; then
-            echo "找不到 CSV 檔案：$CSV_FILE"
+            echo "找不到轉換後的 CSV 檔案：$CSV_FILE"
             exit 1
           fi
 
-          if git diff --quiet -- "$CSV_FILE"; then
-            echo "CSV 沒有變更：$CSV_FILE"
-            echo "csv_changed=false" >> "$GITHUB_OUTPUT"
+          if ! git ls-files --error-unmatch "$CSV_FILE" > /dev/null 2>&1; then
+            echo "CSV 是新檔案，需要提交：$CSV_FILE"
+            NEED_UPDATE=true
+          elif git diff --quiet -- "$CSV_FILE"; then
+            echo "CSV 沒有內容變更：$CSV_FILE"
           else
-            echo "CSV 有變更：$CSV_FILE"
-            echo "csv_changed=true" >> "$GITHUB_OUTPUT"
+            echo "CSV 有內容變更，需要提交：$CSV_FILE"
+            NEED_UPDATE=true
           fi
 
+          if [ ! -f "$WEEKS_FILE" ]; then
+            echo "weeks.csv 不存在，需要建立"
+            NEED_UPDATE=true
+          elif ! grep -q "^${WEEK_ID}," "$WEEKS_FILE"; then
+            echo "weeks.csv 尚未包含 ${WEEK_ID}，需要更新"
+            NEED_UPDATE=true
+          else
+            echo "weeks.csv 已包含 ${WEEK_ID}"
+          fi
+
+          echo "need_update=${NEED_UPDATE}" >> "$GITHUB_OUTPUT"
+
       - name: Update weeks.csv
-        if: steps.check_changes.outputs.csv_changed == 'true'
+        if: steps.check_changes.outputs.need_update == 'true'
         env:
           WEEK_ID: ${{ steps.resolve_week.outputs.week_id }}
         run: |
           python scripts/update_weeks_csv.py
 
       - name: Show changed files
-        if: steps.check_changes.outputs.csv_changed == 'true'
+        if: steps.check_changes.outputs.need_update == 'true'
         run: |
           git status --short
 
       - name: Commit and push changes
-        if: steps.check_changes.outputs.csv_changed == 'true'
+        if: steps.check_changes.outputs.need_update == 'true'
         run: |
           WEEK_ID="${{ steps.resolve_week.outputs.week_id }}"
 
@@ -153,6 +179,7 @@ jobs:
           fi
 
       - name: No changes summary
-        if: steps.check_changes.outputs.csv_changed == 'false'
+        if: steps.check_changes.outputs.need_update == 'false'
         run: |
-          echo "本次同步沒有資料變更，已略過 update_weeks_csv.py 與 commit。"
+          echo "本次同步沒有資料變更，且 weeks.csv 已包含此週別。"
+          echo "已略過 update_weeks_csv.py、commit 與 push。"
