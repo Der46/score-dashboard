@@ -4,12 +4,18 @@ on:
   schedule:
     # GitHub Actions cron 使用 UTC
     # 每 3 小時執行一次
+    #
+    # 自動週別切換規則：
+    # - 每週一是週別起始日
+    # - 但 Google Sheet 當週分頁通常要等資料整理完成
+    # - 因此自動同步延後到「台灣時間每週三 21:00」才切換到當週
+    # - 在週三 21:00 以前，仍繼續同步上一週
     - cron: "0 */3 * * *"
 
   workflow_dispatch:
     inputs:
       week_id:
-        description: "週別 ID，例如 2026-06-w2。留空則自動使用台灣當前週別"
+        description: "週別 ID，例如 2026-06-w2。留空則自動依台灣時間與週三 21:00 規則判斷"
         required: false
         type: string
 
@@ -38,11 +44,18 @@ jobs:
           python - <<'PY'
           import os
           import re
-          from datetime import datetime, date, timedelta
+          from datetime import datetime, date, time, timedelta
           from zoneinfo import ZoneInfo
 
           input_week_id = os.environ.get("INPUT_WEEK_ID", "").strip()
           week_id_pattern = re.compile(r"^\d{4}-\d{2}-w\d+$")
+
+          # 自動週別切換時間設定：
+          # Python weekday(): Monday=0, Tuesday=1, Wednesday=2
+          # 這裡設定為每週三 21:00，台灣時間。
+          SWITCH_WEEKDAY = 2
+          SWITCH_HOUR = 21
+          SWITCH_MINUTE = 0
 
           def first_monday_of_month(year, month):
               first_day = date(year, month, 1)
@@ -69,6 +82,70 @@ jobs:
 
               return f"{year:04d}-{month:02d}-w{week_index}"
 
+          def get_week_start_from_date(current_date):
+              """
+              依照專案目前週別規則，取得 current_date 所屬週別的起始星期一。
+
+              規則：
+              - 每月第一週從「該月第一個星期一」開始。
+              - 若日期早於本月第一個星期一，則歸到上個月最後一週。
+              """
+              year = current_date.year
+              month = current_date.month
+
+              first_monday = first_monday_of_month(year, month)
+
+              if current_date < first_monday:
+                  if month == 1:
+                      year -= 1
+                      month = 12
+                  else:
+                      month -= 1
+
+                  first_monday = first_monday_of_month(year, month)
+
+              week_index = ((current_date - first_monday).days // 7) + 1
+              week_start = first_monday + timedelta(days=(week_index - 1) * 7)
+
+              return week_start
+
+          def resolve_auto_week_id(now):
+              """
+              自動週別切換規則：
+
+              - 每週一是週別起始日。
+              - 但 Google Sheet 當週分頁可能還沒建立或資料尚未整理完成。
+              - 因此自動同步延後到「台灣時間每週三 21:00」才切換到當週。
+              - 在週三 21:00 以前，仍繼續同步上一週。
+
+              範例：
+              2026-06-w2 的起始日是 2026-06-08 週一。
+              自動同步會到 2026-06-10 21:00 之後才開始抓 2026-06-w2。
+              在此之前會繼續抓 2026-06-w1。
+              """
+              today = now.date()
+              current_week_start = get_week_start_from_date(today)
+
+              switch_date = current_week_start + timedelta(days=SWITCH_WEEKDAY)
+              switch_datetime = datetime.combine(
+                  switch_date,
+                  time(SWITCH_HOUR, SWITCH_MINUTE),
+                  tzinfo=now.tzinfo
+              )
+
+              if now < switch_datetime:
+                  # 尚未到週三 21:00，繼續使用上一週
+                  effective_date = current_week_start - timedelta(days=1)
+                  switch_status = "before weekly switch time, use previous week"
+              else:
+                  # 已到週三 21:00，開始使用當週
+                  effective_date = today
+                  switch_status = "after weekly switch time, use current week"
+
+              week_id = get_week_id_from_date(effective_date)
+
+              return week_id, effective_date, switch_datetime, switch_status
+
           if input_week_id:
               if not week_id_pattern.match(input_week_id):
                   raise ValueError(
@@ -78,9 +155,16 @@ jobs:
               week_id = input_week_id
               source = "manual input"
           else:
-              today = datetime.now(ZoneInfo("Asia/Taipei")).date()
-              week_id = get_week_id_from_date(today)
-              source = f"auto from Asia/Taipei date {today.isoformat()}"
+              now = datetime.now(ZoneInfo("Asia/Taipei"))
+
+              week_id, effective_date, switch_datetime, switch_status = resolve_auto_week_id(now)
+
+              source = (
+                  f"auto from Asia/Taipei datetime {now.isoformat()}, "
+                  f"effective week date {effective_date.isoformat()}, "
+                  f"weekly switch datetime {switch_datetime.isoformat()}, "
+                  f"{switch_status}"
+              )
 
           print(f"Resolved WEEK_ID={week_id} ({source})")
 
