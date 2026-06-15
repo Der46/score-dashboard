@@ -1230,7 +1230,12 @@ function getAchievementIdentityFlags(row) {
 }
 
 async function loadMonthlyAchievements(targetWeek) {
-    const monthWeeks = getWeeksInSameMonth(targetWeek).reverse();
+    const monthWeeks = getWeeksInSameMonth(targetWeek)
+        .slice()
+        .sort((a, b) => {
+            return String(a.startDate || a.id || "").localeCompare(String(b.startDate || b.id || ""));
+        });
+
     const achievementMap = new Map();
 
     for (const week of monthWeeks) {
@@ -1345,24 +1350,52 @@ function calculateImproverAchievement(members) {
     const candidates = members
         .filter(member => member.scores.length >= 2)
         .map(member => {
-            const firstScore = member.scores[0];
-            const lastScore = member.scores[member.scores.length - 1];
-            const improvement = lastScore - firstScore;
+            let lowestScoreSoFar = member.scores[0];
+            let lowestIndexSoFar = 0;
+
+            let bestImprovement = Number.NEGATIVE_INFINITY;
+            let bestLowScore = member.scores[0];
+            let bestHighScore = member.scores[1];
+            let bestLowIndex = 0;
+            let bestHighIndex = 1;
+
+            for (let index = 1; index < member.scores.length; index++) {
+                const currentScore = member.scores[index];
+                const improvement = currentScore - lowestScoreSoFar;
+
+                if (improvement > bestImprovement) {
+                    bestImprovement = improvement;
+                    bestLowScore = lowestScoreSoFar;
+                    bestHighScore = currentScore;
+                    bestLowIndex = lowestIndexSoFar;
+                    bestHighIndex = index;
+                }
+
+                if (currentScore < lowestScoreSoFar) {
+                    lowestScoreSoFar = currentScore;
+                    lowestIndexSoFar = index;
+                }
+            }
 
             return {
                 ...member,
-                achievementScore: improvement,
-                firstScore,
-                lastScore
+                achievementScore: bestImprovement,
+                firstScore: bestLowScore,
+                lastScore: bestHighScore,
+                lowestScore: bestLowScore,
+                highestScore: bestHighScore,
+                lowestWeekLabel: member.weekLabels[bestLowIndex] || "",
+                highestWeekLabel: member.weekLabels[bestHighIndex] || ""
             };
         })
+        .filter(member => member.achievementScore > 0)
         .sort((a, b) => {
             if (b.achievementScore !== a.achievementScore) {
                 return b.achievementScore - a.achievementScore;
             }
 
-            if (b.lastScore !== a.lastScore) {
-                return b.lastScore - a.lastScore;
+            if (b.highestScore !== a.highestScore) {
+                return b.highestScore - a.highestScore;
             }
 
             return getAchievementDisplayName(a).localeCompare(getAchievementDisplayName(b));
@@ -1376,8 +1409,8 @@ function calculateImproverAchievement(members) {
             metricValue: formatDelta(winner.achievementScore),
             detail: t("achievement.detailScoreChange", {
                 tag: getAchievementMemberTag(winner),
-                firstScore: formatNumber(winner.firstScore),
-                lastScore: formatNumber(winner.lastScore)
+                firstScore: formatNumber(winner.lowestScore),
+                lastScore: formatNumber(winner.highestScore)
             })
         }
         : null
@@ -1683,8 +1716,6 @@ function renderAchievementCard(achievement) {
                     <span>${escapeHTML(metricLabel)}</span>
                     <strong>${escapeHTML(metricValue)}</strong>
                 </div>
-
-                <div class="podium-detail">${escapeHTML(detail)}</div>
             </div>
         </article>
     `;
