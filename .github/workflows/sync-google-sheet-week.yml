@@ -197,7 +197,7 @@ jobs:
         run: |
           python scripts/convert_excel_to_csv.py
 
-      - name: Check whether data needs update
+      - name: Check whether score data needs update
         id: check_changes
         run: |
           WEEK_ID="${{ steps.resolve_week.outputs.week_id }}"
@@ -240,33 +240,37 @@ jobs:
         run: |
           python scripts/update_weeks_csv.py
 
-      - name: Show changed files
-        if: steps.check_changes.outputs.need_update == 'true'
-        run: |
-          git status --short
-      - name: Write updated time
+      - name: Write successful sync time
         run: |
           mkdir -p data
           echo "{\"updatedAt\":\"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\"}" > data/updated-at.json
+
+      - name: Show changed files
+        run: |
+          git status --short
+
       - name: Commit and push changes
-        if: steps.check_changes.outputs.need_update == 'true'
         run: |
           WEEK_ID="${{ steps.resolve_week.outputs.week_id }}"
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add "data/${WEEK_ID}.csv" data/weeks.csv
+          git add "data/${WEEK_ID}.csv" data/weeks.csv data/updated-at.json
 
           if git diff --cached --quiet; then
             echo "沒有檔案需要提交"
           else
-            git commit -m "Update weekly score ${WEEK_ID}"
+            git commit -m "Update weekly score sync timestamp for ${WEEK_ID}"
             git push
           fi
 
-      - name: No changes summary
-        if: steps.check_changes.outputs.need_update == 'false'
+      - name: Sync summary
         run: |
-          echo "本次同步沒有資料變更，且 weeks.csv 已包含此週別。"
-          echo "已略過 update_weeks_csv.py、commit 與 push。"
+          WEEK_ID="${{ steps.resolve_week.outputs.week_id }}"
+
+          if [ "${{ steps.check_changes.outputs.need_update }}" = "true" ]; then
+            echo "本次同步成功，且成績資料或 weeks.csv 有更新：${WEEK_ID}"
+          else
+            echo "本次同步成功，成績資料沒有變更，但已更新 data/updated-at.json。"
+          fi
