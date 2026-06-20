@@ -8,7 +8,7 @@
             "eyebrow": "Weekly Score Dashboard",
             "title": "Coin999-長長久久 隊伍 每週成績總覽",
             "subtitle": "檢視每週活動分數、與上週比較，以及本月最後五名。",
-            "updatedAt": "資料最後更新時間：{time}"
+            "updatedAt": "資料最後同步時間：{time}"
         },
         "controls": {
             "weekSelectAria": "選擇週別",
@@ -205,7 +205,7 @@
             "eyebrow": "Weekly Score Dashboard",
             "title": "Coin999 Forever Team Weekly Score Overview",
             "subtitle": "Review weekly activity scores, compare with last week, and track this month’s bottom five.",
-            "updatedAt": "Data last updated: {time}"
+            "updatedAt": "Data last synced: {time}"
         },
         "controls": {
             "weekSelectAria": "Select week",
@@ -402,7 +402,7 @@
             "eyebrow": "Weekly Score Dashboard",
             "title": "Tổng quan điểm hằng tuần của đội Coin999 Mãi Mãi Bền Lâu",
             "subtitle": "Xem điểm hoạt động hằng tuần, so sánh với tuần trước và theo dõi 5 người cuối tháng này.",
-            "updatedAt": "Dữ liệu được cập nhật lần cuối: {time}"
+            "updatedAt": "Dữ liệu được đồng bộ lần cuối: {time}"
         },
         "controls": {
             "weekSelectAria": "Chọn tuần",
