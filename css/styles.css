@@ -2159,6 +2159,22 @@ Achievements Podium
     will-change: transform;
 }
 
+.hero-updated-at {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    margin: 12px 0 0;
+    padding: 7px 12px;
+    border: 1px solid rgba(37, 99, 235, 0.14);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.68);
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-weight: 700;
+    box-shadow: var(--shadow-soft);
+    backdrop-filter: blur(10px);
+}
+
 /* ================================
 Responsive
 ================================ */

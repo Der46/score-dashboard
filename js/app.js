@@ -48,6 +48,59 @@ function getLocaleForNumber() {
     return "en-US";
 }
 
+function formatUpdatedAt(date) {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+        return t("common.noData");
+    }
+
+    return new Intl.DateTimeFormat(getLocaleForNumber(), {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+        timeZone: "Asia/Taipei"
+    }).format(date);
+}
+
+function renderUpdatedAt() {
+    if (!els?.updatedAtText) return;
+
+    if (!state.updatedAt) {
+        els.updatedAtText.textContent = "";
+        return;
+    }
+
+    els.updatedAtText.textContent = t("hero.updatedAt", {
+        time: formatUpdatedAt(state.updatedAt)
+    });
+}
+
+async function loadUpdatedAt() {
+    try {
+        const response = await fetch(UPDATED_AT_URL, { cache: "no-store" });
+
+        if (!response.ok) {
+            console.warn(`Failed to read updated time file: ${UPDATED_AT_URL}`);
+            return;
+        }
+
+        const data = await response.json();
+        const updatedAt = new Date(data.updatedAt);
+
+        if (Number.isNaN(updatedAt.getTime())) {
+            console.warn("Invalid updatedAt value:", data.updatedAt);
+            return;
+        }
+
+        state.updatedAt = updatedAt;
+        renderUpdatedAt();
+    } catch (error) {
+        console.warn("Failed to load updated-at.json", error);
+    }
+}
+
 async function loadI18n() {
     const response = await fetch(I18N_URL, { cache: "no-store" });
 
@@ -71,6 +124,7 @@ async function setLocale(locale) {
     localStorage.setItem(STORAGE_LOCALE_KEY, locale);
 
     applyStaticI18n();
+    renderUpdatedAt();
     await rerenderAll();
 }
 
@@ -156,6 +210,7 @@ function tx(value) {
 ================================ */
 
 const WEEK_INDEX_URL = "./data/weeks.csv";
+const UPDATED_AT_URL = "./data/updated-at.json";
 
 const HISTORY_MIN_WEEKS = 2;
 const HISTORY_MODE = "appeared";
@@ -338,6 +393,7 @@ const els = {
     searchInput: document.getElementById("searchInput"),
     statusFilter: document.getElementById("statusFilter"),
     resultHint: document.getElementById("resultHint"),
+    updatedAtText: document.getElementById("updatedAtText"),
     profileModal: document.getElementById("profileModal"),
     profileClose: document.getElementById("profileClose"),
     profileName: document.getElementById("profileName"),
@@ -353,6 +409,7 @@ const els = {
 
 const state = {
     weeks: [],
+    updatedAt: null,
     currentWeek: null,
     currentRows: [],
     historySummaryMap: new Map(),
@@ -2906,6 +2963,8 @@ function renderError(error) {
 async function initApp() {
     try {
         await loadI18n();
+
+        await loadUpdatedAt();
 
         renderHead();
         renderLoading(t("common.readingWeeks"));

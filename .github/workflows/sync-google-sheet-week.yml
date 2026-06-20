@@ -244,7 +244,10 @@ jobs:
         if: steps.check_changes.outputs.need_update == 'true'
         run: |
           git status --short
-
+      - name: Write updated time
+        run: |
+          mkdir -p data
+          echo "{\"updatedAt\":\"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\"}" > data/updated-at.json
       - name: Commit and push changes
         if: steps.check_changes.outputs.need_update == 'true'
         run: |
