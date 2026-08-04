@@ -3,14 +3,14 @@ name: Sync Google Sheet Weekly Score
 on:
   schedule:
     # GitHub Actions cron 使用 UTC
-    # 每 3 小時執行一次
+    # 每 3 小時執行一次，避開整點排程尖峰
     #
     # 自動週別切換規則：
     # - 每週一是週別起始日
     # - 但 Google Sheet 當週分頁通常要等資料整理完成
     # - 因此自動同步延後到「台灣時間每週三 21:00」才切換到當週
     # - 在週三 21:00 以前，仍繼續同步上一週
-    - cron: "0 */3 * * *"
+    - cron: "17 */3 * * *"
 
   workflow_dispatch:
     inputs:
@@ -29,6 +29,7 @@ concurrency:
 jobs:
   sync-week:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repository
@@ -68,7 +69,6 @@ jobs:
 
               first_monday = first_monday_of_month(year, month)
 
-              # 如果今天早於本月第一個星期一，歸到上個月最後一週
               if current_date < first_monday:
                   if month == 1:
                       year -= 1
@@ -83,13 +83,6 @@ jobs:
               return f"{year:04d}-{month:02d}-w{week_index}"
 
           def get_week_start_from_date(current_date):
-              """
-              依照專案目前週別規則，取得 current_date 所屬週別的起始星期一。
-
-              規則：
-              - 每月第一週從「該月第一個星期一」開始。
-              - 若日期早於本月第一個星期一，則歸到上個月最後一週。
-              """
               year = current_date.year
               month = current_date.month
 
@@ -110,19 +103,6 @@ jobs:
               return week_start
 
           def resolve_auto_week_id(now):
-              """
-              自動週別切換規則：
-
-              - 每週一是週別起始日。
-              - 但 Google Sheet 當週分頁可能還沒建立或資料尚未整理完成。
-              - 因此自動同步延後到「台灣時間每週三 21:00」才切換到當週。
-              - 在週三 21:00 以前，仍繼續同步上一週。
-
-              範例：
-              2026-06-w2 的起始日是 2026-06-08 週一。
-              自動同步會到 2026-06-10 21:00 之後才開始抓 2026-06-w2。
-              在此之前會繼續抓 2026-06-w1。
-              """
               today = now.date()
               current_week_start = get_week_start_from_date(today)
 
@@ -134,11 +114,9 @@ jobs:
               )
 
               if now < switch_datetime:
-                  # 尚未到週三 21:00，繼續使用上一週
                   effective_date = current_week_start - timedelta(days=1)
                   switch_status = "before weekly switch time, use previous week"
               else:
-                  # 已到週三 21:00，開始使用當週
                   effective_date = today
                   switch_status = "after weekly switch time, use current week"
 
@@ -176,6 +154,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
       - name: Install dependencies
         run: |
@@ -183,12 +162,16 @@ jobs:
           pip install pandas openpyxl requests
 
       - name: Download Google Sheet week as XLSX
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 60
+          command: python scripts/download_google_sheet_week.py
         env:
           GOOGLE_SPREADSHEET_ID: ${{ secrets.GOOGLE_SPREADSHEET_ID }}
           GOOGLE_SHEETS_API_KEY: ${{ secrets.GOOGLE_SHEETS_API_KEY }}
           WEEK_ID: ${{ steps.resolve_week.outputs.week_id }}
-        run: |
-          python scripts/download_google_sheet_week.py
 
       - name: Convert XLSX to dashboard CSV
         env:
