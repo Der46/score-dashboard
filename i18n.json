@@ -11,6 +11,7 @@
             "updatedAt": "資料最後同步時間：{time}"
         },
         "controls": {
+            "languageSelectAria": "選擇語言",
             "weekSelectAria": "選擇週別",
             "searchPlaceholder": "搜尋 CM...",
             "statusFilterAria": "篩選狀態"
@@ -57,6 +58,7 @@
             "activity3Total": "活動3總分",
             "weeklyTotal": "一週總分",
             "monthTotal": "本月總分",
+            "monthContribution": "本月貢獻度",
             "passDistance": "距離合格分數",
             "elderDistance": "距離長老分數",
             "compareLastWeek": "較上週",
@@ -69,7 +71,8 @@
         },
         "filters": {
             "everBottomFive": "曾經最後五",
-            "monthTotalScoreSort": "本月總分排序"
+            "monthTotalScoreSort": "本月總分排序",
+            "monthContributionSort": "本月貢獻度排序"
         },
         "stats": {
             "weeklyTotalSum": "一週總分加總"
@@ -93,6 +96,14 @@
             "displayRankTitle": "本月總分排序第 {rank} 名",
             "hintTop": "{scope}本月總分最高：{name}｜{score} 分｜已排除回歸號｜目前依本月總分由高到低排序",
             "hintEmpty": "目前沒有可排序的本月總分資料"
+        },
+        "monthlyContribution": {
+            "noData": "{scope}沒有本月貢獻度資料",
+            "returnIncludedTitle": "{scope}平均貢獻度：{contribution}｜回歸號僅供參考｜有貢獻度資料 {contributionWeeks} 週｜出現 {weeksSeen}/{totalWeeks} 週",
+            "rankTitle": "{scope}平均貢獻度：{contribution}｜本月貢獻度第 {rank} 名｜有貢獻度資料 {contributionWeeks} 週｜出現 {weeksSeen}/{totalWeeks} 週",
+            "displayRankTitle": "本月貢獻度排序第 {rank} 名",
+            "hintTop": "{scope}本月貢獻度最高：{name}｜平均貢獻度 {contribution}｜已排除回歸號｜目前依本月貢獻度由高到低排序",
+            "hintEmpty": "目前沒有可排序的本月貢獻度資料"
         },
         "achievement": {
             "kicker": "Achievement Podium",
@@ -128,6 +139,7 @@
             "fallbackWeek": "本月週別"
         },
         "table": {
+            "title": "成績列表",
             "empty": "找不到符合條件的資料。",
             "shownZero": "目前顯示 0 筆成員資料",
             "hint": "目前顯示可計算 {shownPeople} / {allPeople} 筆｜不計算排除 {shownExcluded} / {allExcluded} 筆｜{scope}曾後五 {everCount} 人｜都後五 {riskCount} 人"
@@ -163,6 +175,8 @@
             "averageNote": "依出現週數平均",
             "monthTotal": "{month}總分",
             "monthTotalNote": "本月已出現週別加總",
+            "monthContribution": "{month}貢獻度",
+            "monthContributionNote": "本月各週整週貢獻度平均",
             "monthTrend": "本月走勢",
             "monthTrendNote": "以本月第一筆與最後一筆比較",
             "chartTitle": "{month}分數折線圖",
@@ -188,11 +202,13 @@
             "dataReadFailedBody": "資料讀取失敗，請確認 <strong>data/weeks.csv</strong> 與每週 CSV 檔案路徑是否正確。",
             "historyBottomFiveReadFailed": "本月後五資料讀取失敗：{file}",
             "monthlyPersonalTotalReadFailed": "本月個人總分讀取失敗：{file}",
+            "monthlyContributionReadFailed": "本月個人貢獻度讀取失敗：{file}",
             "monthlyAchievementReadFailed": "本月成就徽章資料讀取失敗：{file}"
         },
         "loadingSteps": {
             "bottomFive": "分析本月後五名中...",
             "monthlyTotal": "計算本月個人總分中...",
+            "monthlyContribution": "計算本月個人貢獻度中...",
             "achievements": "產生成就徽章中..."
         }
     },
@@ -208,6 +224,7 @@
             "updatedAt": "Data last synced: {time}"
         },
         "controls": {
+            "languageSelectAria": "Select language",
             "weekSelectAria": "Select week",
             "searchPlaceholder": "Search CM...",
             "statusFilterAria": "Filter status"
@@ -254,6 +271,7 @@
             "activity3Total": "Activity 3 Total",
             "weeklyTotal": "Weekly Total",
             "monthTotal": "Monthly Total",
+            "monthContribution": "Monthly Contribution",
             "passDistance": "To Pass",
             "elderDistance": "To Elder",
             "compareLastWeek": "vs Last Week",
@@ -266,7 +284,8 @@
         },
         "filters": {
             "everBottomFive": "Ever Bottom 5",
-            "monthTotalScoreSort": "Monthly Total Ranking"
+            "monthTotalScoreSort": "Monthly Total Ranking",
+            "monthContributionSort": "Monthly Contribution Ranking"
         },
         "stats": {
             "weeklyTotalSum": "Weekly Total Sum"
@@ -290,6 +309,14 @@
             "displayRankTitle": "Monthly total ranking #{rank}",
             "hintTop": "Top monthly total in {scope}: {name}｜{score} pts｜Returned accounts excluded｜Sorted by monthly total descending",
             "hintEmpty": "No monthly total data available for ranking"
+        },
+        "monthlyContribution": {
+            "noData": "No monthly contribution data for {scope}",
+            "returnIncludedTitle": "{scope} average contribution: {contribution}｜Returned accounts are for reference only｜Contribution data in {contributionWeeks} weeks｜Appeared {weeksSeen}/{totalWeeks} weeks",
+            "rankTitle": "{scope} average contribution: {contribution}｜Monthly contribution rank #{rank}｜Contribution data in {contributionWeeks} weeks｜Appeared {weeksSeen}/{totalWeeks} weeks",
+            "displayRankTitle": "Monthly contribution ranking #{rank}",
+            "hintTop": "Top monthly contribution in {scope}: {name}｜Average contribution {contribution}｜Returned accounts excluded｜Sorted by monthly contribution descending",
+            "hintEmpty": "No monthly contribution data available for ranking"
         },
         "achievement": {
             "kicker": "Achievement Podium",
@@ -325,6 +352,7 @@
             "fallbackWeek": "Monthly week"
         },
         "table": {
+            "title": "Score table",
             "empty": "No matching data found.",
             "shownZero": "Currently showing 0 member records",
             "hint": "Showing calculable {shownPeople} / {allPeople}｜Excluded {shownExcluded} / {allExcluded}｜Ever Bottom 5 in {scope}: {everCount}｜Always Bottom 5: {riskCount}"
@@ -360,6 +388,8 @@
             "averageNote": "Average based on appeared weeks",
             "monthTotal": "{month} Total",
             "monthTotalNote": "Sum of appeared weeks this month",
+            "monthContribution": "{month} Contribution",
+            "monthContributionNote": "Average of weekly contribution values this month",
             "monthTrend": "Monthly Trend",
             "monthTrendNote": "Compared using the first and latest record this month",
             "chartTitle": "{month} Score Line Chart",
@@ -385,11 +415,13 @@
             "dataReadFailedBody": "Failed to read data. Please confirm <strong>data/weeks.csv</strong> and each weekly CSV file path are correct.",
             "historyBottomFiveReadFailed": "Failed to read monthly bottom-five data: {file}",
             "monthlyPersonalTotalReadFailed": "Failed to read monthly personal total data: {file}",
+            "monthlyContributionReadFailed": "Failed to read monthly contribution data: {file}",
             "monthlyAchievementReadFailed": "Failed to read monthly achievement badge data: {file}"
         },
         "loadingSteps": {
             "bottomFive": "Analyzing this month’s bottom five...",
             "monthlyTotal": "Calculating monthly personal totals...",
+            "monthlyContribution": "Calculating monthly contribution...",
             "achievements": "Generating achievement badges..."
         }
     },
@@ -405,6 +437,7 @@
             "updatedAt": "Dữ liệu được đồng bộ lần cuối: {time}"
         },
         "controls": {
+            "languageSelectAria": "Chọn ngôn ngữ",
             "weekSelectAria": "Chọn tuần",
             "searchPlaceholder": "Tìm CM...",
             "statusFilterAria": "Lọc trạng thái"
@@ -451,6 +484,7 @@
             "activity3Total": "Tổng HĐ 3",
             "weeklyTotal": "Tổng tuần",
             "monthTotal": "Tổng tháng",
+            "monthContribution": "Đóng góp tháng",
             "passDistance": "Cách điểm đạt",
             "elderDistance": "Cách điểm trưởng lão",
             "compareLastWeek": "So với tuần trước",
@@ -463,7 +497,8 @@
         },
         "filters": {
             "everBottomFive": "Từng ở 5 cuối",
-            "monthTotalScoreSort": "Xếp hạng tổng tháng"
+            "monthTotalScoreSort": "Xếp hạng tổng tháng",
+            "monthContributionSort": "Xếp hạng đóng góp tháng"
         },
         "stats": {
             "weeklyTotalSum": "Tổng điểm tuần"
@@ -487,6 +522,14 @@
             "displayRankTitle": "Xếp hạng tổng tháng #{rank}",
             "hintTop": "Tổng tháng cao nhất trong {scope}: {name}｜{score} điểm｜Đã loại trừ tài khoản quay lại｜Đang sắp xếp theo tổng tháng giảm dần",
             "hintEmpty": "Hiện không có dữ liệu tổng tháng để xếp hạng"
+        },
+        "monthlyContribution": {
+            "noData": "Không có dữ liệu đóng góp tháng cho {scope}",
+            "returnIncludedTitle": "Đóng góp trung bình {scope}: {contribution}｜Tài khoản quay lại chỉ để tham khảo｜Có dữ liệu đóng góp {contributionWeeks} tuần｜Xuất hiện {weeksSeen}/{totalWeeks} tuần",
+            "rankTitle": "Đóng góp trung bình {scope}: {contribution}｜Xếp hạng đóng góp tháng #{rank}｜Có dữ liệu đóng góp {contributionWeeks} tuần｜Xuất hiện {weeksSeen}/{totalWeeks} tuần",
+            "displayRankTitle": "Xếp hạng đóng góp tháng #{rank}",
+            "hintTop": "Đóng góp tháng cao nhất trong {scope}: {name}｜Đóng góp trung bình {contribution}｜Đã loại trừ tài khoản quay lại｜Đang sắp xếp theo đóng góp tháng giảm dần",
+            "hintEmpty": "Hiện không có dữ liệu đóng góp tháng để xếp hạng"
         },
         "achievement": {
             "kicker": "Achievement Podium",
@@ -522,6 +565,7 @@
             "fallbackWeek": "Tuần trong tháng"
         },
         "table": {
+            "title": "Bảng điểm",
             "empty": "Không tìm thấy dữ liệu phù hợp.",
             "shownZero": "Hiện đang hiển thị 0 bản ghi thành viên",
             "hint": "Đang hiển thị có thể tính {shownPeople} / {allPeople}｜Không tính {shownExcluded} / {allExcluded}｜Từng 5 cuối trong {scope}: {everCount} người｜Luôn 5 cuối: {riskCount} người"
@@ -557,6 +601,8 @@
             "averageNote": "Tính trung bình theo số tuần xuất hiện",
             "monthTotal": "Tổng {month}",
             "monthTotalNote": "Cộng các tuần đã xuất hiện trong tháng",
+            "monthContribution": "Đóng góp {month}",
+            "monthContributionNote": "Trung bình đóng góp hằng tuần trong tháng",
             "monthTrend": "Xu hướng tháng",
             "monthTrendNote": "So sánh bản ghi đầu tiên và mới nhất trong tháng",
             "chartTitle": "Biểu đồ điểm {month}",
@@ -582,11 +628,13 @@
             "dataReadFailedBody": "Đọc dữ liệu thất bại. Vui lòng xác nhận <strong>data/weeks.csv</strong> và đường dẫn từng file CSV hằng tuần là chính xác.",
             "historyBottomFiveReadFailed": "Đọc dữ liệu 5 người cuối tháng thất bại: {file}",
             "monthlyPersonalTotalReadFailed": "Đọc dữ liệu tổng điểm cá nhân trong tháng thất bại: {file}",
+            "monthlyContributionReadFailed": "Đọc dữ liệu đóng góp cá nhân trong tháng thất bại: {file}",
             "monthlyAchievementReadFailed": "Đọc dữ liệu huy hiệu thành tích trong tháng thất bại: {file}"
         },
         "loadingSteps": {
             "bottomFive": "Đang phân tích 5 người cuối tháng này...",
             "monthlyTotal": "Đang tính tổng điểm cá nhân trong tháng...",
+            "monthlyContribution": "Đang tính đóng góp cá nhân trong tháng...",
             "achievements": "Đang tạo huy hiệu thành tích..."
         }
     }

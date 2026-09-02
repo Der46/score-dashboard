@@ -17,7 +17,7 @@
     </div>
 
     <main class="page">
-        <section class="hero">
+        <section class="hero" aria-labelledby="pageTitle">
             <div class="hero-inner">
                 <div class="hero-content">
                     <div class="hero-title-block">
@@ -26,17 +26,21 @@
                             <span data-i18n="hero.eyebrow">Weekly Score Dashboard</span>
                         </div>
 
-                        <h1 data-i18n="hero.title">Coin999-長長久久 隊伍 每週成績總覽</h1>
+                        <h1 id="pageTitle" data-i18n="hero.title">
+                            Coin999-長長久久 隊伍 每週成績總覽
+                        </h1>
 
                         <p class="hero-subtitle" data-i18n="hero.subtitle">
                             檢視每週活動分數、與上週比較，以及本月最後五名。
                         </p>
+
                         <p class="hero-updated-at" id="updatedAtText" aria-live="polite"></p>
                     </div>
 
                     <div class="hero-actions">
                         <div class="select-wrap">
-                            <select id="languageSelect" aria-label="Language">
+                            <select id="languageSelect" aria-label="Language"
+                                data-i18n-attr="aria-label:controls.languageSelectAria">
                                 <option value="zh-Hant">繁體中文</option>
                                 <option value="en">English</option>
                                 <option value="vi">Tiếng Việt</option>
@@ -52,9 +56,13 @@
             </div>
         </section>
 
-        <section class="stats" id="stats"></section>
+        <section class="stats" id="stats" aria-label="統計摘要"></section>
 
-        <section class="panel">
+        <section class="panel" aria-labelledby="scoreTableTitle">
+            <h2 id="scoreTableTitle" class="sr-only" data-i18n="table.title">
+                成績列表
+            </h2>
+
             <div class="toolbar">
                 <div class="toolbar-left">
                     <div class="input-wrap">
@@ -65,13 +73,17 @@
                     <div class="select-wrap">
                         <select id="statusFilter" aria-label="篩選狀態"
                             data-i18n-attr="aria-label:controls.statusFilterAria">
-                            <option value="全部" data-i18n="status.allStatus">全部狀態</option>
+                            <option value="全部" data-i18n="status.allStatus">
+                                全部狀態
+                            </option>
                         </select>
                     </div>
                 </div>
 
                 <div class="toolbar-right">
-                    <span class="hint" id="resultHint" data-i18n="common.loading">載入中...</span>
+                    <span class="hint" id="resultHint" data-i18n="common.loading" aria-live="polite">
+                        載入中...
+                    </span>
                 </div>
             </div>
 
@@ -85,23 +97,35 @@
     </main>
 
     <section class="profile-modal" id="profileModal" hidden aria-modal="true" role="dialog"
-        aria-labelledby="profileName">
+        aria-labelledby="profileName" aria-describedby="profileMeta">
         <div class="profile-backdrop" data-profile-close></div>
 
         <article class="profile-dialog">
             <header class="profile-head">
                 <div>
-                    <div class="profile-kicker" data-i18n="profile.kicker">Member Analytics</div>
-                    <h2 class="profile-title" id="profileName" data-i18n="profile.title">成員資料</h2>
-                    <div class="profile-meta" id="profileMeta" data-i18n="profile.metaLoading">載入中...</div>
+                    <div class="profile-kicker" data-i18n="profile.kicker">
+                        Member Analytics
+                    </div>
+
+                    <h2 class="profile-title" id="profileName" data-i18n="profile.title">
+                        成員資料
+                    </h2>
+
+                    <div class="profile-meta" id="profileMeta" data-i18n="profile.metaLoading">
+                        載入中...
+                    </div>
                 </div>
 
                 <button class="profile-close" id="profileClose" type="button" aria-label="關閉個人資料"
-                    data-i18n-attr="aria-label:profile.closeAria">×</button>
+                    data-i18n-attr="aria-label:profile.closeAria">
+                    ×
+                </button>
             </header>
 
             <div class="profile-body" id="profileBody">
-                <div class="profile-loading" data-i18n="profile.bodyLoading">資料分析中...</div>
+                <div class="profile-loading" data-i18n="profile.bodyLoading">
+                    資料分析中...
+                </div>
             </div>
         </article>
     </section>

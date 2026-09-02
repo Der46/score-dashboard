@@ -47,6 +47,10 @@ OUTPUT_COLUMNS = [
     "距離合格分數",
     "距離長老分數",
     "狀態",
+    "活動1貢獻度",
+    "活動2貢獻度",
+    "活動3貢獻度",
+    "整週貢獻度",
 ]
 
 
@@ -80,7 +84,6 @@ def clean_column_name(value):
     if text.lower().startswith("unnamed"):
         return ""
 
-    # 移除所有空白字元：空格、換行、Tab、全形空白等
     text = re.sub(r"\s+", "", text)
 
     return text
@@ -127,14 +130,48 @@ def format_score(value, default="0"):
     return formatted_value
 
 
+def format_percent_like_excel(value):
+    """
+    將貢獻度格式化成百分比字串。
+
+    支援：
+    - Excel 實際值 0.1027 -> 10.27%
+    - 已經是字串 10.27% -> 保留成 10.27%
+    - 空白 -> 空白
+    """
+    if pd.isna(value):
+        return ""
+
+    text = str(value).strip()
+
+    if text == "":
+        return ""
+
+    if text.endswith("%"):
+        return text
+
+    try:
+        number = float(text)
+
+        # Excel 百分比通常會讀成 0.1027 這種小數
+        if abs(number) <= 1:
+            return f"{number * 100:.2f}%"
+
+        # 若來源已經是 10.27 這種數字，視為百分比數值
+        return f"{number:.2f}%"
+
+    except ValueError:
+        return text
+
+
 def normalize_columns(df):
     """
     清理欄位名稱。
 
     例如：
     - 活動1\\n投入 -> 活動1投入
-    - 活動1\\n未投入 -> 活動1未投入
     - 活動1\\n小計 -> 活動1小計
+    - 整週\\n貢獻度 -> 整週貢獻度
     """
     normalized_columns = []
 
@@ -150,10 +187,6 @@ def find_header_row(raw_df):
     """
     自動尋找表頭列。
     避免 Excel 前方有空白列或標題列時讀取錯誤。
-
-    這裡會自動處理表頭內換行：
-    例如 Excel 看到「活動1」換行「小計」，
-    程式會視為「活動1小計」。
     """
     for idx, row in raw_df.iterrows():
         values = [clean_column_name(value) for value in row.tolist()]
@@ -239,7 +272,7 @@ def find_activity_columns(df):
     - 活動2總分 / 活動2投分
     - 活動3總分 / 活動3投分
 
-    但輸出一律仍會是：
+    輸出一律仍會是：
     - 活動1總分
     - 活動2總分
     - 活動3總分
@@ -271,10 +304,6 @@ def find_activity_columns(df):
 def find_distance_columns(df):
     """
     找出「距離合格分數」與「距離長老分數」欄位。
-
-    支援兩種常見格式：
-    1. 欄位直接叫「距離合格分數」
-    2. Excel 合併表頭造成欄位被拆成「距離合格」與「分數」
     """
     columns = list(df.columns)
 
@@ -288,7 +317,6 @@ def find_distance_columns(df):
         "距離長老",
     ])
 
-    # 處理「距離合格」後面接「分數」的情況
     if "距離合格" in columns:
         idx = columns.index("距離合格")
 
@@ -299,7 +327,6 @@ def find_distance_columns(df):
                 qualify_col = col
                 break
 
-    # 處理「距離長老」後面接「分數」的情況
     if "距離長老" in columns:
         idx = columns.index("距離長老")
 
@@ -311,6 +338,49 @@ def find_distance_columns(df):
                 break
 
     return qualify_col, elder_col
+
+
+def find_contribution_columns(df):
+    """
+    找出貢獻度欄位。
+
+    支援目前新版欄位：
+    - 活動1貢獻度
+    - 活動2貢獻度
+    - 活動3貢獻度
+    - 整週貢獻度
+
+    也支援可能的替代名稱：
+    - 一週貢獻度
+    - 週貢獻度
+    """
+    activity1_contribution_col = find_column(df, [
+        "活動1貢獻度",
+        "活動1貢獻",
+    ])
+
+    activity2_contribution_col = find_column(df, [
+        "活動2貢獻度",
+        "活動2貢獻",
+    ])
+
+    activity3_contribution_col = find_column(df, [
+        "活動3貢獻度",
+        "活動3貢獻",
+    ])
+
+    weekly_contribution_col = find_column(df, [
+        "整週貢獻度",
+        "一週貢獻度",
+        "週貢獻度",
+    ])
+
+    return (
+        activity1_contribution_col,
+        activity2_contribution_col,
+        activity3_contribution_col,
+        weekly_contribution_col,
+    )
 
 
 def is_return_section_row(row):
@@ -332,11 +402,10 @@ def is_empty_or_skip_row(row):
     cm = clean_text(row.get("CM", ""))
     line_name = clean_text(row.get("LINE名稱", ""))
 
-    # 完全空白列
     if cm == "" and line_name == "":
         return True
 
-    # 低標列不輸出
+    # 舊版低標列相容：雖然現在已移除，但保留防呆
     if cm in {
         "低標",
         "請輸入各活動投分低標→",
@@ -352,7 +421,6 @@ def is_empty_or_skip_row(row):
     }:
         return True
 
-    # 避免奇怪的 0 列
     if cm == "0":
         return True
 
@@ -374,6 +442,10 @@ def make_return_section_row():
         "距離合格分數": "",
         "距離長老分數": "",
         "狀態": "",
+        "活動1貢獻度": "",
+        "活動2貢獻度": "",
+        "活動3貢獻度": "",
+        "整週貢獻度": "",
     }
 
 
@@ -389,6 +461,13 @@ def main():
 
     activity1_col, activity2_col, activity3_col = find_activity_columns(df)
     qualify_distance_col, elder_distance_col = find_distance_columns(df)
+
+    (
+        activity1_contribution_col,
+        activity2_contribution_col,
+        activity3_contribution_col,
+        weekly_contribution_col,
+    ) = find_contribution_columns(df)
 
     required_columns = [
         "CM",
@@ -406,6 +485,7 @@ def main():
         missing.append("活動2小計 / 活動2小記")
 
     # 活動3可有可無，沒有就補 0，所以不列為必要欄位
+    # 貢獻度欄位也可有可無，沒有就輸出空白，方便相容舊週表
 
     if missing:
         raise ValueError(
@@ -418,12 +498,16 @@ def main():
     print(f"活動2來源欄位：{activity2_col}")
     print(f"活動3來源欄位：{activity3_col if activity3_col else '未找到，將補 0'}")
 
+    print(f"活動1貢獻度欄位：{activity1_contribution_col if activity1_contribution_col else '未找到，將輸出空白'}")
+    print(f"活動2貢獻度欄位：{activity2_contribution_col if activity2_contribution_col else '未找到，將輸出空白'}")
+    print(f"活動3貢獻度欄位：{activity3_contribution_col if activity3_contribution_col else '未找到，將輸出空白'}")
+    print(f"整週貢獻度欄位：{weekly_contribution_col if weekly_contribution_col else '未找到，將輸出空白'}")
+
     output_rows = []
     inserted_return_section = False
 
     for _, row in df.iterrows():
 
-        # 處理【回歸帳號】分隔列
         if is_return_section_row(row):
             output_rows.append(make_return_section_row())
             inserted_return_section = True
@@ -441,7 +525,6 @@ def main():
         else:
             row_type = "person"
 
-        # 如果沒有【回歸帳號】分隔列，但狀態已經進入回歸，自動補 section
         if status == "回歸" and not inserted_return_section:
             output_rows.append(make_return_section_row())
             inserted_return_section = True
@@ -467,6 +550,31 @@ def main():
                 row.get(elder_distance_col)
             )
 
+        activity1_contribution = ""
+        activity2_contribution = ""
+        activity3_contribution = ""
+        weekly_contribution = ""
+
+        if activity1_contribution_col:
+            activity1_contribution = format_percent_like_excel(
+                row.get(activity1_contribution_col)
+            )
+
+        if activity2_contribution_col:
+            activity2_contribution = format_percent_like_excel(
+                row.get(activity2_contribution_col)
+            )
+
+        if activity3_contribution_col:
+            activity3_contribution = format_percent_like_excel(
+                row.get(activity3_contribution_col)
+            )
+
+        if weekly_contribution_col:
+            weekly_contribution = format_percent_like_excel(
+                row.get(weekly_contribution_col)
+            )
+
         output_rows.append({
             "type": row_type,
             "CM": cm,
@@ -478,6 +586,10 @@ def main():
             "距離合格分數": "" if row_type == "total" else qualify_distance,
             "距離長老分數": "" if row_type == "total" else elder_distance,
             "狀態": "" if row_type == "total" else status,
+            "活動1貢獻度": activity1_contribution,
+            "活動2貢獻度": activity2_contribution,
+            "活動3貢獻度": activity3_contribution,
+            "整週貢獻度": weekly_contribution,
         })
 
     output_df = pd.DataFrame(output_rows, columns=OUTPUT_COLUMNS)

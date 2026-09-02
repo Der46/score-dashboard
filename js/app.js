@@ -259,11 +259,13 @@ const EXCLUDED_STATUSES = [
 
 const RANK_COLUMN = "編號";
 const MONTH_TOTAL_COLUMN = "本月總分";
+const MONTH_CONTRIBUTION_COLUMN = "本月貢獻度";
 const HISTORY_COLUMN = "本月後五";
 
 const SPECIAL_STATUS_FILTERS = {
     EVER_BOTTOM_FIVE: "__everBottomFive",
-    MONTH_TOTAL_SCORE_SORT: "__monthTotalScoreSort"
+    MONTH_TOTAL_SCORE_SORT: "__monthTotalScoreSort",
+    MONTH_CONTRIBUTION_SORT: "__monthContributionSort"
 };
 
 const DISPLAY_HEADERS = [
@@ -274,6 +276,7 @@ const DISPLAY_HEADERS = [
     "活動3總分",
     "一週總分",
     MONTH_TOTAL_COLUMN,
+    MONTH_CONTRIBUTION_COLUMN,
     "距離合格分數",
     "距離長老分數",
     "較上週",
@@ -289,6 +292,7 @@ const HEADER_I18N_KEY = {
     "活動3總分": "headers.activity3Total",
     "一週總分": "headers.weeklyTotal",
     [MONTH_TOTAL_COLUMN]: "headers.monthTotal",
+    [MONTH_CONTRIBUTION_COLUMN]: "headers.monthContribution",
     "距離合格分數": "headers.passDistance",
     "距離長老分數": "headers.elderDistance",
     "較上週": "headers.compareLastWeek",
@@ -414,6 +418,7 @@ const state = {
     currentRows: [],
     historySummaryMap: new Map(),
     monthlyTotalMap: new Map(),
+    monthlyContributionMap: new Map(),
     monthlyAchievementMap: new Map(),
     achievements: [],
     historyScopeWeekCount: 0,
@@ -459,6 +464,32 @@ function parseNumber(value) {
     if (!value) return 0;
 
     return Number(String(value).replaceAll(",", "").trim()) || 0;
+}
+
+function parsePercent(value) {
+    const text = cleanText(value);
+
+    if (!text || text === "—" || text === "-") return null;
+
+    const normalized = text
+        .replaceAll(",", "")
+        .replaceAll("%", "")
+        .trim();
+
+    const number = Number(normalized);
+
+    if (!Number.isFinite(number)) return null;
+
+    return Math.abs(number) > 1 ? number / 100 : number;
+}
+
+function formatPercent(value, digits = 2) {
+    if (!Number.isFinite(value)) return "-";
+
+    return `${(value * 100).toLocaleString(getLocaleForNumber(), {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits
+    })}%`;
 }
 
 function formatNumber(value) {
@@ -825,6 +856,16 @@ function normalizeRows(rows) {
                 normalized[header] = normalized[header] ?? "";
             });
 
+            [
+                "活動1貢獻度",
+                "活動2貢獻度",
+                "活動3貢獻度",
+                "整週貢獻度",
+                MONTH_CONTRIBUTION_COLUMN
+            ].forEach(header => {
+                normalized[header] = normalized[header] ?? "";
+            });
+
             normalized["CM"] = cleanText(normalized["CM"]);
             normalized["狀態"] = cleanText(normalized["狀態"]);
             normalized.__type = getRowType(normalized);
@@ -893,6 +934,7 @@ function getBadgeClass(status) {
 function getColumnClass(header) {
     if (header === "距離合格分數") return "col-pass-distance";
     if (header === "距離長老分數") return "col-elder-distance";
+    if (header === MONTH_CONTRIBUTION_COLUMN) return "col-month-contribution";
 
     return "";
 }
@@ -1147,6 +1189,119 @@ function getMonthlyTotalPersonKey(row) {
     return getCmKey(row);
 }
 
+async function loadMonthlyPersonalContributions(targetWeek) {
+    const summaryMap = new Map();
+    const monthWeeks = getWeeksInSameMonth(targetWeek);
+
+    for (const week of monthWeeks) {
+        try {
+            const rows = await getWeekRows(week);
+            const totalRow = getTotalRow(rows);
+            const weeklyTeamTotal = totalRow
+                ? parseNumber(totalRow["一週總分"])
+                : getWeeklyTotalScore(rows);
+
+            if (!weeklyTeamTotal || weeklyTeamTotal <= 0) {
+                console.warn("本週團隊總分為 0，略過本週貢獻度統計：", week.file);
+                continue;
+            }
+
+            rows.filter(isPersonRow).forEach(row => {
+                const key = getMonthlyTotalPersonKey(row);
+
+                if (!key) return;
+
+                const weeklyScore = parseNumber(row["一週總分"]);
+
+                if (!summaryMap.has(key)) {
+                    summaryMap.set(key, {
+                        key,
+                        cm: row["CM"] || "",
+                        lineName: row["LINE名稱"] || "",
+                        monthScore: 0,
+                        monthTeamTotal: 0,
+                        weeksSeen: 0,
+                        contributionWeeks: 0,
+                        totalWeeks: monthWeeks.length,
+                        weekLabels: [],
+                        weeklyContributionValues: [],
+                        isReturnAccount: isReturnAccount(row)
+                    });
+                }
+
+                const item = summaryMap.get(key);
+
+                item.monthScore += weeklyScore;
+                item.monthTeamTotal += weeklyTeamTotal;
+                item.weeksSeen += 1;
+                item.contributionWeeks += 1;
+                item.weekLabels.push(week.label || week.id);
+
+                const weeklyContribution = weeklyScore / weeklyTeamTotal;
+
+                if (Number.isFinite(weeklyContribution)) {
+                    item.weeklyContributionValues.push(weeklyContribution);
+                }
+
+                if (isReturnAccount(row)) {
+                    item.isReturnAccount = true;
+                }
+
+                if (!item.cm && row["CM"]) {
+                    item.cm = row["CM"];
+                }
+
+                if (!item.lineName && row["LINE名稱"]) {
+                    item.lineName = row["LINE名稱"];
+                }
+            });
+        } catch (error) {
+            console.warn(t("error.monthlyContributionReadFailed", { file: week.file }), error);
+        }
+    }
+
+    summaryMap.forEach(item => {
+        if (!item.monthTeamTotal || item.monthTeamTotal <= 0) {
+            item.monthContribution = null;
+            item.avgWeeklyContribution = null;
+            return;
+        }
+
+        // 正確的本月貢獻度：個人本月總分 / 團隊本月總分
+        item.monthContribution = item.monthScore / item.monthTeamTotal;
+
+        // 保留參考值：每週貢獻度平均，不作為主要顯示
+        item.avgWeeklyContribution = item.weeklyContributionValues.length
+            ? item.weeklyContributionValues.reduce((sum, value) => sum + value, 0) / item.weeklyContributionValues.length
+            : null;
+    });
+
+    applyMonthlyContributionRank(summaryMap);
+    state.monthlyContributionMap = summaryMap;
+}
+
+function applyMonthlyContributionRank(summaryMap) {
+    const rankedItems = Array.from(summaryMap.values())
+        .filter(item => !item.isReturnAccount)
+        .filter(item => Number.isFinite(item.monthContribution))
+        .sort((a, b) => b.monthContribution - a.monthContribution);
+
+    let previousValue = null;
+    let previousRank = 0;
+
+    rankedItems.forEach((item, index) => {
+        const rank =
+            previousValue !== null && item.monthContribution === previousValue
+                ? previousRank
+                : index + 1;
+
+        item.contributionRank = rank;
+
+        previousValue = item.monthContribution;
+        previousRank = rank;
+    });
+}
+
 async function loadMonthlyPersonalTotals(targetWeek) {
     const summaryMap = new Map();
     const monthWeeks = getWeeksInSameMonth(targetWeek);
@@ -1253,6 +1408,62 @@ function applyMonthlyPersonalTotals(rows) {
                 scope: state.historyScopeLabel,
                 score: formatNumber(summary.totalScore),
                 rank: summary.totalRank,
+                weeksSeen: summary.weeksSeen,
+                totalWeeks: summary.totalWeeks
+            });
+        }
+
+        return row;
+    });
+}
+
+function applyMonthlyPersonalContributions(rows) {
+    return rows.map(row => {
+        if (!isPersonRow(row)) {
+            row[MONTH_CONTRIBUTION_COLUMN] = "";
+            row.__monthContribution = null;
+            row.__monthContributionRank = null;
+            row.__monthContributionTitle = "";
+
+            return row;
+        }
+
+        const key = getMonthlyTotalPersonKey(row);
+        const summary = state.monthlyContributionMap.get(key);
+
+        if (!summary || !Number.isFinite(summary.monthContribution)) {
+            row[MONTH_CONTRIBUTION_COLUMN] = "—";
+            row.__monthContribution = null;
+            row.__monthContributionRank = null;
+            row.__monthContributionTitle = t("monthlyContribution.noData", {
+                scope: state.historyScopeLabel
+            });
+
+            return row;
+        }
+
+        row.__monthContribution = summary.monthContribution;
+        row.__monthContributionRank = summary.contributionRank || null;
+        row[MONTH_CONTRIBUTION_COLUMN] = formatPercent(summary.monthContribution);
+
+        if (summary.isReturnAccount || isReturnAccount(row)) {
+            row.__monthContributionTitle = t("monthlyContribution.returnIncludedTitle", {
+                scope: state.historyScopeLabel,
+                contribution: formatPercent(summary.monthContribution),
+                monthScore: formatNumber(summary.monthScore),
+                monthTeamTotal: formatNumber(summary.monthTeamTotal),
+                contributionWeeks: summary.contributionWeeks,
+                weeksSeen: summary.weeksSeen,
+                totalWeeks: summary.totalWeeks
+            });
+        } else {
+            row.__monthContributionTitle = t("monthlyContribution.rankTitle", {
+                scope: state.historyScopeLabel,
+                contribution: formatPercent(summary.monthContribution),
+                rank: summary.contributionRank,
+                monthScore: formatNumber(summary.monthScore),
+                monthTeamTotal: formatNumber(summary.monthTeamTotal),
+                contributionWeeks: summary.contributionWeeks,
                 weeksSeen: summary.weeksSeen,
                 totalWeeks: summary.totalWeeks
             });
@@ -1829,9 +2040,11 @@ function applyRowNumbers(rows) {
 
 function prepareCurrentRows(rows, previousRows) {
     return applyRowNumbers(
-        applyMonthlyPersonalTotals(
-            applyHistoryBottomFive(
-                applyWeekComparison(rows, previousRows)
+        applyMonthlyPersonalContributions(
+            applyMonthlyPersonalTotals(
+                applyHistoryBottomFive(
+                    applyWeekComparison(rows, previousRows)
+                )
             )
         )
     );
@@ -1857,6 +2070,10 @@ function getFilteredRows() {
 
     if (status === SPECIAL_STATUS_FILTERS.MONTH_TOTAL_SCORE_SORT) {
         return getMonthlyTotalScoreRows(keyword);
+    }
+
+    if (status === SPECIAL_STATUS_FILTERS.MONTH_CONTRIBUTION_SORT) {
+        return getMonthlyContributionRows(keyword);
     }
 
     return state.currentRows.filter(row => {
@@ -1890,6 +2107,43 @@ function getMonthlyTotalScoreRows(keyword) {
         ...peopleRows,
         ...totalRows
     ];
+}
+
+function getMonthlyContributionRows(keyword) {
+    const peopleRows = state.currentRows
+        .filter(row => isPersonRow(row) && !isReturnAccount(row))
+        .filter(row => Number.isFinite(row.__monthContribution))
+        .filter(row => !keyword || normalizeCmName(row["CM"]).includes(keyword))
+        .slice()
+        .sort(compareMonthlyContributionDesc)
+        .map((row, index) => ({
+            ...row,
+            __displayRank: index + 1,
+            __displayRankTitle: t("monthlyContribution.displayRankTitle", { rank: index + 1 })
+        }));
+
+    const totalRows = state.currentRows.filter(isTotalRow);
+
+    return [
+        ...peopleRows,
+        ...totalRows
+    ];
+}
+
+function compareMonthlyContributionDesc(a, b) {
+    const aValue = Number.isFinite(a.__monthContribution)
+        ? a.__monthContribution
+        : Number.NEGATIVE_INFINITY;
+
+    const bValue = Number.isFinite(b.__monthContribution)
+        ? b.__monthContribution
+        : Number.NEGATIVE_INFINITY;
+
+    if (aValue !== bValue) {
+        return bValue - aValue;
+    }
+
+    return normalizeCmName(a["CM"]).localeCompare(normalizeCmName(b["CM"]));
 }
 
 function compareMonthlyTotalScoreDesc(a, b) {
@@ -1979,6 +2233,7 @@ function renderStatusFilter(rows) {
         <option value="${STATUS.ALL}">${escapeHTML(t("status.allStatus"))}</option>
         <option value="${SPECIAL_STATUS_FILTERS.EVER_BOTTOM_FIVE}">${escapeHTML(t("filters.everBottomFive"))}</option>
         <option value="${SPECIAL_STATUS_FILTERS.MONTH_TOTAL_SCORE_SORT}">${escapeHTML(t("filters.monthTotalScoreSort"))}</option>
+        <option value="${SPECIAL_STATUS_FILTERS.MONTH_CONTRIBUTION_SORT}">${escapeHTML(t("filters.monthContributionSort"))}</option>
         ${statuses.map(status => `
             <option value="${escapeHTML(status)}">${escapeHTML(tx(status))}</option>
         `).join("")}
@@ -1988,6 +2243,7 @@ function renderStatusFilter(rows) {
         STATUS.ALL,
         SPECIAL_STATUS_FILTERS.EVER_BOTTOM_FIVE,
         SPECIAL_STATUS_FILTERS.MONTH_TOTAL_SCORE_SORT,
+        SPECIAL_STATUS_FILTERS.MONTH_CONTRIBUTION_SORT,
         ...statuses
     ];
 
@@ -2186,6 +2442,7 @@ function renderTableCell(row, header) {
     if (header === "CM") return renderNameCell(row, header);
     if (header === RANK_COLUMN) return renderRankCell(row, header);
     if (header === MONTH_TOTAL_COLUMN) return renderMonthTotalCell(row, header);
+    if (header === MONTH_CONTRIBUTION_COLUMN) return renderMonthContributionCell(row, header);
     if (header === "較上週") return renderTrendCell(row, header);
     if (header === HISTORY_COLUMN) return renderHistoryCell(row, header);
     if (header === "狀態") return renderStatusCell(row, header);
@@ -2227,14 +2484,15 @@ function renderNameCell(row, header) {
 }
 
 function renderRankCell(row, header) {
-    const isMonthTotalScoreSort =
-        els.statusFilter.value === SPECIAL_STATUS_FILTERS.MONTH_TOTAL_SCORE_SORT;
+    const isSpecialRankSort =
+        els.statusFilter.value === SPECIAL_STATUS_FILTERS.MONTH_TOTAL_SCORE_SORT ||
+        els.statusFilter.value === SPECIAL_STATUS_FILTERS.MONTH_CONTRIBUTION_SORT;
 
-    const numberValue = isMonthTotalScoreSort
+    const numberValue = isSpecialRankSort
         ? row.__displayRank
         : row[RANK_COLUMN];
 
-    const rankTitle = isMonthTotalScoreSort
+    const rankTitle = isSpecialRankSort
         ? row.__displayRankTitle
         : row.__rankTitle;
 
@@ -2255,6 +2513,18 @@ function renderMonthTotalCell(row, header) {
             <td class="${getCellClass(header, "score")}" ${getCellLabelAttr(header)}>
                 <span title="${escapeHTML(row.__monthTotalTitle || "")}">
                     ${escapeHTML(monthTotalValue || "-")}
+                </span>
+            </td>
+        `;
+}
+
+function renderMonthContributionCell(row, header) {
+    const value = row[MONTH_CONTRIBUTION_COLUMN] || "";
+
+    return `
+            <td class="${getCellClass(header, "score")}" ${getCellLabelAttr(header)}>
+                <span title="${escapeHTML(row.__monthContributionTitle || "")}">
+                    ${escapeHTML(value || "-")}
                 </span>
             </td>
         `;
@@ -2321,6 +2591,11 @@ function updateResultHint(filteredRows) {
 
         return;
     }
+    if (els.statusFilter.value === SPECIAL_STATUS_FILTERS.MONTH_CONTRIBUTION_SORT) {
+        updateMonthlyContributionHint(filteredRows);
+
+        return;
+    }
 
     const shownPeople = filteredRows.filter(isCalculablePerson).length;
     const allPeople = getCalculablePeople(state.currentRows).length;
@@ -2346,6 +2621,22 @@ function updateResultHint(filteredRows) {
         everCount: historyEverCount,
         riskCount: historyRiskCount
     });
+}
+
+function updateMonthlyContributionHint(filteredRows) {
+    const sortedPeople = filteredRows.filter(row => {
+        return isPersonRow(row) && !isReturnAccount(row);
+    });
+
+    const topPerson = sortedPeople[0] || null;
+
+    els.resultHint.textContent = topPerson
+        ? t("monthlyContribution.hintTop", {
+            scope: state.historyScopeLabel,
+            name: topPerson["CM"] || "-",
+            contribution: formatPercent(topPerson.__monthContribution)
+        })
+        : t("monthlyContribution.hintEmpty");
 }
 
 function updateMonthlyTotalScoreHint(filteredRows) {
@@ -2414,7 +2705,8 @@ function getScoreRecordsFromRows(row, week) {
         activity2,
         activity3,
         activities,
-        score: parseNumber(row["一週總分"])
+        score: parseNumber(row["一週總分"]),
+        weeklyContribution: parsePercent(row["整週貢獻度"])
     };
 }
 
@@ -2484,7 +2776,8 @@ function createEmptyMonthRecord(week) {
         activity1: null,
         activity2: null,
         activity3: null,
-        score: null
+        score: null,
+        weeklyContribution: null
     };
 }
 
@@ -2504,6 +2797,15 @@ function getProfileSummary(profile) {
     const monthValidRecords = profile.monthRecords.filter(record => Number.isFinite(record.score));
     const monthScores = monthValidRecords.map(record => record.score);
     const monthTotal = monthScores.reduce((sum, score) => sum + score, 0);
+
+    const monthContributionValues = profile.monthRecords
+        .map(record => record.weeklyContribution)
+        .filter(Number.isFinite);
+
+    const monthContribution = monthContributionValues.length
+        ? monthContributionValues.reduce((sum, value) => sum + value, 0) / monthContributionValues.length
+        : null;
+
 
     const firstMonthRecord = monthValidRecords[0] || null;
     const lastMonthRecord = monthValidRecords[monthValidRecords.length - 1] || null;
@@ -2525,6 +2827,7 @@ function getProfileSummary(profile) {
         previousRecord,
         averageScore: calculateAverage(validScores),
         monthTotal,
+        monthContribution,
         monthDelta,
         latestDelta
     };
@@ -2797,6 +3100,13 @@ function renderMemberProfile(profile) {
                     <div class="profile-stat-value">${escapeHTML(formatDelta(summary.monthDelta))}</div>
                     <div class="profile-stat-note">${escapeHTML(t("profile.monthTrendNote"))}</div>
                 </article>
+
+                <article class="profile-stat">
+                    <div class="profile-stat-label">${escapeHTML(t("profile.monthContribution", { month: profile.selectedMonthLabel }))}</div>
+                    <div class="profile-stat-value">${escapeHTML(formatPercent(summary.monthContribution))}</div>
+                    <div class="profile-stat-note">${escapeHTML(t("profile.monthContributionNote"))}</div>
+                </article>
+
             </div>
 
             <section class="profile-section">
@@ -2925,6 +3235,9 @@ async function loadWeek(weekId) {
 
     showLoading(t("loadingSteps.monthlyTotal"));
     await loadMonthlyPersonalTotals(week);
+
+    showLoading(t("loadingSteps.monthlyContribution"));
+    await loadMonthlyPersonalContributions(week);
 
     showLoading(t("loadingSteps.achievements"));
     await loadMonthlyAchievements(week);

@@ -1,6 +1,5 @@
 import os
 import re
-import time
 import requests
 from pathlib import Path
 from requests.adapters import HTTPAdapter
@@ -70,10 +69,6 @@ def create_retry_session():
 def get_with_retry(session, url, *, description, timeout=None):
     """
     統一處理 GET request。
-
-    注意：
-    urllib3 Retry 會處理部分 connect/read/status retry，
-    這裡再補上清楚的錯誤訊息，讓 GitHub Actions log 更容易看。
     """
 
     request_timeout = timeout or (

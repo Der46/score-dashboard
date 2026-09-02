@@ -680,7 +680,7 @@ Panel / Toolbar / Table
 
 table {
     width: 100%;
-    min-width: 1260px;
+    min-width: 1380px;
     border-collapse: separate;
     border-spacing: 0;
     font-size: 14px;
@@ -783,10 +783,22 @@ tbody td.col-elder-distance {
         inset -1px 0 0 rgba(245, 158, 11, 0.18);
 }
 
+/* 本月貢獻度欄位 */
+thead th.col-month-contribution,
+tbody td.col-month-contribution {
+    background: linear-gradient(180deg, rgba(240, 253, 250, 0.98), rgba(204, 251, 241, 0.86)) !important;
+    color: #0f766e;
+    box-shadow:
+        inset 1px 0 0 rgba(20, 184, 166, 0.22),
+        inset -1px 0 0 rgba(20, 184, 166, 0.16);
+}
+
 thead th.col-pass-distance,
 thead th.col-elder-distance,
+thead th.col-month-contribution,
 tbody td.col-pass-distance.score,
-tbody td.col-elder-distance.score {
+tbody td.col-elder-distance.score,
+tbody td.col-month-contribution.score {
     font-weight: 950;
 }
 
@@ -800,6 +812,11 @@ tbody tr:hover td.col-elder-distance {
     color: #92400e;
 }
 
+tbody tr:hover td.col-month-contribution {
+    background: linear-gradient(180deg, rgba(204, 251, 241, 1), rgba(153, 246, 228, 0.92)) !important;
+    color: #0f766e;
+}
+
 .row-elder td.col-pass-distance,
 .row-total td.col-pass-distance {
     background: linear-gradient(180deg, rgba(255, 237, 213, 0.98), rgba(254, 215, 170, 0.92)) !important;
@@ -810,6 +827,12 @@ tbody tr:hover td.col-elder-distance {
 .row-total td.col-elder-distance {
     background: linear-gradient(180deg, rgba(254, 243, 199, 1), rgba(253, 230, 138, 0.9)) !important;
     color: #92400e !important;
+}
+
+.row-elder td.col-month-contribution,
+.row-total td.col-month-contribution {
+    background: linear-gradient(180deg, rgba(240, 253, 250, 0.98), rgba(153, 246, 228, 0.82)) !important;
+    color: #0f766e !important;
 }
 
 /* ================================
@@ -903,6 +926,20 @@ Cells / Badges
 .score {
     color: #1e293b;
     font-weight: 760;
+    font-variant-numeric: tabular-nums;
+}
+
+.col-month-contribution.score span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 68px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.54);
+    border: 1px solid rgba(20, 184, 166, 0.18);
+    color: #0f766e;
+    font-weight: 950;
     font-variant-numeric: tabular-nums;
 }
 
@@ -1361,7 +1398,7 @@ body.profile-open {
 
 .profile-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
     gap: 12px;
     margin-bottom: 16px;
 }
@@ -2646,6 +2683,11 @@ Responsive
         border-left: 4px solid #f59e0b;
     }
 
+    tbody td.col-month-contribution {
+        background: rgba(240, 253, 250, 0.9) !important;
+        border-left: 4px solid #14b8a6;
+    }
+
     tbody td.col-pass-distance::before {
         color: #c2410c;
         font-weight: 950;
@@ -2653,6 +2695,11 @@ Responsive
 
     tbody td.col-elder-distance::before {
         color: #92400e;
+        font-weight: 950;
+    }
+
+    tbody td.col-month-contribution::before {
+        color: #0f766e;
         font-weight: 950;
     }
 
@@ -2846,4 +2893,16 @@ Responsive
         scroll-behavior: auto !important;
         transition-duration: 0.001ms !important;
     }
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
