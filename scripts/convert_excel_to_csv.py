@@ -40,9 +40,17 @@ OUTPUT_COLUMNS = [
     "type",
     "CM",
     "LINE名稱",
+    "活動1投入",
+    "活動1未投入",
     "活動1總分",
+    "活動2投入",
+    "活動2未投入",
     "活動2總分",
+    "活動3投入",
+    "活動3未投入",
     "活動3總分",
+    "投入總分",
+    "未投入總分",
     "一週總分",
     "距離合格分數",
     "距離長老分數",
@@ -301,6 +309,67 @@ def find_activity_columns(df):
     return activity1_col, activity2_col, activity3_col
 
 
+def find_split_columns(df):
+    """
+    找出各活動「投入 / 未投入」欄位。
+
+    週表表頭為「活動1\\n投入」、「活動1\\n未投入」，
+    清理換行後會變成「活動1投入」、「活動1未投入」。
+
+    回傳：
+    {
+        1: ("活動1投入", "活動1未投入"),
+        2: (...),
+        3: (...),
+    }
+    找不到的欄位為 None（舊版週表沒有拆分時，輸出空白）。
+    """
+    columns = {}
+
+    for number in (1, 2, 3):
+        invested_col = find_column(df, [
+            f"活動{number}投入",
+            f"活動{number}投分",
+        ])
+
+        uninvested_col = find_column(df, [
+            f"活動{number}未投入",
+            f"活動{number}未投分",
+        ])
+
+        columns[number] = (invested_col, uninvested_col)
+
+    return columns
+
+
+def to_number(value):
+    """
+    將儲存格轉為數字，空白或非數字回傳 None。
+    """
+    if pd.isna(value):
+        return None
+
+    text = str(value).strip().replace(",", "")
+
+    if text == "":
+        return None
+
+    try:
+        return float(text)
+    except ValueError:
+        return None
+
+
+def format_int(number):
+    if number is None:
+        return ""
+
+    if float(number).is_integer():
+        return f"{int(number):,}"
+
+    return f"{number:,}"
+
+
 def find_distance_columns(df):
     """
     找出「距離合格分數」與「距離長老分數」欄位。
@@ -431,22 +500,11 @@ def make_return_section_row():
     """
     建立【回歸帳號】區段列。
     """
-    return {
-        "type": "section",
-        "CM": "【回歸帳號】",
-        "LINE名稱": "",
-        "活動1總分": "",
-        "活動2總分": "",
-        "活動3總分": "",
-        "一週總分": "",
-        "距離合格分數": "",
-        "距離長老分數": "",
-        "狀態": "",
-        "活動1貢獻度": "",
-        "活動2貢獻度": "",
-        "活動3貢獻度": "",
-        "整週貢獻度": "",
-    }
+    row = {column: "" for column in OUTPUT_COLUMNS}
+    row["type"] = "section"
+    row["CM"] = "【回歸帳號】"
+
+    return row
 
 
 def main():
@@ -461,6 +519,11 @@ def main():
 
     activity1_col, activity2_col, activity3_col = find_activity_columns(df)
     qualify_distance_col, elder_distance_col = find_distance_columns(df)
+    split_columns = find_split_columns(df)
+    has_split = all(
+        split_columns[number][0] and split_columns[number][1]
+        for number in (1, 2)
+    )
 
     (
         activity1_contribution_col,
@@ -497,6 +560,15 @@ def main():
     print(f"活動1來源欄位：{activity1_col}")
     print(f"活動2來源欄位：{activity2_col}")
     print(f"活動3來源欄位：{activity3_col if activity3_col else '未找到，將補 0'}")
+
+    for number, (invested_col, uninvested_col) in split_columns.items():
+        print(
+            f"活動{number}投入/未投入欄位："
+            f"{invested_col or '未找到'} / {uninvested_col or '未找到'}"
+        )
+
+    if not has_split:
+        print("警告：找不到活動1/活動2 的投入、未投入欄位，投入總分與未投入總分將輸出空白")
 
     print(f"活動1貢獻度欄位：{activity1_contribution_col if activity1_contribution_col else '未找到，將輸出空白'}")
     print(f"活動2貢獻度欄位：{activity2_contribution_col if activity2_contribution_col else '未找到，將輸出空白'}")
@@ -575,10 +647,30 @@ def main():
                 row.get(weekly_contribution_col)
             )
 
+        split_values = {}
+        invested_total = 0
+        uninvested_total = 0
+
+        for number, (invested_col, uninvested_col) in split_columns.items():
+            invested = to_number(row.get(invested_col)) if invested_col else None
+            uninvested = to_number(row.get(uninvested_col)) if uninvested_col else None
+
+            if has_split and invested_col and uninvested_col:
+                invested = invested or 0
+                uninvested = uninvested or 0
+                invested_total += invested
+                uninvested_total += uninvested
+
+            split_values[f"活動{number}投入"] = format_int(invested) if has_split else ""
+            split_values[f"活動{number}未投入"] = format_int(uninvested) if has_split else ""
+
         output_rows.append({
             "type": row_type,
             "CM": cm,
             "LINE名稱": line_name,
+            **split_values,
+            "投入總分": format_int(invested_total) if has_split else "",
+            "未投入總分": format_int(uninvested_total) if has_split else "",
             "活動1總分": activity1_score,
             "活動2總分": activity2_score,
             "活動3總分": activity3_score,

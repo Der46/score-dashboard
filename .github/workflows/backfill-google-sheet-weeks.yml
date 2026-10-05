@@ -1,0 +1,103 @@
+name: Backfill Google Sheet Weeks
+
+# 手動執行：重新下載已存在的週別分頁並重新轉換 CSV。
+#
+# 用途：
+# - 轉換程式新增「投入 / 未投入」欄位後，舊週別 CSV 沒有拆分資料，
+#   執行一次即可把 weeks.csv 內所有週別補齊。
+# - 某週資料在 Google Sheet 修正後，也可指定週別重新同步。
+#
+# 單一週別失敗（例如分頁已刪除）不會中斷其他週別，最後會列出失敗清單。
+
+on:
+  workflow_dispatch:
+    inputs:
+      week_ids:
+        description: "要回補的週別，以逗號分隔，例如 2026-09-w1,2026-09-w2。輸入 all 代表 weeks.csv 內全部週別"
+        required: true
+        default: "all"
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-google-sheet-week
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pandas openpyxl requests
+
+      - name: Download and convert weeks
+        env:
+          GOOGLE_SPREADSHEET_ID: ${{ secrets.GOOGLE_SPREADSHEET_ID }}
+          GOOGLE_SHEETS_API_KEY: ${{ secrets.GOOGLE_SHEETS_API_KEY }}
+          INPUT_WEEK_IDS: ${{ github.event.inputs.week_ids }}
+        run: |
+          set -u
+
+          if [ "$(echo "$INPUT_WEEK_IDS" | tr -d '[:space:]')" = "all" ]; then
+            WEEK_IDS=$(python - <<'PY'
+          import csv
+          with open("data/weeks.csv", encoding="utf-8-sig") as f:
+              print(" ".join(row["id"] for row in csv.DictReader(f) if row.get("id")))
+          PY
+            )
+          else
+            WEEK_IDS=$(echo "$INPUT_WEEK_IDS" | tr ',' ' ')
+          fi
+
+          FAILED=""
+
+          for WEEK_ID in $WEEK_IDS; do
+            echo "::group::${WEEK_ID}"
+
+            if WEEK_ID="$WEEK_ID" python scripts/download_google_sheet_week.py \
+              && INPUT_XLSX="work/${WEEK_ID}.xlsx" OUTPUT_CSV="data/${WEEK_ID}.csv" python scripts/convert_excel_to_csv.py; then
+              echo "完成：${WEEK_ID}"
+            else
+              echo "::warning::回補失敗：${WEEK_ID}"
+              FAILED="${FAILED} ${WEEK_ID}"
+            fi
+
+            echo "::endgroup::"
+
+            # 避免 Google API 請求過於密集
+            sleep 3
+          done
+
+          if [ -n "$FAILED" ]; then
+            echo "以下週別回補失敗：${FAILED}"
+          fi
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add data/*.csv
+
+          if git diff --cached --quiet; then
+            echo "沒有檔案需要提交"
+          else
+            git commit -m "Backfill weekly score CSV with invested / uninvested split"
+            git push
+          fi

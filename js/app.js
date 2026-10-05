@@ -1,435 +1,126 @@
+"use strict";
+
 /* ================================
-   I18n
+   Config
 ================================ */
 
-const I18N_URL = "./i18n.json";
-const DEFAULT_LOCALE = "zh-Hant";
-const STORAGE_LOCALE_KEY = "score-dashboard-locale";
+const CONFIG = {
+    I18N_URL: "./i18n.json",
+    WEEK_INDEX_URL: "./data/weeks.csv",
+    UPDATED_AT_URL: "./data/updated-at.json",
+    DEFAULT_LOCALE: "zh-Hant",
+    STORAGE_LOCALE_KEY: "score-dashboard-locale",
 
-const i18nState = {
-    locale: localStorage.getItem(STORAGE_LOCALE_KEY) || DEFAULT_LOCALE,
-    messages: {}
+    // 與 ScoreDashboardScript.gs 相同：合格 / 長老依「實際投入」判定
+    PASS_SCORE: 200000,
+    ELDER_SCORE: 500000,
+
+    // 未投入佔個人總分達此比例，標記為「未投入過半」
+    UNINVESTED_HEAVY_SHARE: 0.5,
+
+    BOTTOM_N: 5,
+    HISTORY_MIN_WEEKS: 2
 };
 
-function getNestedValue(object, path) {
-    return String(path || "")
-        .split(".")
-        .reduce((current, key) => current?.[key], object);
-}
-
-function interpolate(template, params = {}) {
-    return String(template ?? "").replace(/\{(\w+)\}/g, (_, key) => {
-        return params[key] ?? "";
-    });
-}
-
-function t(path, params = {}) {
-    const localeMessages = i18nState.messages[i18nState.locale] || {};
-    const fallbackMessages = i18nState.messages[DEFAULT_LOCALE] || {};
-
-    const value =
-        getNestedValue(localeMessages, path) ??
-        getNestedValue(fallbackMessages, path) ??
-        path;
-
-    return interpolate(value, params);
-}
-
-function getCurrentLocale() {
-    return i18nState.locale || DEFAULT_LOCALE;
-}
-
-function getLocaleForNumber() {
-    const locale = getCurrentLocale();
-
-    if (locale === "zh-Hant") return "zh-TW";
-    if (locale === "vi") return "vi-VN";
-
-    return "en-US";
-}
-
-function formatUpdatedAt(date) {
-    if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
-        return t("common.noData");
-    }
-
-    return new Intl.DateTimeFormat(getLocaleForNumber(), {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-        timeZone: "Asia/Taipei"
-    }).format(date);
-}
-
-function renderUpdatedAt() {
-    if (!els?.updatedAtText) return;
-
-    if (!state.updatedAt) {
-        els.updatedAtText.textContent = "";
-        return;
-    }
-
-    els.updatedAtText.textContent = t("hero.updatedAt", {
-        time: formatUpdatedAt(state.updatedAt)
-    });
-}
-
-async function loadUpdatedAt() {
-    try {
-        const response = await fetch(UPDATED_AT_URL, { cache: "no-store" });
-
-        if (!response.ok) {
-            console.warn(`Failed to read updated time file: ${UPDATED_AT_URL}`);
-            return;
-        }
-
-        const data = await response.json();
-        const updatedAt = new Date(data.updatedAt);
-
-        if (Number.isNaN(updatedAt.getTime())) {
-            console.warn("Invalid updatedAt value:", data.updatedAt);
-            return;
-        }
-
-        state.updatedAt = updatedAt;
-        renderUpdatedAt();
-    } catch (error) {
-        console.warn("Failed to load updated-at.json", error);
-    }
-}
-
-async function loadI18n() {
-    const response = await fetch(I18N_URL, { cache: "no-store" });
-
-    if (!response.ok) {
-        throw new Error(`Failed to read i18n file: ${I18N_URL}`);
-    }
-
-    i18nState.messages = await response.json();
-
-    if (!i18nState.messages[i18nState.locale]) {
-        i18nState.locale = DEFAULT_LOCALE;
-    }
-
-    applyStaticI18n();
-}
-
-async function setLocale(locale) {
-    if (!i18nState.messages[locale]) return;
-
-    i18nState.locale = locale;
-    localStorage.setItem(STORAGE_LOCALE_KEY, locale);
-
-    applyStaticI18n();
-    renderUpdatedAt();
-    await rerenderAll();
-}
-
-function applyStaticI18n() {
-    document.documentElement.lang = t("page.htmlLang");
-    document.title = t("page.title");
-
-    document.querySelectorAll("[data-i18n]").forEach(element => {
-        element.textContent = t(element.dataset.i18n);
-    });
-
-    document.querySelectorAll("[data-i18n-attr]").forEach(element => {
-        const rules = element.dataset.i18nAttr
-            .split(";")
-            .map(rule => rule.trim())
-            .filter(Boolean);
-
-        rules.forEach(rule => {
-            const [attribute, path] = rule.split(":").map(part => part.trim());
-
-            if (!attribute || !path) return;
-
-            element.setAttribute(attribute, t(path));
-        });
-    });
-
-    if (els?.languageSelect) {
-        els.languageSelect.value = getCurrentLocale();
-    }
-}
-
-async function rerenderAll() {
-    if (!state.weeks.length) return;
-
-    const keyword = els.searchInput.value;
-    const status = els.statusFilter.value;
-
-    renderWeekSelect();
-
-    if (state.currentWeek) {
-        await loadWeek(state.currentWeek.id);
-
-        els.searchInput.value = keyword;
-
-        const optionValues = Array.from(els.statusFilter.options).map(option => option.value);
-        els.statusFilter.value = optionValues.includes(status) ? status : STATUS.ALL;
-
-        renderBody();
-    } else if (state.currentRows.length) {
-        renderHead();
-        renderStatusFilter(state.currentRows);
-        renderAchievementsPodium();
-        renderStats(state.currentRows);
-        renderBody();
-    }
-
-    if (!els.profileModal.hidden) {
-        closeProfileModal();
-    }
-}
-
-function tx(value) {
-    const map = {
-        "全部": t("status.all"),
-        "PASS": t("status.pass"),
-        "淘汰": t("status.out"),
-        "回歸": t("status.return"),
-        "降級": t("status.downgrade"),
-        "長老": t("status.elder"),
-        "隊長": t("status.captain"),
-        "副隊長": t("status.viceCaptain"),
-        "無資料": t("status.noData"),
-        "不計算": t("common.notCalculated"),
-        "總計": t("specialCm.total"),
-        "【回歸帳號】": t("specialCm.returnSection")
-    };
-
-    return map[value] || value;
-}
-
-/* ================================
-   Config / Constants
-================================ */
-
-const WEEK_INDEX_URL = "./data/weeks.csv";
-const UPDATED_AT_URL = "./data/updated-at.json";
-
-const HISTORY_MIN_WEEKS = 2;
-const HISTORY_MODE = "appeared";
-
 const STATUS = {
-    ALL: "全部",
     PASS: "PASS",
     OUT: "淘汰",
     RETURN: "回歸",
     DOWNGRADE: "降級",
     ELDER: "長老",
     CAPTAIN: "隊長",
-    VICE_CAPTAIN: "副隊長",
-    NO_DATA: "無資料"
+    VICE_CAPTAIN: "副隊長"
 };
 
-const ROW_TYPE = {
-    PERSON: "person",
-    SECTION: "section",
-    TOTAL: "total"
-};
+const LEADER_STATUSES = [STATUS.CAPTAIN, STATUS.VICE_CAPTAIN];
 
 const SPECIAL_CM = {
     RETURN_SECTION: "【回歸帳號】",
     TOTAL: "總計"
 };
 
-const TREND = {
-    UP: "up",
-    DOWN: "down",
-    SAME: "same",
-    NEW: "new"
+const VIEW = {
+    MONTH: "month",
+    WEEK: "week"
 };
 
-const HISTORY_LEVEL = {
-    NONE: "none",
-    WATCH: "watch",
-    RISK: "risk"
+const FILTER = {
+    ALL: "all",
+    HEAVY: "heavy",
+    LEADERS: "leaders",
+    ELDER: "elder",
+    RETURN: "return",
+    EVER_BOTTOM: "everBottom",
+    STATUS_PREFIX: "status:"
 };
 
-const EXCLUDED_STATUSES = [
-    STATUS.RETURN,
-    STATUS.VICE_CAPTAIN,
-    STATUS.CAPTAIN
-];
+/* ================================
+   State / Elements
+================================ */
 
-const RANK_COLUMN = "編號";
-const MONTH_TOTAL_COLUMN = "本月總分";
-const MONTH_CONTRIBUTION_COLUMN = "本月貢獻度";
-const HISTORY_COLUMN = "本月後五";
-
-const SPECIAL_STATUS_FILTERS = {
-    EVER_BOTTOM_FIVE: "__everBottomFive",
-    MONTH_TOTAL_SCORE_SORT: "__monthTotalScoreSort",
-    MONTH_CONTRIBUTION_SORT: "__monthContributionSort"
+const i18nState = {
+    locale: safeStorageGet(CONFIG.STORAGE_LOCALE_KEY) || CONFIG.DEFAULT_LOCALE,
+    messages: {}
 };
 
-const DISPLAY_HEADERS = [
-    RANK_COLUMN,
-    "CM",
-    "活動1總分",
-    "活動2總分",
-    "活動3總分",
-    "一週總分",
-    MONTH_TOTAL_COLUMN,
-    MONTH_CONTRIBUTION_COLUMN,
-    "距離合格分數",
-    "距離長老分數",
-    "較上週",
-    HISTORY_COLUMN,
-    "狀態"
-];
+const state = {
+    weeks: [],              // weeks.csv，新到舊
+    weekData: new Map(),    // weekId -> 週資料模型
+    failedWeeks: [],
+    months: [],             // monthKey，新到舊
+    monthCache: new Map(),
+    updatedAt: null,
 
-const HEADER_I18N_KEY = {
-    [RANK_COLUMN]: "headers.rank",
-    "CM": "headers.cm",
-    "活動1總分": "headers.activity1Total",
-    "活動2總分": "headers.activity2Total",
-    "活動3總分": "headers.activity3Total",
-    "一週總分": "headers.weeklyTotal",
-    [MONTH_TOTAL_COLUMN]: "headers.monthTotal",
-    [MONTH_CONTRIBUTION_COLUMN]: "headers.monthContribution",
-    "距離合格分數": "headers.passDistance",
-    "距離長老分數": "headers.elderDistance",
-    "較上週": "headers.compareLastWeek",
-    [HISTORY_COLUMN]: "headers.bottomFiveThisMonth",
-    "狀態": "headers.status"
-};
-
-function getHeaderLabel(header) {
-    return HEADER_I18N_KEY[header] ? t(HEADER_I18N_KEY[header]) : header;
-}
-function getAchievementTitle(achievement) {
-    return achievement.titleKey ? t(achievement.titleKey) : achievement.title || "";
-}
-
-function getAchievementSubtitle(achievement) {
-    return achievement.subtitleKey ? t(achievement.subtitleKey) : achievement.subtitle || "";
-}
-
-function getAchievementEmptyText(achievement) {
-    return achievement.emptyTextKey ? t(achievement.emptyTextKey) : achievement.emptyText || t("common.noData");
-}
-
-const ACHIEVEMENT_BADGES = {
-    MVP: {
-        key: "mvp",
-        titleKey: "achievement.mvpTitle",
-        subtitleKey: "achievement.mvpSubtitle",
-        icon: "🏆",
-        accent: "gold",
-        emptyTextKey: "achievement.mvpEmpty"
-    },
-    IMPROVER: {
-        key: "improver",
-        titleKey: "achievement.improverTitle",
-        subtitleKey: "achievement.improverSubtitle",
-        icon: "🚀",
-        accent: "green",
-        emptyTextKey: "achievement.improverEmpty"
-    },
-    STABLE: {
-        key: "stable",
-        titleKey: "achievement.stableTitle",
-        subtitleKey: "achievement.stableSubtitle",
-        icon: "🛡️",
-        accent: "blue",
-        emptyTextKey: "achievement.stableEmpty"
-    },
-    BURST: {
-        key: "burst",
-        titleKey: "achievement.burstTitle",
-        subtitleKey: "achievement.burstSubtitle",
-        icon: "⚡",
-        accent: "orange",
-        emptyTextKey: "achievement.burstEmpty"
-    },
-    POTENTIAL: {
-        key: "potential",
-        titleKey: "achievement.potentialTitle",
-        subtitleKey: "achievement.potentialSubtitle",
-        icon: "🌱",
-        accent: "purple",
-        emptyTextKey: "achievement.potentialEmpty"
-    }
-};
-
-const ROLE_META = {
-    [STATUS.ELDER]: {
-        rowClass: "row-elder",
-        rankBadgeClass: "rank-badge rank-badge-elder",
-        personLinkClass: "person-link elder-link",
-        badgeClass: "badge-elder",
-    },
-    [STATUS.CAPTAIN]: {
-        rowClass: "row-captain",
-        rankBadgeClass: "rank-badge rank-badge-captain",
-        personLinkClass: "person-link captain-link",
-        badgeClass: "badge-captain",
-    },
-    [STATUS.VICE_CAPTAIN]: {
-        rowClass: "row-vice",
-        rankBadgeClass: "rank-badge rank-badge-vice",
-        personLinkClass: "person-link vice-link",
-        badgeClass: "badge-vice",
-    }
-};
-
-const STATUS_BADGE_CLASS = {
-    [STATUS.PASS]: "badge-pass",
-    [STATUS.OUT]: "badge-out",
-    [STATUS.RETURN]: "badge-return",
-    [STATUS.ELDER]: ROLE_META[STATUS.ELDER].badgeClass,
-    [STATUS.CAPTAIN]: ROLE_META[STATUS.CAPTAIN].badgeClass,
-    [STATUS.VICE_CAPTAIN]: ROLE_META[STATUS.VICE_CAPTAIN].badgeClass
+    view: VIEW.MONTH,
+    period: "",
+    filter: FILTER.ALL,
+    sort: { key: "score", dir: "desc" },
+    keyword: ""
 };
 
 const els = {
     languageSelect: document.getElementById("languageSelect"),
-    weekSelect: document.getElementById("weekSelect"),
+    viewTabs: document.getElementById("viewTabs"),
+    periodSelect: document.getElementById("periodSelect"),
+    searchInput: document.getElementById("searchInput"),
+    filterSelect: document.getElementById("filterSelect"),
+    sortSelect: document.getElementById("sortSelect"),
+    notice: document.getElementById("notice"),
     stats: document.getElementById("stats"),
+    podium: document.getElementById("podium"),
+    tableTitle: document.getElementById("tableTitle"),
+    resultHint: document.getElementById("resultHint"),
     tableHead: document.getElementById("tableHead"),
     tableBody: document.getElementById("tableBody"),
-    searchInput: document.getElementById("searchInput"),
-    statusFilter: document.getElementById("statusFilter"),
-    resultHint: document.getElementById("resultHint"),
     updatedAtText: document.getElementById("updatedAtText"),
     profileModal: document.getElementById("profileModal"),
-    profileClose: document.getElementById("profileClose"),
+    profileDialog: document.querySelector("#profileModal .modal-dialog"),
     profileName: document.getElementById("profileName"),
+    profileAvatar: document.getElementById("profileAvatar"),
     profileMeta: document.getElementById("profileMeta"),
     profileBody: document.getElementById("profileBody"),
-    get achievements() {
-        return document.getElementById("achievementsPodium");
-    },
-    get profileDialog() {
-        return document.querySelector(".profile-dialog");
-    }
-};
-
-const state = {
-    weeks: [],
-    updatedAt: null,
-    currentWeek: null,
-    currentRows: [],
-    historySummaryMap: new Map(),
-    monthlyTotalMap: new Map(),
-    monthlyContributionMap: new Map(),
-    monthlyAchievementMap: new Map(),
-    achievements: [],
-    historyScopeWeekCount: 0,
-    historyScopeLabel: "",
-    weekRowsCache: new Map(),
-    hasRenderedTableOnce: false
+    tooltip: document.getElementById("chartTooltip")
 };
 
 /* ================================
    Utilities
 ================================ */
+
+function safeStorageGet(key) {
+    try {
+        return localStorage.getItem(key);
+    } catch {
+        return null;
+    }
+}
+
+function safeStorageSet(key, value) {
+    try {
+        localStorage.setItem(key, value);
+    } catch {
+        /* 無法寫入時忽略 */
+    }
+}
 
 function escapeHTML(value) {
     return String(value ?? "")
@@ -444,125 +135,196 @@ function cleanText(value) {
     return String(value ?? "").replace(/\s+/g, " ").trim();
 }
 
-function createClassName(...classes) {
-    return classes.filter(Boolean).join(" ");
+function parseNumber(value) {
+    const text = cleanText(value).replaceAll(",", "");
+
+    if (!text) return 0;
+
+    return Number(text) || 0;
 }
 
-function debounce(fn, delay = 180) {
+function parseOptionalNumber(value) {
+    const text = cleanText(value).replaceAll(",", "");
+
+    if (!text) return null;
+
+    const number = Number(text);
+
+    return Number.isFinite(number) ? number : null;
+}
+
+function sum(values) {
+    return values.reduce((total, value) => total + value, 0);
+}
+
+function ratio(numerator, denominator) {
+    if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator <= 0) {
+        return null;
+    }
+
+    return numerator / denominator;
+}
+
+function debounce(fn, delay = 160) {
     let timer = null;
 
     return (...args) => {
         clearTimeout(timer);
-
-        timer = setTimeout(() => {
-            fn(...args);
-        }, delay);
+        timer = setTimeout(() => fn(...args), delay);
     };
 }
 
-function parseNumber(value) {
-    if (!value) return 0;
+function getNumberLocale() {
+    if (i18nState.locale === "zh-Hant") return "zh-TW";
+    if (i18nState.locale === "vi") return "vi-VN";
 
-    return Number(String(value).replaceAll(",", "").trim()) || 0;
+    return "en-US";
 }
 
-function parsePercent(value) {
-    const text = cleanText(value);
+function formatNumber(value) {
+    if (!Number.isFinite(value)) return "—";
 
-    if (!text || text === "—" || text === "-") return null;
-
-    const normalized = text
-        .replaceAll(",", "")
-        .replaceAll("%", "")
-        .trim();
-
-    const number = Number(normalized);
-
-    if (!Number.isFinite(number)) return null;
-
-    return Math.abs(number) > 1 ? number / 100 : number;
+    return Math.round(value).toLocaleString(getNumberLocale());
 }
 
-function formatPercent(value, digits = 2) {
-    if (!Number.isFinite(value)) return "-";
+function formatCompact(value) {
+    if (!Number.isFinite(value)) return "—";
 
-    return `${(value * 100).toLocaleString(getLocaleForNumber(), {
+    return new Intl.NumberFormat(getNumberLocale(), {
+        notation: "compact",
+        maximumFractionDigits: 1
+    }).format(value);
+}
+
+function formatPercent(value, digits = 1) {
+    if (!Number.isFinite(value)) return "—";
+
+    return `${(value * 100).toLocaleString(getNumberLocale(), {
         minimumFractionDigits: digits,
         maximumFractionDigits: digits
     })}%`;
 }
 
-function formatNumber(value) {
-    return Number(value || 0).toLocaleString(getLocaleForNumber());
+function formatSigned(value) {
+    if (!Number.isFinite(value)) return "—";
+    if (value > 0) return `+${formatNumber(value)}`;
+    if (value < 0) return `−${formatNumber(Math.abs(value))}`;
+
+    return "0";
 }
 
-function formatCompactNumber(value) {
-    const number = Number(value || 0);
-    const locale = getLocaleForNumber();
+function average(values) {
+    const valid = values.filter(Number.isFinite);
 
-    return new Intl.NumberFormat(locale, {
-        notation: "compact",
-        maximumFractionDigits: 1
-    }).format(number);
+    return valid.length ? sum(valid) / valid.length : 0;
 }
 
-function calculateAverage(values) {
-    const validValues = values.filter(Number.isFinite);
+function stdDev(values) {
+    const valid = values.filter(Number.isFinite);
 
-    if (!validValues.length) return 0;
+    if (!valid.length) return 0;
 
-    return Math.round(
-        validValues.reduce((sum, value) => sum + value, 0) / validValues.length
-    );
-}
+    const mean = average(valid);
 
-function calculatePopulationStdDev(values) {
-    const validValues = values.filter(Number.isFinite);
-
-    if (!validValues.length) return 0;
-
-    const average = validValues.reduce((sum, value) => sum + value, 0) / validValues.length;
-    const variance =
-        validValues.reduce((sum, value) => sum + Math.pow(value - average, 2), 0) /
-        validValues.length;
-
-    return Math.sqrt(variance);
-}
-
-function formatDelta(delta) {
-    if (delta === null || delta === undefined) return t("trend.noData");
-    if (delta > 0) return `▲ ${formatNumber(delta)}`;
-    if (delta < 0) return `▼ ${formatNumber(Math.abs(delta))}`;
-
-    return "— 0";
-}
-
-function cloneRows(rows) {
-    return rows.map(row => ({ ...row }));
-}
-
-function getRowAnimationDelay(index) {
-    return Math.min(index * 0.015, 0.3);
-}
-
-function showLoading(message = t("common.syncing")) {
-    els.resultHint.textContent = message;
-    renderLoading(message);
+    return Math.sqrt(average(valid.map(value => (value - mean) ** 2)));
 }
 
 /* ================================
-   Data Fetching / CSV
+   I18n
 ================================ */
 
-async function fetchText(url) {
-    const response = await fetch(url, { cache: "no-store" });
+function getNestedValue(object, path) {
+    return String(path || "")
+        .split(".")
+        .reduce((current, key) => current?.[key], object);
+}
+
+function t(path, params = {}) {
+    const localeMessages = i18nState.messages[i18nState.locale] || {};
+    const fallbackMessages = i18nState.messages[CONFIG.DEFAULT_LOCALE] || {};
+
+    const template =
+        getNestedValue(localeMessages, path) ??
+        getNestedValue(fallbackMessages, path) ??
+        path;
+
+    return String(template).replace(/\{(\w+)\}/g, (_, key) => params[key] ?? "");
+}
+
+function statusLabel(status) {
+    const map = {
+        [STATUS.PASS]: "status.pass",
+        [STATUS.OUT]: "status.out",
+        [STATUS.RETURN]: "status.return",
+        [STATUS.DOWNGRADE]: "status.downgrade",
+        [STATUS.ELDER]: "status.elder",
+        [STATUS.CAPTAIN]: "status.captain",
+        [STATUS.VICE_CAPTAIN]: "status.viceCaptain"
+    };
+
+    return map[status] ? t(map[status]) : status;
+}
+
+async function loadI18n() {
+    const response = await fetch(CONFIG.I18N_URL, { cache: "no-store" });
 
     if (!response.ok) {
-        throw new Error(t("error.fetchFailed", { url }));
+        throw new Error(`Failed to read ${CONFIG.I18N_URL}`);
     }
 
-    return response.text();
+    i18nState.messages = await response.json();
+
+    if (!i18nState.messages[i18nState.locale]) {
+        i18nState.locale = CONFIG.DEFAULT_LOCALE;
+    }
+
+    applyStaticI18n();
 }
+
+function applyStaticI18n() {
+    document.documentElement.lang = t("page.htmlLang");
+    document.title = t("page.title");
+
+    document.querySelectorAll("[data-i18n]").forEach(element => {
+        element.textContent = t(element.dataset.i18n);
+    });
+
+    document.querySelectorAll("[data-i18n-attr]").forEach(element => {
+        element.dataset.i18nAttr
+            .split(";")
+            .map(rule => rule.trim())
+            .filter(Boolean)
+            .forEach(rule => {
+                const [attribute, path] = rule.split(":").map(part => part.trim());
+
+                if (attribute && path) {
+                    element.setAttribute(attribute, t(path));
+                }
+            });
+    });
+
+    els.languageSelect.value = i18nState.locale;
+}
+
+async function setLocale(locale) {
+    if (!i18nState.messages[locale]) return;
+
+    i18nState.locale = locale;
+    safeStorageSet(CONFIG.STORAGE_LOCALE_KEY, locale);
+
+    applyStaticI18n();
+    renderUpdatedAt();
+    renderControls();
+    renderAll();
+
+    if (!els.profileModal.hidden && state.profileKey) {
+        renderProfile(state.profileKey);
+    }
+}
+
+/* ================================
+   CSV
+================================ */
 
 function parseCSV(text) {
     const rows = [];
@@ -572,9 +334,9 @@ function parseCSV(text) {
 
     for (let i = 0; i < text.length; i++) {
         const char = text[i];
-        const nextChar = text[i + 1];
+        const next = text[i + 1];
 
-        if (char === '"' && inQuotes && nextChar === '"') {
+        if (char === '"' && inQuotes && next === '"') {
             cell += '"';
             i++;
             continue;
@@ -592,13 +354,11 @@ function parseCSV(text) {
         }
 
         if ((char === "\n" || char === "\r") && !inQuotes) {
-            if (char === "\r" && nextChar === "\n") i++;
+            if (char === "\r" && next === "\n") i++;
 
             row.push(cell);
 
-            if (row.some(value => String(value).trim() !== "")) {
-                rows.push(row);
-            }
+            if (row.some(value => value.trim() !== "")) rows.push(row);
 
             row = [];
             cell = "";
@@ -610,2734 +370,1848 @@ function parseCSV(text) {
 
     row.push(cell);
 
-    if (row.some(value => String(value).trim() !== "")) {
-        rows.push(row);
-    }
+    if (row.some(value => value.trim() !== "")) rows.push(row);
 
     return rows;
 }
 
-function csvToObjects(csvText) {
-    const rows = parseCSV(csvText);
+function csvToObjects(text) {
+    const rows = parseCSV(text.replace(/^﻿/, ""));
 
     if (!rows.length) return [];
 
     const headers = rows[0].map(cleanText);
 
     return rows.slice(1).map(cols => {
-        const obj = {};
+        const object = {};
 
         headers.forEach((header, index) => {
-            obj[header] = cols[index] ?? "";
+            object[header] = cols[index] ?? "";
         });
 
-        return obj;
+        return object;
     });
 }
 
-async function loadWeeks() {
-    const csvText = await fetchText(WEEK_INDEX_URL);
+async function fetchText(url) {
+    const response = await fetch(url, { cache: "no-store" });
 
-    state.weeks = csvToObjects(csvText).sort((a, b) => {
-        return String(b.startDate || "").localeCompare(String(a.startDate || ""));
-    });
-
-    renderWeekSelect();
-}
-
-async function getWeekRows(week) {
-    if (!week) return [];
-
-    if (state.weekRowsCache.has(week.id)) {
-        return state.weekRowsCache.get(week.id);
+    if (!response.ok) {
+        throw new Error(t("error.fetchFailed", { url }));
     }
 
-    const csvText = await fetchText(week.file);
-    const rows = normalizeRows(csvToObjects(csvText));
-
-    state.weekRowsCache.set(week.id, rows);
-
-    return rows;
+    return response.text();
 }
 
 /* ================================
-   Week Helpers
+   Data Model: Week
 ================================ */
 
 function getWeekMonthKey(week) {
-    const startDate = cleanText(week?.startDate || "");
-    const startDateMatch = startDate.match(/^(\d{4})-(\d{2})/);
+    const match =
+        cleanText(week?.startDate).match(/^(\d{4})-(\d{2})/) ||
+        cleanText(week?.id).match(/^(\d{4})-(\d{2})/);
 
-    if (startDateMatch) {
-        return `${startDateMatch[1]}-${startDateMatch[2]}`;
-    }
+    return match ? `${match[1]}-${match[2]}` : "";
+}
 
-    const id = cleanText(week?.id || "");
-    const idMatch = id.match(/^(\d{4})-(\d{2})/);
+function getWeekShortLabel(week) {
+    const label = cleanText(week?.label || week?.id);
 
-    if (idMatch) {
-        return `${idMatch[1]}-${idMatch[2]}`;
-    }
-
-    return "";
+    return label.split("｜")[0] || label;
 }
 
 function formatMonthLabel(monthKey) {
     const [year, month] = String(monthKey || "").split("-");
 
-    if (!year || !month) {
-        return t("month.currentMonth");
-    }
+    if (!year || !month) return monthKey;
 
-    return t("month.label", { year, month });
+    return t("month.label", { year, month: String(Number(month)) });
 }
 
-function getWeeksInSameMonth(targetWeek) {
-    const targetMonthKey = getWeekMonthKey(targetWeek);
+function formatMonthShort(monthKey) {
+    const [year, month] = String(monthKey || "").split("-");
 
-    if (!targetMonthKey) return [];
+    if (!year || !month) return monthKey;
 
-    return state.weeks.filter(week => getWeekMonthKey(week) === targetMonthKey);
+    return t("month.short", { year: year.slice(2), month: String(Number(month)) });
 }
 
-function getWeekShortLabel(week) {
-    const label = cleanText(week?.label || week?.id || "");
-    const parts = label.split("｜");
-
-    return parts[0] || label;
-}
-
-function findWeekById(weekId) {
-    const week = state.weeks.find(item => item.id === weekId) || state.weeks[0];
-
-    if (!week) {
-        throw new Error(t("error.weekNotFound"));
-    }
-
-    return week;
-}
-
-async function getPreviousRows(currentWeekId) {
-    const currentIndex = state.weeks.findIndex(week => week.id === currentWeekId);
-    const previousWeek = state.weeks[currentIndex + 1];
-
-    if (!previousWeek) return [];
-
-    try {
-        const rows = await getWeekRows(previousWeek);
-
-        return cloneRows(rows);
-    } catch (error) {
-        console.warn(t("error.previousWeekReadFailed"), error);
-
-        return [];
-    }
-}
-
-/* ================================
-   Row Helpers
-================================ */
-
-function getRowType(row) {
-    const cm = cleanText(row["CM"]);
-
-    if (row.type) return row.type;
-    if (cm === SPECIAL_CM.RETURN_SECTION) return ROW_TYPE.SECTION;
-    if (cm === SPECIAL_CM.TOTAL) return ROW_TYPE.TOTAL;
-
-    return ROW_TYPE.PERSON;
-}
-
-function isPersonRow(row) {
-    return row?.__type === ROW_TYPE.PERSON;
-}
-
-function isSectionRow(row) {
-    return row?.__type === ROW_TYPE.SECTION;
-}
-
-function isTotalRow(row) {
-    return row?.__type === ROW_TYPE.TOTAL;
-}
-
-function getRowStatus(row) {
-    return cleanText(row?.["狀態"]);
-}
-
-function isStatus(row, status) {
-    return isPersonRow(row) && getRowStatus(row) === status;
-}
-
-function normalizeCmName(value) {
-    return cleanText(value).toLowerCase();
-}
-
-function getCmKey(row) {
-    const cm = normalizeCmName(row["CM"]);
-
-    return cm ? `cm:${cm}` : "";
-}
-
-function getPersonKey(row) {
-    if (isExcludedFromCalculation(row)) return "";
-
-    return getCmKey(row);
-}
-
-function hasMatchingProfileKey(row, keySet) {
-    const cmKey = getCmKey(row);
-
-    return Boolean(cmKey && keySet.has(cmKey));
-}
-
-function isReturnAccount(row) {
-    const cm = cleanText(row["CM"]);
-    const status = getRowStatus(row);
-
-    return (
-        row.__isReturnAccount === true ||
-        cm === SPECIAL_CM.RETURN_SECTION ||
-        status === STATUS.RETURN
-    );
-}
-
-function isExcludedFromCalculation(row) {
-    return (
-        isReturnAccount(row) ||
-        EXCLUDED_STATUSES.includes(getRowStatus(row))
-    );
-}
-
-function isCalculablePerson(row) {
-    return isPersonRow(row) && !isExcludedFromCalculation(row);
-}
-
-function getCalculablePeople(rows) {
-    return rows.filter(isCalculablePerson);
-}
-
-function getExcludedPeople(rows) {
-    return rows.filter(row => isPersonRow(row) && isExcludedFromCalculation(row));
-}
-
-function getTotalRow(rows) {
-    return rows.find(row => {
-        return (
-            isTotalRow(row) ||
-            cleanText(row["CM"]) === SPECIAL_CM.TOTAL
-        );
-    }) || null;
-}
-
-function getWeeklyTotalScore(rows) {
-    const totalRow = getTotalRow(rows);
-
-    if (totalRow) {
-        return parseNumber(totalRow["一週總分"]);
-    }
-
-    return rows
-        .filter(isPersonRow)
-        .reduce((sum, row) => sum + parseNumber(row["一週總分"]), 0);
-}
-
-function countByStatus(rows, status) {
-    return rows.filter(row => getRowStatus(row) === status).length;
-}
-
-function normalizeRows(rows) {
+/**
+ * 將一週 CSV 轉為週資料模型。
+ *
+ * 貢獻度在這裡重新計算：分母 = 全隊（一般帳號 + 回歸帳號）總分，
+ * 不使用 CSV 內舊的貢獻度欄位，因為舊週表分母沒有包含回歸帳號。
+ */
+function buildWeekModel(week, rawRows) {
+    const people = [];
     let inReturnSection = false;
 
-    return rows
-        .map(row => {
-            const normalized = { ...row };
-
-            DISPLAY_HEADERS.forEach(header => {
-                normalized[header] = normalized[header] ?? "";
-            });
-
-            [
-                "活動1貢獻度",
-                "活動2貢獻度",
-                "活動3貢獻度",
-                "整週貢獻度",
-                MONTH_CONTRIBUTION_COLUMN
-            ].forEach(header => {
-                normalized[header] = normalized[header] ?? "";
-            });
-
-            normalized["CM"] = cleanText(normalized["CM"]);
-            normalized["狀態"] = cleanText(normalized["狀態"]);
-            normalized.__type = getRowType(normalized);
-
-            const cm = cleanText(normalized["CM"]);
-            const status = getRowStatus(normalized);
-
-            if (cm === SPECIAL_CM.RETURN_SECTION) {
-                inReturnSection = true;
-                normalized.__isReturnAccount = true;
-            } else if (isSectionRow(normalized)) {
-                inReturnSection = false;
-                normalized.__isReturnAccount = false;
-            } else if (isPersonRow(normalized)) {
-                normalized.__isReturnAccount = inReturnSection || status === STATUS.RETURN;
-            } else {
-                normalized.__isReturnAccount = false;
-            }
-
-            return normalized;
-        })
-        .filter(row => {
-            if (!isPersonRow(row)) return true;
-
-            return cleanText(row["CM"]) || cleanText(row["LINE名稱"]);
-        });
-}
-
-/* ================================
-   Role / Style Helpers
-================================ */
-
-function getRoleMeta(row) {
-    return ROLE_META[getRowStatus(row)] || null;
-}
-
-function getRowRewardClass(row) {
-    return getRoleMeta(row)?.rowClass || "";
-}
-
-function getRankBadgeClass(row) {
-    return getRoleMeta(row)?.rankBadgeClass || "rank-badge";
-}
-
-function getPersonLinkClass(row) {
-    return getRoleMeta(row)?.personLinkClass || "person-link";
-}
-
-function getStatusTitle(status) {
-    const keyMap = {
-        [STATUS.ELDER]: "statusTitle.elder",
-        [STATUS.CAPTAIN]: "statusTitle.captain",
-        [STATUS.VICE_CAPTAIN]: "statusTitle.viceCaptain",
-        [STATUS.PASS]: "statusTitle.pass",
-        [STATUS.OUT]: "statusTitle.out",
-        [STATUS.DOWNGRADE]: "statusTitle.downgrade"
-    };
-
-    return keyMap[status] ? t(keyMap[status]) : tx(status) || "";
-}
-
-function getBadgeClass(status) {
-    return STATUS_BADGE_CLASS[status] || "badge-other";
-}
-
-function getColumnClass(header) {
-    if (header === "距離合格分數") return "col-pass-distance";
-    if (header === "距離長老分數") return "col-elder-distance";
-    if (header === MONTH_CONTRIBUTION_COLUMN) return "col-month-contribution";
-
-    return "";
-}
-
-function getCellClass(header, extraClass = "") {
-    return createClassName(extraClass, getColumnClass(header));
-}
-
-function getCellLabelAttr(header) {
-    return `data-label="${escapeHTML(getHeaderLabel(header))}"`;
-}
-
-function getDisplayName(value) {
-    return escapeHTML(cleanText(value) || "-");
-}
-
-/* ================================
-   Comparison / History / Monthly
-================================ */
-
-function buildPreviousScoreMap(rows) {
-    const map = new Map();
-
-    rows.filter(isCalculablePerson).forEach(row => {
-        const key = getPersonKey(row);
-
-        if (!key) return;
-
-        map.set(key, parseNumber(row["一週總分"]));
-    });
-
-    return map;
-}
-
-function applyWeekComparison(rows, previousRows) {
-    const previousScoreMap = buildPreviousScoreMap(previousRows);
-
-    return rows.map(row => {
-        if (!isPersonRow(row)) {
-            row["較上週"] = "";
-            row.__trend = "";
-            row.__delta = null;
-            row.__prevScore = null;
-
-            return row;
-        }
-
-        if (isExcludedFromCalculation(row)) {
-            row["較上週"] = t("common.notCalculated");
-
-            row.__trend = TREND.SAME;
-            row.__delta = null;
-            row.__prevScore = null;
-
-            return row;
-        }
-
-        const key = getPersonKey(row);
-        const currentScore = parseNumber(row["一週總分"]);
-
-        if (!key || !previousScoreMap.has(key)) {
-            row["較上週"] = t("common.newOrNoData");
-            row.__trend = TREND.NEW;
-            row.__delta = null;
-            row.__prevScore = null;
-
-            return row;
-        }
-
-        const previousScore = previousScoreMap.get(key);
-        const delta = currentScore - previousScore;
-
-        row.__delta = delta;
-        row.__prevScore = previousScore;
-
-        if (delta > 0) {
-            row["較上週"] = `▲ ${formatNumber(delta)}`;
-            row.__trend = TREND.UP;
-        } else if (delta < 0) {
-            row["較上週"] = `▼ ${formatNumber(Math.abs(delta))}`;
-            row.__trend = TREND.DOWN;
-        } else {
-            row["較上週"] = "— 0";
-            row.__trend = TREND.SAME;
-        }
-
-        return row;
-    });
-}
-
-function getBottomFiveKeys(rows) {
-    const people = rows
-        .filter(isCalculablePerson)
-        .map(row => ({
-            key: getPersonKey(row),
-            score: parseNumber(row["一週總分"])
-        }))
-        .filter(item => item.key);
-
-    if (!people.length) return new Set();
-
-    people.sort((a, b) => a.score - b.score);
-
-    const cutoffIndex = Math.min(4, people.length - 1);
-    const cutoffScore = people[cutoffIndex].score;
-
-    return new Set(
-        people
-            .filter(item => item.score <= cutoffScore)
-            .map(item => item.key)
-    );
-}
-
-async function loadHistoryBottomFive(targetWeek) {
-    const summaryMap = new Map();
-    const monthKey = getWeekMonthKey(targetWeek);
-    const monthWeeks = getWeeksInSameMonth(targetWeek);
-
-    state.historyScopeWeekCount = monthWeeks.length;
-    state.historyScopeLabel = formatMonthLabel(monthKey);
-
-    for (const week of monthWeeks) {
-        try {
-            const rows = await getWeekRows(week);
-            const bottomKeys = getBottomFiveKeys(rows);
-
-            rows.filter(isCalculablePerson).forEach(row => {
-                const key = getPersonKey(row);
-
-                if (!key) return;
-
-                if (!summaryMap.has(key)) {
-                    summaryMap.set(key, {
-                        key,
-                        cm: row["CM"] || "",
-                        lineName: row["LINE名稱"] || "",
-                        weeksSeen: 0,
-                        bottomWeeks: 0,
-                        bottomWeekLabels: [],
-                        monthKey,
-                        totalWeeks: monthWeeks.length
-                    });
-                }
-
-                const item = summaryMap.get(key);
-
-                item.weeksSeen += 1;
-
-                if (bottomKeys.has(key)) {
-                    item.bottomWeeks += 1;
-                    item.bottomWeekLabels.push(week.label || week.id);
-                }
-            });
-        } catch (error) {
-            console.warn(t("error.historyBottomFiveReadFailed", { file: week.file }), error);
-        }
-    }
-
-    state.historySummaryMap = summaryMap;
-}
-
-function isAlwaysHistoricalBottomFive(summary) {
-    if (!summary) return false;
-    if (summary.weeksSeen < HISTORY_MIN_WEEKS) return false;
-
-    const totalWeeks = summary.totalWeeks || state.historyScopeWeekCount || 0;
-    const appearedModePass = summary.bottomWeeks === summary.weeksSeen;
-
-    const allWeeksModePass =
-        totalWeeks > 0 &&
-        summary.weeksSeen === totalWeeks &&
-        summary.bottomWeeks === totalWeeks;
-
-    return HISTORY_MODE === "allWeeks"
-        ? allWeeksModePass
-        : appearedModePass;
-}
-
-function applyHistoryBottomFive(rows) {
-    return rows.map(row => {
-        if (!isPersonRow(row)) {
-            row[HISTORY_COLUMN] = "";
-            row.__historyLevel = "";
-            row.__historyTitle = "";
-            row.__historyAlways = false;
-
-            return row;
-        }
-
-        if (isExcludedFromCalculation(row)) {
-            const status = getRowStatus(row);
-
-            row[HISTORY_COLUMN] = t("common.notCalculated");
-            row.__historyLevel = HISTORY_LEVEL.NONE;
-            row.__historyTitle = t("history.excludedTitle", {
-                status: tx(status || t("common.noData")),
-                scope: state.historyScopeLabel
-            });
-            row.__historyAlways = false;
-
-            return row;
-        }
-
-        const key = getPersonKey(row);
-        const summary = state.historySummaryMap.get(key);
-
-        if (!summary) {
-            row[HISTORY_COLUMN] = "—";
-            row.__historyLevel = HISTORY_LEVEL.NONE;
-            row.__historyTitle = t("history.noMonthData", {
-                scope: state.historyScopeLabel
-            });
-            row.__historyAlways = false;
-
-            return row;
-        }
-
-        const alwaysBottomFive = isAlwaysHistoricalBottomFive(summary);
-
-        row.__historyAlways = alwaysBottomFive;
-        row.__historyTitle = summary.bottomWeekLabels.length
-            ? t("history.bottomFiveWeeks", {
-                scope: state.historyScopeLabel,
-                weeks: summary.bottomWeekLabels.join("、")
-            })
-            : t("history.noBottomFive", {
-                scope: state.historyScopeLabel
-            });
-
-        if (alwaysBottomFive) {
-            row[HISTORY_COLUMN] = t("history.alwaysBottomFive", {
-                bottomWeeks: summary.bottomWeeks,
-                weeksSeen: summary.weeksSeen
-            });
-            row.__historyLevel = HISTORY_LEVEL.RISK;
-        } else if (summary.bottomWeeks > 0) {
-            row[HISTORY_COLUMN] = t("history.everBottomFive", {
-                bottomWeeks: summary.bottomWeeks,
-                weeksSeen: summary.weeksSeen
-            });
-            row.__historyLevel = HISTORY_LEVEL.WATCH;
-        } else {
-            row[HISTORY_COLUMN] = "—";
-            row.__historyLevel = HISTORY_LEVEL.NONE;
-        }
-
-        return row;
-    });
-}
-
-function getMonthlyTotalPersonKey(row) {
-    return getCmKey(row);
-}
-
-async function loadMonthlyPersonalContributions(targetWeek) {
-    const summaryMap = new Map();
-    const monthWeeks = getWeeksInSameMonth(targetWeek);
-
-    for (const week of monthWeeks) {
-        try {
-            const rows = await getWeekRows(week);
-            const totalRow = getTotalRow(rows);
-            const weeklyTeamTotal = totalRow
-                ? parseNumber(totalRow["一週總分"])
-                : getWeeklyTotalScore(rows);
-
-            if (!weeklyTeamTotal || weeklyTeamTotal <= 0) {
-                console.warn("本週團隊總分為 0，略過本週貢獻度統計：", week.file);
-                continue;
-            }
-
-            rows.filter(isPersonRow).forEach(row => {
-                const key = getMonthlyTotalPersonKey(row);
-
-                if (!key) return;
-
-                const weeklyScore = parseNumber(row["一週總分"]);
-
-                if (!summaryMap.has(key)) {
-                    summaryMap.set(key, {
-                        key,
-                        cm: row["CM"] || "",
-                        lineName: row["LINE名稱"] || "",
-                        monthScore: 0,
-                        monthTeamTotal: 0,
-                        weeksSeen: 0,
-                        contributionWeeks: 0,
-                        totalWeeks: monthWeeks.length,
-                        weekLabels: [],
-                        weeklyContributionValues: [],
-                        isReturnAccount: isReturnAccount(row)
-                    });
-                }
-
-                const item = summaryMap.get(key);
-
-                item.monthScore += weeklyScore;
-                item.monthTeamTotal += weeklyTeamTotal;
-                item.weeksSeen += 1;
-                item.contributionWeeks += 1;
-                item.weekLabels.push(week.label || week.id);
-
-                const weeklyContribution = weeklyScore / weeklyTeamTotal;
-
-                if (Number.isFinite(weeklyContribution)) {
-                    item.weeklyContributionValues.push(weeklyContribution);
-                }
-
-                if (isReturnAccount(row)) {
-                    item.isReturnAccount = true;
-                }
-
-                if (!item.cm && row["CM"]) {
-                    item.cm = row["CM"];
-                }
-
-                if (!item.lineName && row["LINE名稱"]) {
-                    item.lineName = row["LINE名稱"];
-                }
-            });
-        } catch (error) {
-            console.warn(t("error.monthlyContributionReadFailed", { file: week.file }), error);
-        }
-    }
-
-    summaryMap.forEach(item => {
-        if (!item.monthTeamTotal || item.monthTeamTotal <= 0) {
-            item.monthContribution = null;
-            item.avgWeeklyContribution = null;
+    rawRows.forEach(raw => {
+        const type = cleanText(raw.type);
+        const cm = cleanText(raw["CM"]);
+        const lineName = cleanText(raw["LINE名稱"]);
+
+        if (cm === SPECIAL_CM.RETURN_SECTION || type === "section") {
+            inReturnSection = cm === SPECIAL_CM.RETURN_SECTION;
             return;
         }
 
-        // 正確的本月貢獻度：個人本月總分 / 團隊本月總分
-        item.monthContribution = item.monthScore / item.monthTeamTotal;
+        if (type === "total" || cm === SPECIAL_CM.TOTAL) return;
+        if (!cm && !lineName) return;
 
-        // 保留參考值：每週貢獻度平均，不作為主要顯示
-        item.avgWeeklyContribution = item.weeklyContributionValues.length
-            ? item.weeklyContributionValues.reduce((sum, value) => sum + value, 0) / item.weeklyContributionValues.length
-            : null;
+        const status = cleanText(raw["狀態"]);
+        const score = parseNumber(raw["一週總分"]);
+        let invested = parseOptionalNumber(raw["投入總分"]);
+        let uninvested = parseOptionalNumber(raw["未投入總分"]);
+
+        if (invested !== null && uninvested === null) {
+            uninvested = Math.max(score - invested, 0);
+        }
+
+        if (invested === null) {
+            uninvested = null;
+        }
+
+        const activities = [1, 2, 3].map(number => ({
+            number,
+            total: parseNumber(raw[`活動${number}總分`]),
+            invested: parseOptionalNumber(raw[`活動${number}投入`]),
+            uninvested: parseOptionalNumber(raw[`活動${number}未投入`])
+        }));
+
+        people.push({
+            key: `cm:${cm.toLowerCase()}`,
+            cm: cm || lineName,
+            lineName,
+            status,
+            isReturn: inReturnSection || status === STATUS.RETURN,
+            score,
+            invested,
+            uninvested,
+            activities,
+            passDistanceRaw: cleanText(raw["距離合格分數"]),
+            elderDistanceRaw: cleanText(raw["距離長老分數"]),
+            sheetOrder: people.length
+        });
     });
 
-    applyMonthlyContributionRank(summaryMap);
-    state.monthlyContributionMap = summaryMap;
+    const hasSplit = people.length > 0 && people.every(person => person.invested !== null);
+    const teamTotal = sum(people.map(person => person.score));
+    const teamInvested = hasSplit ? sum(people.map(person => person.invested)) : null;
+    const teamUninvested = hasSplit ? sum(people.map(person => person.uninvested)) : null;
+
+    people.forEach(person => {
+        person.contribution = ratio(person.score, teamTotal);
+        person.investedShare = person.invested === null ? null : ratio(person.invested, person.score);
+        person.uninvestedShare = person.uninvested === null ? null : ratio(person.uninvested, person.score);
+    });
+
+    const model = {
+        week,
+        monthKey: getWeekMonthKey(week),
+        people,
+        byKey: new Map(people.map(person => [person.key, person])),
+        hasSplit,
+        teamTotal,
+        teamInvested,
+        teamUninvested
+    };
+
+    model.bottomKeys = getBottomKeys(model);
+
+    return model;
 }
 
-function applyMonthlyContributionRank(summaryMap) {
-    const rankedItems = Array.from(summaryMap.values())
-        .filter(item => !item.isReturnAccount)
-        .filter(item => Number.isFinite(item.monthContribution))
-        .sort((a, b) => b.monthContribution - a.monthContribution);
+function isBottomEligible(person) {
+    return !person.isReturn && !LEADER_STATUSES.includes(person.status);
+}
+
+/**
+ * 後五名：合格判定以實際投入為準，因此有拆分資料時用投入分排序，
+ * 舊資料沒有拆分時才退回一週總分。
+ */
+function getBottomKeys(model) {
+    const metric = person => (model.hasSplit ? person.invested : person.score);
+    const candidates = model.people
+        .filter(isBottomEligible)
+        .map(person => ({ key: person.key, value: metric(person) }))
+        .sort((a, b) => a.value - b.value);
+
+    if (!candidates.length) return new Set();
+
+    const cutoff = candidates[Math.min(CONFIG.BOTTOM_N - 1, candidates.length - 1)].value;
+
+    return new Set(candidates.filter(item => item.value <= cutoff).map(item => item.key));
+}
+
+async function loadWeeks() {
+    const text = await fetchText(CONFIG.WEEK_INDEX_URL);
+
+    state.weeks = csvToObjects(text)
+        .filter(week => cleanText(week.id) && cleanText(week.file))
+        .sort((a, b) => String(b.startDate || b.id).localeCompare(String(a.startDate || a.id)));
+
+    if (!state.weeks.length) {
+        throw new Error(t("error.weeksEmpty"));
+    }
+
+    const results = await Promise.allSettled(
+        state.weeks.map(async week => buildWeekModel(week, csvToObjects(await fetchText(week.file))))
+    );
+
+    results.forEach((result, index) => {
+        const week = state.weeks[index];
+
+        if (result.status === "fulfilled") {
+            state.weekData.set(week.id, result.value);
+        } else {
+            state.failedWeeks.push(week);
+            console.warn("Failed to load week", week.file, result.reason);
+        }
+    });
+
+    state.weeks = state.weeks.filter(week => state.weekData.has(week.id));
+    state.months = Array.from(new Set(state.weeks.map(getWeekMonthKey).filter(Boolean)));
+
+    if (!state.weeks.length) {
+        throw new Error(t("error.weeksEmpty"));
+    }
+}
+
+async function loadUpdatedAt() {
+    try {
+        const response = await fetch(CONFIG.UPDATED_AT_URL, { cache: "no-store" });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const date = new Date(data.updatedAt);
+
+        if (!Number.isNaN(date.getTime())) {
+            state.updatedAt = date;
+        }
+    } catch (error) {
+        console.warn("Failed to load updated-at.json", error);
+    }
+}
+
+function renderUpdatedAt() {
+    if (!state.updatedAt) {
+        els.updatedAtText.textContent = "";
+        return;
+    }
+
+    const time = new Intl.DateTimeFormat(getNumberLocale(), {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+        timeZone: "Asia/Taipei"
+    }).format(state.updatedAt);
+
+    els.updatedAtText.innerHTML = `${icon("refresh")}<span>${escapeHTML(t("hero.updatedAt", { time }))}</span>`;
+}
+
+/* ================================
+   Data Model: Month
+================================ */
+
+function getWeeksOfMonth(monthKey) {
+    // 舊到新
+    return state.weeks
+        .filter(week => getWeekMonthKey(week) === monthKey)
+        .slice()
+        .reverse()
+        .map(week => state.weekData.get(week.id))
+        .filter(Boolean);
+}
+
+/**
+ * 月資料模型：每位成員本月的總分、實際投入、未投入與貢獻度。
+ *
+ * 本月貢獻度 = 個人本月總分 ÷ 全隊本月總分（含回歸帳號）。
+ */
+function buildMonthModel(monthKey, uptoWeekId = null) {
+    const cacheKey = `${monthKey}|${uptoWeekId || ""}`;
+
+    if (state.monthCache.has(cacheKey)) {
+        return state.monthCache.get(cacheKey);
+    }
+
+    let weekModels = getWeeksOfMonth(monthKey);
+
+    if (uptoWeekId) {
+        const index = weekModels.findIndex(model => model.week.id === uptoWeekId);
+
+        if (index >= 0) weekModels = weekModels.slice(0, index + 1);
+    }
+
+    const hasSplit = weekModels.length > 0 && weekModels.every(model => model.hasSplit);
+    const members = new Map();
+
+    weekModels.forEach(model => {
+        model.people.forEach(person => {
+            if (!members.has(person.key)) {
+                members.set(person.key, {
+                    key: person.key,
+                    cm: person.cm,
+                    lineName: person.lineName,
+                    score: 0,
+                    invested: 0,
+                    uninvested: 0,
+                    splitComplete: true,
+                    weeks: [],
+                    bottomWeeks: 0,
+                    bottomEligibleWeeks: 0
+                });
+            }
+
+            const member = members.get(person.key);
+
+            member.score += person.score;
+
+            if (person.invested === null) {
+                member.splitComplete = false;
+            } else {
+                member.invested += person.invested;
+                member.uninvested += person.uninvested;
+            }
+
+            member.weeks.push({ model, person });
+
+            if (isBottomEligible(person)) {
+                member.bottomEligibleWeeks += 1;
+
+                if (model.bottomKeys.has(person.key)) member.bottomWeeks += 1;
+            }
+
+            // 最新一週的身分
+            member.latest = person;
+            member.cm = person.cm || member.cm;
+            member.lineName = person.lineName || member.lineName;
+        });
+    });
+
+    const teamTotal = sum(weekModels.map(model => model.teamTotal));
+    const teamInvested = hasSplit ? sum(weekModels.map(model => model.teamInvested)) : null;
+    const teamUninvested = hasSplit ? sum(weekModels.map(model => model.teamUninvested)) : null;
+
+    const list = Array.from(members.values()).map(member => {
+        if (!member.splitComplete) {
+            member.invested = null;
+            member.uninvested = null;
+        }
+
+        const latest = member.latest;
+
+        member.status = latest.status;
+        member.isReturn = latest.isReturn;
+        member.weeksSeen = member.weeks.length;
+        member.contribution = ratio(member.score, teamTotal);
+        member.investedContribution = member.invested === null ? null : ratio(member.invested, teamInvested);
+        member.investedShare = member.invested === null ? null : ratio(member.invested, member.score);
+        member.uninvestedShare = member.uninvested === null ? null : ratio(member.uninvested, member.score);
+        member.isHeavy = isUninvestedHeavy(member);
+
+        return member;
+    });
+
+    assignRanks(list, "score", "totalRank");
+    assignRanks(list.filter(member => member.invested !== null), "invested", "investedRank");
+
+    const monthModel = {
+        monthKey,
+        weekModels,
+        totalWeeks: weekModels.length,
+        hasSplit,
+        missingSplitWeeks: weekModels.filter(model => !model.hasSplit).length,
+        teamTotal,
+        teamInvested,
+        teamUninvested,
+        members: list,
+        byKey: new Map(list.map(member => [member.key, member]))
+    };
+
+    state.monthCache.set(cacheKey, monthModel);
+
+    return monthModel;
+}
+
+function isUninvestedHeavy(item) {
+    return (
+        Number.isFinite(item.uninvestedShare) &&
+        item.score > 0 &&
+        item.uninvestedShare >= CONFIG.UNINVESTED_HEAVY_SHARE
+    );
+}
+
+/** 排名：回歸帳號不列入，同分同名次。 */
+function assignRanks(items, field, rankField) {
+    const ranked = items
+        .filter(item => !item.isReturn && Number.isFinite(item[field]))
+        .sort((a, b) => b[field] - a[field]);
 
     let previousValue = null;
     let previousRank = 0;
 
-    rankedItems.forEach((item, index) => {
-        const rank =
-            previousValue !== null && item.monthContribution === previousValue
-                ? previousRank
-                : index + 1;
+    ranked.forEach((item, index) => {
+        const rank = item[field] === previousValue ? previousRank : index + 1;
 
-        item.contributionRank = rank;
-
-        previousValue = item.monthContribution;
+        item[rankField] = rank;
+        previousValue = item[field];
         previousRank = rank;
-    });
-}
-
-async function loadMonthlyPersonalTotals(targetWeek) {
-    const summaryMap = new Map();
-    const monthWeeks = getWeeksInSameMonth(targetWeek);
-
-    for (const week of monthWeeks) {
-        try {
-            const rows = await getWeekRows(week);
-
-            rows.filter(isPersonRow).forEach(row => {
-                const key = getMonthlyTotalPersonKey(row);
-
-                if (!key) return;
-
-                if (!summaryMap.has(key)) {
-                    summaryMap.set(key, {
-                        key,
-                        cm: row["CM"] || "",
-                        totalScore: 0,
-                        weeksSeen: 0,
-                        totalWeeks: monthWeeks.length,
-                        weekLabels: [],
-                        isReturnAccount: isReturnAccount(row)
-                    });
-                }
-
-                const item = summaryMap.get(key);
-
-                item.totalScore += parseNumber(row["一週總分"]);
-                item.weeksSeen += 1;
-                item.weekLabels.push(week.label || week.id);
-
-                if (isReturnAccount(row)) {
-                    item.isReturnAccount = true;
-                }
-            });
-        } catch (error) {
-            console.warn(t("error.monthlyPersonalTotalReadFailed", { file: week.file }), error);
-        }
-    }
-
-    applyMonthlyTotalRank(summaryMap);
-    state.monthlyTotalMap = summaryMap;
-}
-
-function applyMonthlyTotalRank(summaryMap) {
-    const rankedItems = Array.from(summaryMap.values())
-        .filter(item => !item.isReturnAccount)
-        .sort((a, b) => b.totalScore - a.totalScore);
-
-    let previousScore = null;
-    let previousRank = 0;
-
-    rankedItems.forEach((item, index) => {
-        const rank =
-            previousScore !== null && item.totalScore === previousScore
-                ? previousRank
-                : index + 1;
-
-        item.totalRank = rank;
-
-        previousScore = item.totalScore;
-        previousRank = rank;
-    });
-}
-
-function applyMonthlyPersonalTotals(rows) {
-    return rows.map(row => {
-        if (!isPersonRow(row)) {
-            row[MONTH_TOTAL_COLUMN] = "";
-            row.__monthTotal = null;
-            row.__monthTotalRank = null;
-            row.__monthTotalTitle = "";
-
-            return row;
-        }
-
-        const key = getMonthlyTotalPersonKey(row);
-        const summary = state.monthlyTotalMap.get(key);
-
-        if (!summary) {
-            row[MONTH_TOTAL_COLUMN] = "—";
-            row.__monthTotal = null;
-            row.__monthTotalRank = null;
-            row.__monthTotalTitle = t("monthlyTotal.noData", {
-                scope: state.historyScopeLabel
-            });
-
-            return row;
-        }
-
-        row.__monthTotal = summary.totalScore;
-        row.__monthTotalRank = summary.totalRank || null;
-        row[MONTH_TOTAL_COLUMN] = formatNumber(summary.totalScore);
-
-        if (summary.isReturnAccount || isReturnAccount(row)) {
-            row.__monthTotalTitle = t("monthlyTotal.returnExcludedTitle", {
-                scope: state.historyScopeLabel,
-                score: formatNumber(summary.totalScore),
-                weeksSeen: summary.weeksSeen,
-                totalWeeks: summary.totalWeeks
-            });
-        } else {
-            row.__monthTotalTitle = t("monthlyTotal.rankTitle", {
-                scope: state.historyScopeLabel,
-                score: formatNumber(summary.totalScore),
-                rank: summary.totalRank,
-                weeksSeen: summary.weeksSeen,
-                totalWeeks: summary.totalWeeks
-            });
-        }
-
-        return row;
-    });
-}
-
-function applyMonthlyPersonalContributions(rows) {
-    return rows.map(row => {
-        if (!isPersonRow(row)) {
-            row[MONTH_CONTRIBUTION_COLUMN] = "";
-            row.__monthContribution = null;
-            row.__monthContributionRank = null;
-            row.__monthContributionTitle = "";
-
-            return row;
-        }
-
-        const key = getMonthlyTotalPersonKey(row);
-        const summary = state.monthlyContributionMap.get(key);
-
-        if (!summary || !Number.isFinite(summary.monthContribution)) {
-            row[MONTH_CONTRIBUTION_COLUMN] = "—";
-            row.__monthContribution = null;
-            row.__monthContributionRank = null;
-            row.__monthContributionTitle = t("monthlyContribution.noData", {
-                scope: state.historyScopeLabel
-            });
-
-            return row;
-        }
-
-        row.__monthContribution = summary.monthContribution;
-        row.__monthContributionRank = summary.contributionRank || null;
-        row[MONTH_CONTRIBUTION_COLUMN] = formatPercent(summary.monthContribution);
-
-        if (summary.isReturnAccount || isReturnAccount(row)) {
-            row.__monthContributionTitle = t("monthlyContribution.returnIncludedTitle", {
-                scope: state.historyScopeLabel,
-                contribution: formatPercent(summary.monthContribution),
-                monthScore: formatNumber(summary.monthScore),
-                monthTeamTotal: formatNumber(summary.monthTeamTotal),
-                contributionWeeks: summary.contributionWeeks,
-                weeksSeen: summary.weeksSeen,
-                totalWeeks: summary.totalWeeks
-            });
-        } else {
-            row.__monthContributionTitle = t("monthlyContribution.rankTitle", {
-                scope: state.historyScopeLabel,
-                contribution: formatPercent(summary.monthContribution),
-                rank: summary.contributionRank,
-                monthScore: formatNumber(summary.monthScore),
-                monthTeamTotal: formatNumber(summary.monthTeamTotal),
-                contributionWeeks: summary.contributionWeeks,
-                weeksSeen: summary.weeksSeen,
-                totalWeeks: summary.totalWeeks
-            });
-        }
-
-        return row;
     });
 }
 
 /* ================================
-   Achievements / Podium
+   Row Building (month / week)
 ================================ */
 
-function isAchievementEligiblePerson(row) {
-    return isPersonRow(row) && Boolean(getAchievementPersonKey(row));
-}
-
-function getAchievementPersonKey(row) {
-    return getCmKey(row);
-}
-
-function getAchievementIdentityFlags(row) {
-    const status = getRowStatus(row);
+function getMonthRows() {
+    const month = buildMonthModel(state.period);
 
     return {
-        isReturnAccount: isReturnAccount(row),
-        isElder: status === STATUS.ELDER,
-        isCaptain: status === STATUS.CAPTAIN,
-        isViceCaptain: status === STATUS.VICE_CAPTAIN,
-        latestStatus: status || ""
+        month,
+        rows: month.members.map(member => ({
+            ...member,
+            name: member.cm,
+            rankShift:
+                Number.isFinite(member.totalRank) && Number.isFinite(member.investedRank)
+                    ? member.totalRank - member.investedRank
+                    : null
+        }))
     };
 }
 
-async function loadMonthlyAchievements(targetWeek) {
-    const monthWeeks = getWeeksInSameMonth(targetWeek)
-        .slice()
-        .sort((a, b) => {
-            return String(a.startDate || a.id || "").localeCompare(String(b.startDate || b.id || ""));
-        });
+function getPreviousWeekModel(weekId) {
+    const index = state.weeks.findIndex(week => week.id === weekId);
+    const previous = state.weeks[index + 1];
 
-    const achievementMap = new Map();
-
-    for (const week of monthWeeks) {
-        try {
-            const rows = await getWeekRows(week);
-
-            rows.filter(isAchievementEligiblePerson).forEach(row => {
-                const key = getAchievementPersonKey(row);
-
-                if (!key) return;
-
-                const score = parseNumber(row["一週總分"]);
-                const identityFlags = getAchievementIdentityFlags(row);
-
-                if (!achievementMap.has(key)) {
-                    achievementMap.set(key, {
-                        key,
-                        cm: row["CM"] || "",
-                        lineName: row["LINE名稱"] || "",
-                        totalScore: 0,
-                        scores: [],
-                        weekLabels: [],
-                        bestScore: Number.NEGATIVE_INFINITY,
-                        bestWeekLabel: "",
-                        weeksSeen: 0,
-                        totalWeeks: monthWeeks.length,
-
-                        isReturnAccount: false,
-                        isElder: false,
-                        isCaptain: false,
-                        isViceCaptain: false,
-                        latestStatus: ""
-                    });
-                }
-
-                const item = achievementMap.get(key);
-
-                item.totalScore += score;
-                item.scores.push(score);
-                item.weekLabels.push(week.label || week.id);
-                item.weeksSeen += 1;
-
-                if (score > item.bestScore) {
-                    item.bestScore = score;
-                    item.bestWeekLabel = week.label || week.id;
-                }
-
-                if (!item.cm && row["CM"]) {
-                    item.cm = row["CM"];
-                }
-
-                if (!item.lineName && row["LINE名稱"]) {
-                    item.lineName = row["LINE名稱"];
-                }
-
-                item.isReturnAccount = item.isReturnAccount || identityFlags.isReturnAccount;
-                item.isElder = item.isElder || identityFlags.isElder;
-                item.isCaptain = item.isCaptain || identityFlags.isCaptain;
-                item.isViceCaptain = item.isViceCaptain || identityFlags.isViceCaptain;
-                item.latestStatus = identityFlags.latestStatus || item.latestStatus;
-            });
-        } catch (error) {
-            console.warn(t("error.monthlyAchievementReadFailed", { file: week.file }), error);
-        }
-    }
-
-    achievementMap.forEach(item => {
-        if (item.bestScore === Number.NEGATIVE_INFINITY) {
-            item.bestScore = 0;
-        }
-    });
-
-    state.monthlyAchievementMap = achievementMap;
-    state.achievements = calculateAchievements(achievementMap);
+    return previous ? state.weekData.get(previous.id) : null;
 }
 
-function calculateAchievements(achievementMap) {
-    const members = Array.from(achievementMap.values());
+function getWeekRows() {
+    const model = state.weekData.get(state.period);
+    const previous = getPreviousWeekModel(state.period);
+    const monthToDate = buildMonthModel(model.monthKey, model.week.id);
 
-    return [
-        calculateMvpAchievement(members),
-        calculateImproverAchievement(members),
-        calculateStableAchievement(members),
-        calculateBurstAchievement(members),
-        calculatePotentialAchievement(members)
+    const rows = model.people.map(person => {
+        const previousPerson = previous?.byKey.get(person.key) || null;
+        const monthMember = monthToDate.byKey.get(person.key);
+
+        return {
+            ...person,
+            name: person.cm,
+            weekModel: model,
+            delta: previousPerson ? person.score - previousPerson.score : null,
+            previousScore: previousPerson ? previousPerson.score : null,
+            isHeavy: isUninvestedHeavy(person),
+            bottomWeeks: monthMember?.bottomWeeks || 0,
+            bottomEligibleWeeks: monthMember?.bottomEligibleWeeks || 0,
+            monthWeeks: monthToDate.totalWeeks
+        };
+    });
+
+    assignRanks(rows, "score", "totalRank");
+    assignRanks(rows.filter(row => row.invested !== null), "invested", "investedRank");
+
+    rows.forEach(row => {
+        row.rankShift =
+            Number.isFinite(row.totalRank) && Number.isFinite(row.investedRank)
+                ? row.totalRank - row.investedRank
+                : null;
+    });
+
+    return { model, rows };
+}
+
+/* ================================
+   Filters / Sort
+================================ */
+
+const SORT_OPTIONS = {
+    [VIEW.MONTH]: ["score", "invested", "uninvested", "investedShare", "contribution", "weeksSeen"],
+    [VIEW.WEEK]: ["sheetOrder", "score", "invested", "uninvested", "investedShare", "contribution", "delta"]
+};
+
+const SORT_DEFAULT = {
+    [VIEW.MONTH]: "score",
+    [VIEW.WEEK]: "sheetOrder"
+};
+
+function getFilterOptions() {
+    const options = [
+        { value: FILTER.ALL, label: t("filter.all") },
+        { value: FILTER.HEAVY, label: t("filter.heavy") },
+        { value: FILTER.LEADERS, label: t("filter.leaders") },
+        { value: FILTER.ELDER, label: t("filter.elder") },
+        { value: FILTER.RETURN, label: t("filter.return") }
     ];
-}
 
-function calculateMvpAchievement(members) {
-    const winner = members
-        .filter(member => member.weeksSeen > 0)
-        .sort((a, b) => {
-            if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
-            return getAchievementDisplayName(a).localeCompare(getAchievementDisplayName(b));
-        })[0] || null;
+    if (state.view === VIEW.WEEK) {
+        options.push({ value: FILTER.EVER_BOTTOM, label: t("filter.everBottom") });
 
-    return createAchievementResult(ACHIEVEMENT_BADGES.MVP, winner, winner
-        ? {
-            metricLabel: t("achievement.metricMonthTotal"),
-            metricValue: formatNumber(winner.totalScore),
-            detail: t("achievement.detailAppeared", {
-                tag: getAchievementMemberTag(winner),
-                weeksSeen: winner.weeksSeen,
-                totalWeeks: winner.totalWeeks
-            })
-        }
-        : null
-    );
-}
+        const model = state.weekData.get(state.period);
+        const statuses = Array.from(new Set((model?.people || []).map(person => person.status).filter(Boolean)))
+            .filter(status => ![STATUS.ELDER, STATUS.RETURN, ...LEADER_STATUSES].includes(status));
 
-function calculateImproverAchievement(members) {
-    const candidates = members
-        .filter(member => member.scores.length >= 2)
-        .map(member => {
-            let lowestScoreSoFar = member.scores[0];
-            let lowestIndexSoFar = 0;
-
-            let bestImprovement = Number.NEGATIVE_INFINITY;
-            let bestLowScore = member.scores[0];
-            let bestHighScore = member.scores[1];
-            let bestLowIndex = 0;
-            let bestHighIndex = 1;
-
-            for (let index = 1; index < member.scores.length; index++) {
-                const currentScore = member.scores[index];
-                const improvement = currentScore - lowestScoreSoFar;
-
-                if (improvement > bestImprovement) {
-                    bestImprovement = improvement;
-                    bestLowScore = lowestScoreSoFar;
-                    bestHighScore = currentScore;
-                    bestLowIndex = lowestIndexSoFar;
-                    bestHighIndex = index;
-                }
-
-                if (currentScore < lowestScoreSoFar) {
-                    lowestScoreSoFar = currentScore;
-                    lowestIndexSoFar = index;
-                }
-            }
-
-            return {
-                ...member,
-                achievementScore: bestImprovement,
-                firstScore: bestLowScore,
-                lastScore: bestHighScore,
-                lowestScore: bestLowScore,
-                highestScore: bestHighScore,
-                lowestWeekLabel: member.weekLabels[bestLowIndex] || "",
-                highestWeekLabel: member.weekLabels[bestHighIndex] || ""
-            };
-        })
-        .filter(member => member.achievementScore > 0)
-        .sort((a, b) => {
-            if (b.achievementScore !== a.achievementScore) {
-                return b.achievementScore - a.achievementScore;
-            }
-
-            if (b.highestScore !== a.highestScore) {
-                return b.highestScore - a.highestScore;
-            }
-
-            return getAchievementDisplayName(a).localeCompare(getAchievementDisplayName(b));
+        statuses.forEach(status => {
+            options.push({ value: `${FILTER.STATUS_PREFIX}${status}`, label: statusLabel(status) });
         });
-
-    const winner = candidates[0] || null;
-
-    return createAchievementResult(ACHIEVEMENT_BADGES.IMPROVER, winner, winner
-        ? {
-            metricLabel: t("achievement.metricImprovement"),
-            metricValue: formatDelta(winner.achievementScore),
-            detail: t("achievement.detailScoreChange", {
-                tag: getAchievementMemberTag(winner),
-                firstScore: formatNumber(winner.lowestScore),
-                lastScore: formatNumber(winner.highestScore)
-            })
-        }
-        : null
-    );
-}
-
-function calculateStableAchievement(members) {
-    const candidates = members
-        .filter(member => member.scores.length >= 2)
-        .map(member => {
-            const average = calculateAverage(member.scores);
-            const volatility = calculatePopulationStdDev(member.scores);
-
-            return {
-                ...member,
-                averageScore: average,
-                volatility
-            };
-        });
-
-    if (!candidates.length) {
-        return createAchievementResult(ACHIEVEMENT_BADGES.STABLE, null, null);
     }
 
-    const averageOfAverages = calculateAverage(candidates.map(member => member.averageScore));
+    return options;
+}
 
-    const highAverageCandidates = candidates.filter(member => {
-        return member.averageScore >= averageOfAverages;
+function matchesFilter(row) {
+    const filter = state.filter;
+
+    if (filter === FILTER.ALL) return true;
+    if (filter === FILTER.HEAVY) return row.isHeavy;
+    if (filter === FILTER.LEADERS) return LEADER_STATUSES.includes(row.status);
+    if (filter === FILTER.ELDER) return row.status === STATUS.ELDER;
+    if (filter === FILTER.RETURN) return row.isReturn;
+    if (filter === FILTER.EVER_BOTTOM) return row.bottomWeeks > 0;
+
+    if (filter.startsWith(FILTER.STATUS_PREFIX)) {
+        return row.status === filter.slice(FILTER.STATUS_PREFIX.length);
+    }
+
+    return true;
+}
+
+function matchesKeyword(row) {
+    const keyword = state.keyword.trim().toLowerCase();
+
+    if (!keyword) return true;
+
+    return (
+        row.name.toLowerCase().includes(keyword) ||
+        row.lineName.toLowerCase().includes(keyword)
+    );
+}
+
+function sortRows(rows) {
+    const { key, dir } = state.sort;
+    const factor = dir === "asc" ? 1 : -1;
+
+    return rows.slice().sort((a, b) => {
+        if (key === "sheetOrder") {
+            return a.sheetOrder - b.sheetOrder;
+        }
+
+        const aValue = Number.isFinite(a[key]) ? a[key] : Number.NEGATIVE_INFINITY;
+        const bValue = Number.isFinite(b[key]) ? b[key] : Number.NEGATIVE_INFINITY;
+
+        if (aValue !== bValue) {
+            if (aValue === Number.NEGATIVE_INFINITY) return 1;
+            if (bValue === Number.NEGATIVE_INFINITY) return -1;
+
+            return (aValue - bValue) * factor;
+        }
+
+        return b.score - a.score || a.name.localeCompare(b.name);
+    });
+}
+
+/* ================================
+   URL Hash State
+================================ */
+
+function readHash() {
+    const params = new URLSearchParams(location.hash.slice(1));
+    const view = params.get("view");
+    const period = params.get("period");
+
+    if (view === VIEW.MONTH || view === VIEW.WEEK) state.view = view;
+    if (period) state.period = period;
+}
+
+function writeHash() {
+    const params = new URLSearchParams({ view: state.view, period: state.period });
+
+    history.replaceState(null, "", `#${params.toString()}`);
+}
+
+function ensureValidPeriod() {
+    if (state.view === VIEW.MONTH) {
+        if (!state.months.includes(state.period)) {
+            const fromWeek = state.weekData.get(state.period)?.monthKey;
+
+            state.period = state.months.includes(fromWeek) ? fromWeek : state.months[0];
+        }
+    } else if (!state.weekData.has(state.period)) {
+        // 由月份切換到週：選該月最新一週
+        const weekInMonth = state.weeks.find(week => getWeekMonthKey(week) === state.period);
+
+        state.period = (weekInMonth || state.weeks[0]).id;
+    }
+}
+
+/* ================================
+   Render: Controls
+================================ */
+
+function renderControls() {
+    document.querySelectorAll("#viewTabs [data-view], #railNav [data-view]").forEach(button => {
+        const active = button.dataset.view === state.view;
+
+        button.setAttribute("aria-selected", String(active));
+        button.classList.toggle("is-active", active);
     });
 
-    const pool = highAverageCandidates.length ? highAverageCandidates : candidates;
+    if (state.view === VIEW.MONTH) {
+        els.periodSelect.innerHTML = state.months
+            .map(month => `<option value="${escapeHTML(month)}">${escapeHTML(formatMonthLabel(month))}</option>`)
+            .join("");
+    } else {
+        els.periodSelect.innerHTML = state.weeks
+            .map(week => `<option value="${escapeHTML(week.id)}">${escapeHTML(week.label || week.id)}</option>`)
+            .join("");
+    }
 
-    const winner = pool.sort((a, b) => {
-        if (a.volatility !== b.volatility) {
-            return a.volatility - b.volatility;
-        }
+    els.periodSelect.value = state.period;
+    els.periodSelect.setAttribute("aria-label", t(state.view === VIEW.MONTH ? "controls.month" : "controls.week"));
 
-        if (b.averageScore !== a.averageScore) {
-            return b.averageScore - a.averageScore;
-        }
+    const filterOptions = getFilterOptions();
 
-        return getAchievementDisplayName(a).localeCompare(getAchievementDisplayName(b));
-    })[0] || null;
+    if (!filterOptions.some(option => option.value === state.filter)) {
+        state.filter = FILTER.ALL;
+    }
 
-    return createAchievementResult(ACHIEVEMENT_BADGES.STABLE, winner, winner
-        ? {
-            metricLabel: t("achievement.metricAverageVolatility"),
-            metricValue: `${formatCompactNumber(winner.averageScore)} / ${formatCompactNumber(Math.round(winner.volatility))}`,
-            detail: t("achievement.detailStable", {
-                tag: getAchievementMemberTag(winner),
-                average: formatCompactNumber(averageOfAverages)
-            })
-        }
-        : null
-    );
+    els.filterSelect.innerHTML = filterOptions
+        .map(option => `<option value="${escapeHTML(option.value)}">${escapeHTML(option.label)}</option>`)
+        .join("");
+    els.filterSelect.value = state.filter;
+    els.filterSelect.setAttribute("aria-label", t("controls.filter"));
+
+    const sortKeys = SORT_OPTIONS[state.view];
+
+    if (!sortKeys.includes(state.sort.key)) {
+        state.sort = { key: SORT_DEFAULT[state.view], dir: "desc" };
+    }
+
+    els.sortSelect.innerHTML = sortKeys
+        .map(key => `<option value="${key}">${escapeHTML(t("sort.prefix", { label: t(`sortKey.${key}`) }))}</option>`)
+        .join("");
+    els.sortSelect.value = state.sort.key;
+    els.sortSelect.setAttribute("aria-label", t("controls.sort"));
 }
 
-function calculateBurstAchievement(members) {
-    const winner = members
-        .filter(member => member.scores.length)
-        .sort((a, b) => {
-            if (b.bestScore !== a.bestScore) {
-                return b.bestScore - a.bestScore;
-            }
+/* ================================
+   Render: Notice / Stats
+================================ */
 
-            if (b.totalScore !== a.totalScore) {
-                return b.totalScore - a.totalScore;
-            }
+function renderNotice(missingWeeks) {
+    const messages = [];
 
-            return getAchievementDisplayName(a).localeCompare(getAchievementDisplayName(b));
-        })[0] || null;
+    if (missingWeeks > 0) {
+        messages.push(t("notice.missingSplit", { count: missingWeeks }));
+    }
 
-    return createAchievementResult(ACHIEVEMENT_BADGES.BURST, winner, winner
-        ? {
-            metricLabel: t("achievement.metricBestWeek"),
-            metricValue: formatNumber(winner.bestScore),
-            detail: t("achievement.detailBestWeek", {
-                tag: getAchievementMemberTag(winner),
-                week: winner.bestWeekLabel || t("achievement.fallbackWeek")
-            })
-        }
-        : null
-    );
+    if (state.failedWeeks.length) {
+        messages.push(t("notice.failedWeeks", { weeks: state.failedWeeks.map(week => week.id).join("、") }));
+    }
+
+    els.notice.hidden = !messages.length;
+    els.notice.innerHTML = messages.map(message => `<p>${escapeHTML(message)}</p>`).join("");
 }
 
-function calculatePotentialAchievement(members) {
-    const candidates = members
-        .filter(member => member.scores.length >= 3)
-        .map(member => {
-            const scores = member.scores;
-            const last3 = scores.slice(-3);
-            const firstDelta = last3[1] - last3[0];
-            const secondDelta = last3[2] - last3[1];
-            const totalRise = last3[2] - last3[0];
+function renderStats(scope) {
+    const people = scope.rows;
+    const regular = people.filter(row => !row.isReturn);
+    const returning = people.filter(row => row.isReturn);
+    const heavyCount = regular.filter(row => row.isHeavy).length;
 
-            return {
-                ...member,
-                last3,
-                firstDelta,
-                secondDelta,
-                totalRise
-            };
+    const investedShare = ratio(scope.teamInvested, scope.teamTotal);
+    const uninvestedShare = ratio(scope.teamUninvested, scope.teamTotal);
+
+    const sideCard = state.view === VIEW.WEEK
+        ? miniCard({
+            icon: "crown",
+            label: t("stats.statusMix"),
+            value: `${countStatus(people, STATUS.ELDER)} / ${countStatus(people, STATUS.PASS)} / ${countStatus(people, STATUS.OUT)}`,
+            note: t("stats.statusMixNote")
         })
-        .filter(member => member.firstDelta > 0 && member.secondDelta > 0)
-        .sort((a, b) => {
-            if (b.totalRise !== a.totalRise) {
-                return b.totalRise - a.totalRise;
-            }
-
-            if (b.secondDelta !== a.secondDelta) {
-                return b.secondDelta - a.secondDelta;
-            }
-
-            if (b.last3[2] !== a.last3[2]) {
-                return b.last3[2] - a.last3[2];
-            }
-
-            return getAchievementDisplayName(a).localeCompare(getAchievementDisplayName(b));
+        : miniCard({
+            icon: "users",
+            label: t("stats.members"),
+            value: formatNumber(people.length),
+            note: t("stats.membersNote", { regular: regular.length, returning: returning.length })
         });
 
-    const winner = candidates[0] || null;
+    els.stats.innerHTML = `
+        <article class="stat-card">
+            ${cardHead("chartColumn", t(state.view === VIEW.MONTH ? "stats.teamMonthTotal" : "stats.teamWeekTotal"))}
+            <div class="stat-value">${escapeHTML(formatNumber(scope.teamTotal))}</div>
+            ${renderTeamMix(scope.teamInvested, scope.teamUninvested, scope.teamTotal)}
+        </article>
 
-    return createAchievementResult(ACHIEVEMENT_BADGES.POTENTIAL, winner, winner
-        ? {
-            metricLabel: t("achievement.metricRecentRise"),
-            metricValue: formatDelta(winner.totalRise),
-            detail: t("achievement.detailRecentRise", {
-                tag: getAchievementMemberTag(winner),
-                scores: winner.last3.map(formatCompactNumber).join(" → ")
-            })
-        }
-        : null
-    );
-}
+        <article class="stat-card stat-lime">
+            ${cardHead("target", t("metric.invested"), Number.isFinite(investedShare) ? formatPercent(investedShare, 0) : "")}
+            <div class="stat-value">${escapeHTML(formatNumber(scope.teamInvested))}</div>
+            <div class="stat-note">${escapeHTML(Number.isFinite(investedShare) ? t("stats.shareOfTeam", { pct: formatPercent(investedShare) }) : t("common.noSplit"))}</div>
+            ${renderCapsuleMeter(investedShare)}
+        </article>
 
-function createAchievementResult(config, winner, metric) {
-    return {
-        ...config,
-        winner,
-        metric,
-        isEmpty: !winner
-    };
-}
+        <article class="stat-card stat-dark">
+            ${cardHead("layers", t("metric.uninvested"), Number.isFinite(uninvestedShare) ? formatPercent(uninvestedShare, 0) : "")}
+            <div class="stat-value">${escapeHTML(formatNumber(scope.teamUninvested))}</div>
+            <div class="stat-note">${escapeHTML(Number.isFinite(uninvestedShare) ? t("stats.shareOfTeam", { pct: formatPercent(uninvestedShare) }) : t("common.noSplit"))}</div>
+            ${renderCapsuleMeter(uninvestedShare)}
+        </article>
 
-function getAchievementDisplayName(member) {
-    return cleanText(member?.cm || member?.lineName || "-");
-}
-
-function getAchievementProfileKeys(member) {
-    return member?.key || "";
-}
-
-function getAchievementMemberTag(member) {
-    if (!member) return t("common.normal");
-
-    const tags = [];
-
-    if (member.isReturnAccount) {
-        tags.push(tx(STATUS.RETURN));
-    }
-
-    if (member.isElder) {
-        tags.push(tx(STATUS.ELDER));
-    }
-
-    if (member.isCaptain) {
-        tags.push(tx(STATUS.CAPTAIN));
-    }
-
-    if (member.isViceCaptain) {
-        tags.push(tx(STATUS.VICE_CAPTAIN));
-    }
-
-    if (!tags.length && member.latestStatus) {
-        tags.push(tx(member.latestStatus));
-    }
-
-    return tags.length ? tags.join(" / ") : t("common.normal");
-}
-
-function getAchievementMemberClass(member) {
-    if (!member) return "";
-
-    if (member.isElder) {
-        return "achievement-member-elder";
-    }
-
-    if (member.isCaptain) {
-        return "achievement-member-captain";
-    }
-
-    if (member.isViceCaptain) {
-        return "achievement-member-vice";
-    }
-
-    if (member.isReturnAccount) {
-        return "achievement-member-return";
-    }
-
-    return "";
-}
-
-function ensureAchievementsSection() {
-    if (els.achievements) return els.achievements;
-
-    const section = document.createElement("section");
-
-    section.className = "achievements-podium";
-    section.id = "achievementsPodium";
-    section.setAttribute("aria-labelledby", "achievementsTitle");
-
-    const hero = document.querySelector(".hero");
-
-    if (hero) {
-        hero.insertAdjacentElement("afterend", section);
-    } else {
-        const page = document.querySelector(".page");
-
-        if (page) {
-            page.prepend(section);
-        }
-    }
-
-    return section;
-}
-
-function renderAchievementsPodium() {
-    const section = ensureAchievementsSection();
-
-    if (!section) return;
-
-    const achievements = state.achievements || [];
-    const loadedText = state.historyScopeLabel || t("month.currentMonth");
-
-    section.innerHTML = `
-        <div class="achievements-head">
-            <div>
-                <div class="achievements-kicker">${escapeHTML(t("achievement.kicker"))}</div>
-                <h2 class="achievements-title" id="achievementsTitle">
-                    ${escapeHTML(t("achievement.title", { scope: loadedText }))}
-                </h2>
-            </div>
-
-            <div class="achievements-note">
-                ${escapeHTML(t("achievement.note"))}
-            </div>
-        </div>
-
-        <div class="podium-row" role="list">
-            ${achievements.map(renderAchievementCard).join("")}
+        <div class="stat-side">
+            ${miniCard({
+                icon: "alert",
+                label: t("stats.heavy"),
+                value: scope.hasSplit ? formatNumber(heavyCount) : "—",
+                note: t("stats.heavyNote", { pct: formatPercent(CONFIG.UNINVESTED_HEAVY_SHARE, 0) }),
+                action: heavyCount > 0 ? FILTER.HEAVY : ""
+            })}
+            ${sideCard}
         </div>
     `;
 }
 
-function renderAchievementCard(achievement) {
-    const accent = escapeHTML(achievement.accent || "");
-    const title = escapeHTML(getAchievementTitle(achievement));
-    const subtitle = escapeHTML(getAchievementSubtitle(achievement));
-    const icon = escapeHTML(achievement.icon || "🏅");
+function countStatus(rows, status) {
+    return rows.filter(row => row.status === status).length;
+}
 
-    if (achievement.isEmpty || !achievement.winner) {
+function cardHead(iconName, label, pill = "") {
+    return `
+        <div class="card-head">
+            <span class="icon-chip" aria-hidden="true">${icon(iconName)}</span>
+            <span class="card-label">${escapeHTML(label)}</span>
+            ${pill ? `<span class="pct-pill">${escapeHTML(pill)}</span>` : ""}
+        </div>
+    `;
+}
+
+function miniCard({ icon: iconName, label, value, note = "", action = "" }) {
+    const tag = action ? "button" : "article";
+    const attrs = action ? `type="button" data-filter-shortcut="${escapeHTML(action)}"` : "";
+
+    return `
+        <${tag} class="mini-card ${action ? "is-action" : ""}" ${attrs}>
+            <div class="mini-top">
+                <span class="icon-chip icon-chip-sm" aria-hidden="true">${icon(iconName)}</span>
+                ${action ? `<span class="mini-arrow" aria-hidden="true">${icon("arrowUpRight")}</span>` : ""}
+            </div>
+            <div class="mini-label">${escapeHTML(label)}</div>
+            <div class="mini-value">${escapeHTML(value)}</div>
+            ${note ? `<div class="mini-note">${escapeHTML(note)}</div>` : ""}
+        </${tag}>
+    `;
+}
+
+/** 參考圖的膠囊進度條：10 格，依比例填滿。 */
+function renderCapsuleMeter(share, count = 10) {
+    if (!Number.isFinite(share)) {
+        return `<div class="capsules capsules-empty">${"<span></span>".repeat(count)}</div>`;
+    }
+
+    const filled = Math.round(share * count);
+
+    return `
+        <div class="capsules" aria-hidden="true">
+            ${Array.from({ length: count }, (_, index) => `<span class="${index < filled ? "is-on" : ""}"></span>`).join("")}
+        </div>
+    `;
+}
+
+function renderTeamMix(invested, uninvested, total) {
+    if (!Number.isFinite(invested) || !total) {
+        return `<div class="team-mix team-mix-empty">${escapeHTML(t("common.noSplit"))}</div>`;
+    }
+
+    return `
+        <div class="team-mix" role="img" aria-label="${escapeHTML(t("stats.mixAria", {
+            invested: formatPercent(invested / total),
+            uninvested: formatPercent(uninvested / total)
+        }))}">
+            <div class="mix-track mix-track-lg">
+                <span class="mix-seg mix-invested" style="flex-grow:${invested}"></span>
+                <span class="mix-seg mix-uninvested" style="flex-grow:${uninvested}"></span>
+            </div>
+            <div class="team-mix-labels">
+                <span><i class="swatch swatch-invested"></i>${escapeHTML(t("metric.invested"))}</span>
+                <span><i class="swatch swatch-uninvested"></i>${escapeHTML(t("metric.uninvested"))}</span>
+            </div>
+        </div>
+    `;
+}
+
+/* ================================
+   Render: Achievements
+================================ */
+
+const ACHIEVEMENTS = [
+    { key: "mvp", icon: "trophy", accent: "lime" },
+    { key: "improver", icon: "rocket" },
+    { key: "stable", icon: "shieldCheck" },
+    { key: "burst", icon: "zap" },
+    { key: "potential", icon: "sprout" }
+];
+
+function calculateAchievements(month) {
+    const useInvested = month.hasSplit;
+    const metric = person => (useInvested ? person.invested : person.score);
+
+    const members = month.members
+        .filter(member => !member.isReturn)
+        .map(member => {
+            const values = member.weeks.map(entry => metric(entry.person));
+            const labels = member.weeks.map(entry => getWeekShortLabel(entry.model.week));
+
+            return { member, values, labels, total: sum(values) };
+        });
+
+    const byName = (a, b) => a.member.cm.localeCompare(b.member.cm);
+    const results = {};
+
+    // MVP：本月累計最高
+    const mvp = members.filter(item => item.values.length).sort((a, b) => b.total - a.total || byName(a, b))[0];
+
+    results.mvp = mvp && { item: mvp, value: formatNumber(mvp.total) };
+
+    // 進步王：本月由低點到後續高點的最大漲幅
+    const improver = members
+        .filter(item => item.values.length >= 2)
+        .map(item => {
+            let lowest = item.values[0];
+            let best = Number.NEGATIVE_INFINITY;
+
+            for (let i = 1; i < item.values.length; i++) {
+                best = Math.max(best, item.values[i] - lowest);
+                lowest = Math.min(lowest, item.values[i]);
+            }
+
+            return { ...item, gain: best };
+        })
+        .filter(item => item.gain > 0)
+        .sort((a, b) => b.gain - a.gain || byName(a, b))[0];
+
+    results.improver = improver && { item: improver, value: formatSigned(improver.gain) };
+
+    // 穩定王：平均高於全體平均者中，波動最小
+    const stableCandidates = members
+        .filter(item => item.values.length >= 2)
+        .map(item => ({ ...item, avg: average(item.values), sd: stdDev(item.values) }));
+    const avgOfAvg = average(stableCandidates.map(item => item.avg));
+    const stablePool = stableCandidates.filter(item => item.avg >= avgOfAvg);
+    const stable = (stablePool.length ? stablePool : stableCandidates)
+        .sort((a, b) => a.sd - b.sd || b.avg - a.avg || byName(a, b))[0];
+
+    results.stable = stable && {
+        item: stable,
+        value: `${formatCompact(stable.avg)} ± ${formatCompact(stable.sd)}`
+    };
+
+    // 爆發王：單週最高
+    const burst = members
+        .filter(item => item.values.length)
+        .map(item => ({ ...item, best: Math.max(...item.values) }))
+        .sort((a, b) => b.best - a.best || b.total - a.total || byName(a, b))[0];
+
+    results.burst = burst && { item: burst, value: formatNumber(burst.best) };
+
+    // 潛力股：最近三週連續上升
+    const potential = members
+        .filter(item => item.values.length >= 3)
+        .map(item => {
+            const last3 = item.values.slice(-3);
+
+            return { ...item, last3, rise: last3[2] - last3[0], ok: last3[1] > last3[0] && last3[2] > last3[1] };
+        })
+        .filter(item => item.ok)
+        .sort((a, b) => b.rise - a.rise || byName(a, b))[0];
+
+    results.potential = potential && { item: potential, value: formatSigned(potential.rise) };
+
+    return { results, useInvested };
+}
+
+function renderPodium(month) {
+    if (state.view !== VIEW.MONTH) {
+        els.podium.hidden = true;
+        els.podium.innerHTML = "";
+        return;
+    }
+
+    const { results, useInvested } = calculateAchievements(month);
+
+    els.podium.hidden = false;
+    els.podium.innerHTML = `
+        <div class="section-head">
+            <div class="panel-heading">
+                <span class="icon-chip" aria-hidden="true">${icon("award")}</span>
+                <h2 class="section-title">${escapeHTML(t("achievement.title", { scope: formatMonthLabel(month.monthKey) }))}</h2>
+            </div>
+            <span class="section-note">${escapeHTML(t(useInvested ? "achievement.noteInvested" : "achievement.noteScore"))}</span>
+        </div>
+        <div class="podium-row" role="list">
+            ${ACHIEVEMENTS.map(config => renderAchievementCard(config, results[config.key])).join("")}
+        </div>
+    `;
+}
+
+function renderAchievementCard(config, result) {
+    const title = t(`achievement.${config.key}Title`);
+    const subtitle = t(`achievement.${config.key}Subtitle`);
+    const accentClass = config.accent ? `podium-${config.accent}` : "";
+
+    if (!result) {
         return `
-            <article class="podium-card podium-${accent} podium-empty" role="listitem">
-                <div class="podium-medal" aria-hidden="true">${icon}</div>
-
-                <div class="podium-content">
-                    <div class="podium-title">${title}</div>
-                    <div class="podium-subtitle">${subtitle}</div>
-                    <div class="podium-name">${escapeHTML(t("achievement.pending"))}</div>
-                    <div class="podium-metric">${escapeHTML(getAchievementEmptyText(achievement))}</div>
+            <article class="podium-card ${accentClass} is-empty" role="listitem">
+                <div class="mini-top">
+                    <span class="icon-chip icon-chip-sm" aria-hidden="true">${icon(config.icon)}</span>
                 </div>
+                <div class="podium-title">${escapeHTML(title)}</div>
+                <div class="podium-subtitle">${escapeHTML(subtitle)}</div>
+                <div class="podium-empty">${escapeHTML(t(`achievement.${config.key}Empty`))}</div>
             </article>
         `;
     }
 
-    const member = achievement.winner;
-    const displayName = getAchievementDisplayName(member);
-    const profileKeys = getAchievementProfileKeys(member);
-    const metric = achievement.metric || {};
-    const metricLabel = metric.metricLabel || "";
-    const metricValue = metric.metricValue || "";
-    const detail = metric.detail || "";
-    const memberClass = getAchievementMemberClass(member);
-
     return `
-        <article class="podium-card podium-${accent}" role="listitem">
-            <div class="podium-medal" aria-hidden="true">${icon}</div>
-
-            <div class="podium-content">
-                <div class="podium-title">${title}</div>
-                <div class="podium-subtitle">${subtitle}</div>
-
-                <button
-                    class="podium-name ${escapeHTML(memberClass)}"
-                    type="button"
-                    data-profile-keys="${escapeHTML(profileKeys)}"
-                    title="${escapeHTML(t("achievement.viewProfileTitle", { name: displayName }))}"
-                >
-                    ${escapeHTML(displayName)}
-                </button>
-
-                <div class="podium-metric">
-                    <span>${escapeHTML(metricLabel)}</span>
-                    <strong>${escapeHTML(metricValue)}</strong>
-                </div>
+        <button class="podium-card ${accentClass}" type="button" role="listitem"
+            data-profile-key="${escapeHTML(result.item.member.key)}"
+            title="${escapeHTML(t("profile.open", { name: result.item.member.cm }))}">
+            <div class="mini-top">
+                <span class="icon-chip icon-chip-sm" aria-hidden="true">${icon(config.icon)}</span>
+                <span class="mini-arrow" aria-hidden="true">${icon("arrowUpRight")}</span>
             </div>
-        </article>
+            <div class="podium-title">${escapeHTML(title)}</div>
+            <div class="podium-name">${escapeHTML(result.item.member.cm)}</div>
+            <div class="podium-metric">${escapeHTML(result.value)}</div>
+            <div class="podium-subtitle">${escapeHTML(subtitle)}</div>
+        </button>
     `;
 }
 
 /* ================================
-   Row Numbering
+   Render: Table
 ================================ */
 
-function applyRowNumbers(rows) {
-    let normalNumber = 0;
-    let returnNumber = 0;
-    let inReturnSection = false;
-
-    return rows.map(row => {
-        if (isSectionRow(row)) {
-            const cm = cleanText(row["CM"]);
-
-            if (cm === SPECIAL_CM.RETURN_SECTION) {
-                inReturnSection = true;
-                returnNumber = 0;
-            } else {
-                inReturnSection = false;
-            }
-
-            row.__rank = null;
-            row.__rankTitle = "";
-            row[RANK_COLUMN] = "";
-
-            return row;
-        }
-
-        if (!isPersonRow(row)) {
-            row.__rank = null;
-            row.__rankTitle = "";
-            row[RANK_COLUMN] = "";
-
-            return row;
-        }
-
-        const isReturn = inReturnSection || isReturnAccount(row);
-        const number = isReturn ? ++returnNumber : ++normalNumber;
-
-        row.__rank = number;
-        row.__rankTitle = isReturn
-            ? t("rank.returnAccountNumber", { number })
-            : t("rank.number", { number });
-
-        row[RANK_COLUMN] = String(number);
-
-        return row;
-    });
-}
-
-function prepareCurrentRows(rows, previousRows) {
-    return applyRowNumbers(
-        applyMonthlyPersonalContributions(
-            applyMonthlyPersonalTotals(
-                applyHistoryBottomFive(
-                    applyWeekComparison(rows, previousRows)
-                )
-            )
-        )
-    );
-}
-
-/* ================================
-   Filters
-================================ */
-
-function isEverBottomFive(row) {
-    return (
-        isCalculablePerson(row) &&
-        (
-            row.__historyLevel === HISTORY_LEVEL.WATCH ||
-            row.__historyLevel === HISTORY_LEVEL.RISK
-        )
-    );
-}
-
-function getFilteredRows() {
-    const keyword = els.searchInput.value.trim().toLowerCase();
-    const status = els.statusFilter.value;
-
-    if (status === SPECIAL_STATUS_FILTERS.MONTH_TOTAL_SCORE_SORT) {
-        return getMonthlyTotalScoreRows(keyword);
+function getColumns() {
+    if (state.view === VIEW.MONTH) {
+        return [
+            { key: "rank", label: t("col.rank"), className: "col-rank" },
+            { key: "member", label: t("col.member"), className: "col-member" },
+            { key: "score", label: t("col.monthScore"), sort: "score", className: "col-num" },
+            { key: "invested", label: t("metric.invested"), sort: "invested", className: "col-num" },
+            { key: "uninvested", label: t("metric.uninvested"), sort: "uninvested", className: "col-num" },
+            { key: "mix", label: t("col.mix"), sort: "investedShare", className: "col-mix" },
+            { key: "contribution", label: t("col.contribution"), sort: "contribution", className: "col-num" },
+            { key: "investedRank", label: t("col.investedRank"), className: "col-num" },
+            { key: "weeks", label: t("col.weeks"), sort: "weeksSeen", className: "col-num" }
+        ];
     }
-
-    if (status === SPECIAL_STATUS_FILTERS.MONTH_CONTRIBUTION_SORT) {
-        return getMonthlyContributionRows(keyword);
-    }
-
-    return state.currentRows.filter(row => {
-        if (!isPersonRow(row)) return true;
-
-        const matchKeyword =
-            !keyword ||
-            normalizeCmName(row["CM"]).includes(keyword);
-
-        const matchStatus = getStatusMatch(row, status);
-
-        return matchKeyword && matchStatus;
-    });
-}
-
-function getMonthlyTotalScoreRows(keyword) {
-    const peopleRows = state.currentRows
-        .filter(row => isPersonRow(row) && !isReturnAccount(row))
-        .filter(row => !keyword || normalizeCmName(row["CM"]).includes(keyword))
-        .slice()
-        .sort(compareMonthlyTotalScoreDesc)
-        .map((row, index) => ({
-            ...row,
-            __displayRank: index + 1,
-            __displayRankTitle: t("monthlyTotal.displayRankTitle", { rank: index + 1 })
-        }));
-
-    const totalRows = state.currentRows.filter(isTotalRow);
 
     return [
-        ...peopleRows,
-        ...totalRows
+        { key: "rank", label: t("col.rank"), className: "col-rank" },
+        { key: "member", label: t("col.member"), className: "col-member" },
+        { key: "score", label: t("col.weekScore"), sort: "score", className: "col-num" },
+        { key: "invested", label: t("metric.invested"), sort: "invested", className: "col-num" },
+        { key: "uninvested", label: t("metric.uninvested"), sort: "uninvested", className: "col-num" },
+        { key: "mix", label: t("col.mix"), sort: "investedShare", className: "col-mix" },
+        { key: "contribution", label: t("col.contribution"), sort: "contribution", className: "col-num" },
+        { key: "delta", label: t("col.delta"), sort: "delta", className: "col-num" },
+        { key: "target", label: t("col.target"), className: "col-text" },
+        { key: "bottom", label: t("col.bottom"), className: "col-text" },
+        { key: "status", label: t("col.status"), className: "col-text" }
     ];
 }
 
-function getMonthlyContributionRows(keyword) {
-    const peopleRows = state.currentRows
-        .filter(row => isPersonRow(row) && !isReturnAccount(row))
-        .filter(row => Number.isFinite(row.__monthContribution))
-        .filter(row => !keyword || normalizeCmName(row["CM"]).includes(keyword))
-        .slice()
-        .sort(compareMonthlyContributionDesc)
-        .map((row, index) => ({
-            ...row,
-            __displayRank: index + 1,
-            __displayRankTitle: t("monthlyContribution.displayRankTitle", { rank: index + 1 })
-        }));
-
-    const totalRows = state.currentRows.filter(isTotalRow);
-
-    return [
-        ...peopleRows,
-        ...totalRows
-    ];
-}
-
-function compareMonthlyContributionDesc(a, b) {
-    const aValue = Number.isFinite(a.__monthContribution)
-        ? a.__monthContribution
-        : Number.NEGATIVE_INFINITY;
-
-    const bValue = Number.isFinite(b.__monthContribution)
-        ? b.__monthContribution
-        : Number.NEGATIVE_INFINITY;
-
-    if (aValue !== bValue) {
-        return bValue - aValue;
-    }
-
-    return normalizeCmName(a["CM"]).localeCompare(normalizeCmName(b["CM"]));
-}
-
-function compareMonthlyTotalScoreDesc(a, b) {
-    const aScore = Number.isFinite(a.__monthTotal)
-        ? a.__monthTotal
-        : Number.NEGATIVE_INFINITY;
-
-    const bScore = Number.isFinite(b.__monthTotal)
-        ? b.__monthTotal
-        : Number.NEGATIVE_INFINITY;
-
-    if (aScore !== bScore) {
-        return bScore - aScore;
-    }
-
-    return normalizeCmName(a["CM"]).localeCompare(normalizeCmName(b["CM"]));
-}
-
-function getStatusMatch(row, status) {
-    if (status === STATUS.ALL) return true;
-
-    if (status === SPECIAL_STATUS_FILTERS.EVER_BOTTOM_FIVE) {
-        return isEverBottomFive(row);
-    }
-
-    return getRowStatus(row) === status;
-}
-
-/* ================================
-   Render: Common
-================================ */
-
-function renderHead() {
+function renderHead(columns) {
     els.tableHead.innerHTML = `
         <tr>
-            ${DISPLAY_HEADERS.map(header => {
-        const columnClass = getColumnClass(header);
+            ${columns.map(column => {
+                if (!column.sort) {
+                    return `<th scope="col" class="${column.className}">${escapeHTML(column.label)}</th>`;
+                }
 
-        return `
-                    <th class="${escapeHTML(columnClass)}">
-                        ${escapeHTML(getHeaderLabel(header))}
+                const active = state.sort.key === column.sort;
+                const ariaSort = active ? (state.sort.dir === "asc" ? "ascending" : "descending") : "none";
+                const arrow = active ? icon(state.sort.dir === "asc" ? "arrowUp" : "arrowDown") : "";
+
+                return `
+                    <th scope="col" class="${column.className} ${active ? "is-sorted" : ""}" aria-sort="${ariaSort}">
+                        <button type="button" class="th-sort" data-sort="${column.sort}">
+                            ${escapeHTML(column.label)}<span class="sort-arrow" aria-hidden="true">${arrow}</span>
+                        </button>
                     </th>
                 `;
-    }).join("")}
+            }).join("")}
         </tr>
     `;
 }
 
-function renderLoading(message = t("common.syncing")) {
-    els.tableBody.innerHTML = `
-            <tr class="loading-row">
-                <td colspan="${DISPLAY_HEADERS.length}">
-                    <span class="cyber-loader">
-                        <span></span><span></span><span></span>
-                        <strong>${escapeHTML(message)}</strong>
-                    </span>
-                </td>
-            </tr>
+function renderBody(columns, rows, maxScore) {
+    const regular = rows.filter(row => !row.isReturn);
+    const returning = rows.filter(row => row.isReturn);
+
+    if (!rows.length) {
+        els.tableBody.innerHTML = `
+            <tr><td class="empty-state" colspan="${columns.length}">${escapeHTML(t("table.empty"))}</td></tr>
         `;
-}
+        return;
+    }
 
-function renderWeekSelect() {
-    const currentWeekId = state.currentWeek?.id || state.weeks[0]?.id || "";
-
-    els.weekSelect.innerHTML = state.weeks
-        .map(week => `<option value="${escapeHTML(week.id)}">${escapeHTML(week.label)}</option>`)
+    const regularHTML = regular
+        .map((row, index) => renderRow(columns, row, index + 1, maxScore))
         .join("");
 
-    if (currentWeekId) {
-        els.weekSelect.value = currentWeekId;
-    }
-}
-
-function renderStatusFilter(rows) {
-    const statuses = Array.from(
-        new Set(
-            rows
-                .filter(isPersonRow)
-                .map(getRowStatus)
-                .filter(Boolean)
-        )
-    );
-
-    const current = els.statusFilter.value || STATUS.ALL;
-
-    els.statusFilter.innerHTML = `
-        <option value="${STATUS.ALL}">${escapeHTML(t("status.allStatus"))}</option>
-        <option value="${SPECIAL_STATUS_FILTERS.EVER_BOTTOM_FIVE}">${escapeHTML(t("filters.everBottomFive"))}</option>
-        <option value="${SPECIAL_STATUS_FILTERS.MONTH_TOTAL_SCORE_SORT}">${escapeHTML(t("filters.monthTotalScoreSort"))}</option>
-        <option value="${SPECIAL_STATUS_FILTERS.MONTH_CONTRIBUTION_SORT}">${escapeHTML(t("filters.monthContributionSort"))}</option>
-        ${statuses.map(status => `
-            <option value="${escapeHTML(status)}">${escapeHTML(tx(status))}</option>
-        `).join("")}
-    `;
-
-    const validValues = [
-        STATUS.ALL,
-        SPECIAL_STATUS_FILTERS.EVER_BOTTOM_FIVE,
-        SPECIAL_STATUS_FILTERS.MONTH_TOTAL_SCORE_SORT,
-        SPECIAL_STATUS_FILTERS.MONTH_CONTRIBUTION_SORT,
-        ...statuses
-    ];
-
-    els.statusFilter.value = validValues.includes(current)
-        ? current
-        : STATUS.ALL;
-}
-
-/* ================================
-   Render: Stats
-================================ */
-
-function animateNumber(element, target) {
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const formatType = element.dataset.format || "normal";
-    const formatter = formatType === "compact" ? formatCompactNumber : formatNumber;
-
-    if (prefersReducedMotion) {
-        element.textContent = formatter(target);
-        element.title = formatNumber(target);
-
-        return;
-    }
-
-    const duration = 650;
-    const startTime = performance.now();
-
-    function update(now) {
-        const elapsed = now - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3);
-        const current = Math.round(target * eased);
-
-        element.textContent = formatter(current);
-        element.title = formatNumber(current);
-
-        if (progress < 1) {
-            requestAnimationFrame(update);
-        }
-    }
-
-    requestAnimationFrame(update);
-}
-
-function animateStatCards() {
-    document.querySelectorAll("[data-stat-value]").forEach(element => {
-        animateNumber(element, Number(element.dataset.statValue || 0));
-    });
-}
-
-function renderStats(rows) {
-    const people = getCalculablePeople(rows);
-
-    const statItems = [
-        {
-            label: t("stats.weeklyTotalSum"),
-            value: getWeeklyTotalScore(rows),
-            icon: "⚡",
-            format: "compact",
-            className: ""
-        },
-        {
-            label: tx(STATUS.ELDER),
-            value: countByStatus(people, STATUS.ELDER),
-            icon: "♕",
-            format: "normal",
-            className: "stat-elder"
-        },
-        {
-            label: tx(STATUS.PASS),
-            value: countByStatus(people, STATUS.PASS),
-            icon: "✅",
-            format: "normal",
-            className: ""
-        },
-        {
-            label: tx(STATUS.DOWNGRADE),
-            value: countByStatus(people, STATUS.DOWNGRADE),
-            icon: "⚠️",
-            format: "normal",
-            className: ""
-        },
-        {
-            label: tx(STATUS.OUT),
-            value: countByStatus(people, STATUS.OUT),
-            icon: "⛔",
-            format: "normal",
-            className: ""
-        }
-    ];
-
-    els.stats.innerHTML = statItems.map(renderStatCard).join("");
-
-    animateStatCards();
-}
-
-function renderStatCard(item) {
-    return `
-            <article class="stat-card ${escapeHTML(item.className || "")}">
-                <div class="stat-top">
-                    <div>
-                        <div class="stat-label">${escapeHTML(item.label)}</div>
-                        <div 
-                            class="stat-value" 
-                            data-stat-value="${Number(item.value)}" 
-                            data-format="${escapeHTML(item.format || "normal")}" 
-                            title="${escapeHTML(formatNumber(item.value))}"
-                        >0</div>
-                    </div>
-                    <div class="stat-icon" aria-hidden="true">${escapeHTML(item.icon)}</div>
-                </div>
-            </article>
-        `;
-}
-
-/* ================================
-   Render: Table Body
-================================ */
-
-function renderBody() {
-    const filteredRows = getFilteredRows();
-
-    if (!filteredRows.length) {
-        renderEmptyBody();
-        els.resultHint.textContent = t("table.shownZero");
-        state.hasRenderedTableOnce = true;
-
-        return;
-    }
-
-    els.tableBody.innerHTML = filteredRows
-        .map(renderTableRow)
-        .join("");
-
-    updateResultHint(filteredRows);
-
-    state.hasRenderedTableOnce = true;
-}
-
-function renderEmptyBody() {
-    els.tableBody.innerHTML = `
-        <tr>
-            <td class="empty-state" colspan="${DISPLAY_HEADERS.length}">
-                ${escapeHTML(t("table.empty"))}
-            </td>
-        </tr>
-    `;
-}
-
-function renderTableRow(row, index) {
-    if (isSectionRow(row)) {
-        return renderSectionRow(row, index);
-    }
-
-    const rowClass = createClassName(
-        isTotalRow(row) ? "row-total" : "",
-        getRowRewardClass(row),
-        state.hasRenderedTableOnce ? "row-no-animation" : ""
-    );
-
-    const animationStyle = state.hasRenderedTableOnce
-        ? ""
-        : `style="animation-delay: ${getRowAnimationDelay(index)}s"`;
-
-    const cells = DISPLAY_HEADERS
-        .map(header => renderTableCell(row, header))
-        .join("");
-
-    return `
-            <tr class="${rowClass}" ${animationStyle}>
-                ${cells}
-            </tr>
-        `;
-}
-
-function renderSectionRow(row, index) {
-    const rowClass = createClassName(
-        "section-row",
-        state.hasRenderedTableOnce ? "row-no-animation" : ""
-    );
-
-    const animationStyle = state.hasRenderedTableOnce
-        ? ""
-        : `style="animation-delay: ${getRowAnimationDelay(index)}s"`;
-
-    return `
-        <tr class="${rowClass}" ${animationStyle}>
-            <td colspan="${DISPLAY_HEADERS.length}">
-                📌 ${escapeHTML(tx(cleanText(row["CM"])))}
-            </td>
-        </tr>
-    `;
-}
-
-function renderTableCell(row, header) {
-    if (header === "CM") return renderNameCell(row, header);
-    if (header === RANK_COLUMN) return renderRankCell(row, header);
-    if (header === MONTH_TOTAL_COLUMN) return renderMonthTotalCell(row, header);
-    if (header === MONTH_CONTRIBUTION_COLUMN) return renderMonthContributionCell(row, header);
-    if (header === "較上週") return renderTrendCell(row, header);
-    if (header === HISTORY_COLUMN) return renderHistoryCell(row, header);
-    if (header === "狀態") return renderStatusCell(row, header);
-
-    return renderScoreCell(row, header);
-}
-
-function renderNameCell(row, header) {
-    const cmKey = getCmKey(row);
-    const rawCellValue = cleanText(row[header]);
-    const rawName = rawCellValue || t("profile.thisMember");
-
-    const displayName = escapeHTML(
-        !isPersonRow(row)
-            ? tx(rawCellValue || "-")
-            : (rawCellValue || "-")
-    );
-
-    if (isPersonRow(row) && cmKey) {
-        return `
-            <td class="${getCellClass(header, "name")}" ${getCellLabelAttr(header)}>
-                <button 
-                    class="${getPersonLinkClass(row)}" 
-                    type="button" 
-                    data-profile-keys="${escapeHTML(cmKey)}" 
-                    title="${escapeHTML(t("achievement.viewProfileTitle", { name: rawName }))}"
-                >
-                    ${displayName}
-                </button>
-            </td>
-        `;
-    }
-
-    return `
-        <td class="${getCellClass(header, "name")}" ${getCellLabelAttr(header)}>
-            ${displayName}
-        </td>
-    `;
-}
-
-function renderRankCell(row, header) {
-    const isSpecialRankSort =
-        els.statusFilter.value === SPECIAL_STATUS_FILTERS.MONTH_TOTAL_SCORE_SORT ||
-        els.statusFilter.value === SPECIAL_STATUS_FILTERS.MONTH_CONTRIBUTION_SORT;
-
-    const numberValue = isSpecialRankSort
-        ? row.__displayRank
-        : row[RANK_COLUMN];
-
-    const rankTitle = isSpecialRankSort
-        ? row.__displayRankTitle
-        : row.__rankTitle;
-
-    return `
-            <td class="${getCellClass(header, "rank-cell")}" ${getCellLabelAttr(header)}>
-                ${numberValue
-            ? `<span class="${getRankBadgeClass(row)}" title="${escapeHTML(rankTitle || "")}">${escapeHTML(numberValue)}</span>`
-            : ""
-        }
-            </td>
-        `;
-}
-
-function renderMonthTotalCell(row, header) {
-    const monthTotalValue = row[MONTH_TOTAL_COLUMN] || "";
-
-    return `
-            <td class="${getCellClass(header, "score")}" ${getCellLabelAttr(header)}>
-                <span title="${escapeHTML(row.__monthTotalTitle || "")}">
-                    ${escapeHTML(monthTotalValue || "-")}
-                </span>
-            </td>
-        `;
-}
-
-function renderMonthContributionCell(row, header) {
-    const value = row[MONTH_CONTRIBUTION_COLUMN] || "";
-
-    return `
-            <td class="${getCellClass(header, "score")}" ${getCellLabelAttr(header)}>
-                <span title="${escapeHTML(row.__monthContributionTitle || "")}">
-                    ${escapeHTML(value || "-")}
-                </span>
-            </td>
-        `;
-}
-
-function renderTrendCell(row, header) {
-    const value = row[header] || "";
-    const trendClass = row.__trend ? `trend-${row.__trend}` : "trend-same";
-
-    const prevScoreText =
-        row.__prevScore !== null && row.__prevScore !== undefined
-            ? t("trend.lastWeek", { score: formatNumber(row.__prevScore) })
-            : t("trend.lastWeekNoData");
-
-    return `
-            <td class="${getCellClass(header, "score")}" ${getCellLabelAttr(header)}>
-                <span class="trend-badge ${trendClass}" title="${escapeHTML(prevScoreText)}">
-                    ${escapeHTML(value || "-")}
-                </span>
-            </td>
-        `;
-}
-
-function renderHistoryCell(row, header) {
-    const value = row[header] || "";
-    const historyClass = row.__historyLevel
-        ? `history-${row.__historyLevel}`
-        : "history-none";
-
-    return `
-            <td class="${getCellClass(header, "score")}" ${getCellLabelAttr(header)}>
-                <span class="history-badge ${historyClass}" title="${escapeHTML(row.__historyTitle || "")}">
-                    ${escapeHTML(value || "-")}
-                </span>
-            </td>
-        `;
-}
-
-function renderStatusCell(row, header) {
-    const status = cleanText(row[header]);
-
-    const statusHTML = status
-        ? `<span class="badge ${getBadgeClass(status)}" title="${escapeHTML(getStatusTitle(status))}">${escapeHTML(tx(status))}</span>`
-        : "-";
-
-    return `
-        <td class="${getCellClass(header)}" ${getCellLabelAttr(header)}>
-            ${statusHTML}
-        </td>
-    `;
-}
-
-function renderScoreCell(row, header) {
-    return `
-            <td class="${getCellClass(header, "score")}" ${getCellLabelAttr(header)}>
-                ${escapeHTML(row[header] || "-")}
-            </td>
-        `;
-}
-
-function updateResultHint(filteredRows) {
-    if (els.statusFilter.value === SPECIAL_STATUS_FILTERS.MONTH_TOTAL_SCORE_SORT) {
-        updateMonthlyTotalScoreHint(filteredRows);
-
-        return;
-    }
-    if (els.statusFilter.value === SPECIAL_STATUS_FILTERS.MONTH_CONTRIBUTION_SORT) {
-        updateMonthlyContributionHint(filteredRows);
-
-        return;
-    }
-
-    const shownPeople = filteredRows.filter(isCalculablePerson).length;
-    const allPeople = getCalculablePeople(state.currentRows).length;
-
-    const shownExcludedCount = filteredRows.filter(row => {
-        return isPersonRow(row) && isExcludedFromCalculation(row);
-    }).length;
-
-    const allExcludedCount = getExcludedPeople(state.currentRows).length;
-
-    const historyRiskCount = state.currentRows.filter(row => {
-        return isCalculablePerson(row) && row.__historyAlways;
-    }).length;
-
-    const historyEverCount = state.currentRows.filter(isEverBottomFive).length;
-
-    els.resultHint.textContent = t("table.hint", {
-        shownPeople,
-        allPeople,
-        shownExcluded: shownExcludedCount,
-        allExcluded: allExcludedCount,
-        scope: state.historyScopeLabel,
-        everCount: historyEverCount,
-        riskCount: historyRiskCount
-    });
-}
-
-function updateMonthlyContributionHint(filteredRows) {
-    const sortedPeople = filteredRows.filter(row => {
-        return isPersonRow(row) && !isReturnAccount(row);
-    });
-
-    const topPerson = sortedPeople[0] || null;
-
-    els.resultHint.textContent = topPerson
-        ? t("monthlyContribution.hintTop", {
-            scope: state.historyScopeLabel,
-            name: topPerson["CM"] || "-",
-            contribution: formatPercent(topPerson.__monthContribution)
-        })
-        : t("monthlyContribution.hintEmpty");
-}
-
-function updateMonthlyTotalScoreHint(filteredRows) {
-    const sortedPeople = filteredRows.filter(row => {
-        return isPersonRow(row) && !isReturnAccount(row);
-    });
-
-    const topPerson = sortedPeople[0] || null;
-
-    els.resultHint.textContent = topPerson
-        ? t("monthlyTotal.hintTop", {
-            scope: state.historyScopeLabel,
-            name: topPerson["CM"] || "-",
-            score: formatNumber(topPerson.__monthTotal || 0)
-        })
-        : t("monthlyTotal.hintEmpty");
-}
-
-/* ================================
-   Profile Data
-================================ */
-
-function getScoreRecordsFromRows(row, week) {
-    const activity1Raw = cleanText(row["活動1總分"] ?? "");
-    const activity2Raw = cleanText(row["活動2總分"] ?? "");
-    const activity3Raw = cleanText(row["活動3總分"] ?? "");
-
-    const activity1 = parseNumber(activity1Raw);
-    const activity2 = parseNumber(activity2Raw);
-    const activity3 = parseNumber(activity3Raw);
-
-    const activities = [
-        {
-            label: t("profile.activity", { number: 1 }),
-            value: activity1,
-            raw: activity1Raw,
-            show: true
-        },
-        {
-            label: t("profile.activity", { number: 2 }),
-            value: activity2,
-            raw: activity2Raw,
-            show: true
-        }
-    ];
-
-    if (activity3Raw !== "" && activity3 !== 0) {
-        activities.push({
-            label: t("profile.activity", { number: 3 }),
-            value: activity3,
-            raw: activity3Raw,
-            show: true
-        });
-    }
-
-    return {
-        weekId: week.id,
-        weekLabel: week.label || week.id,
-        shortLabel: getWeekShortLabel(week),
-        startDate: week.startDate || "",
-        monthKey: getWeekMonthKey(week),
-        cm: row["CM"] || "",
-        lineName: row["LINE名稱"] || "",
-        status: row["狀態"] || "",
-        activity1,
-        activity2,
-        activity3,
-        activities,
-        score: parseNumber(row["一週總分"]),
-        weeklyContribution: parsePercent(row["整週貢獻度"])
-    };
-}
-
-async function buildMemberProfile(initialKeys) {
-    const keySet = new Set(
-        initialKeys
-            .filter(Boolean)
-            .filter(key => String(key).startsWith("cm:"))
-    );
-
-    const selectedMonthKey = getWeekMonthKey(state.currentWeek);
-    const selectedMonthLabel = formatMonthLabel(selectedMonthKey);
-    const monthWeeks = getWeeksInSameMonth(state.currentWeek).reverse();
-
-    if (!keySet.size) {
-        return {
-            records: [],
-            monthRecords: createEmptyMonthRecords(monthWeeks),
-            selectedMonthKey,
-            selectedMonthLabel
-        };
-    }
-
-    const records = [];
-    const chronologicalWeeks = [...state.weeks].reverse();
-
-    for (const week of chronologicalWeeks) {
-        const rows = await getWeekRows(week);
-
-        const matchedRow = rows.find(row => {
-            return isPersonRow(row) && hasMatchingProfileKey(row, keySet);
-        });
-
-        if (!matchedRow) continue;
-
-        records.push(getScoreRecordsFromRows(matchedRow, week));
-    }
-
-    const monthRecords = monthWeeks.map(week => {
-        const record = records.find(item => item.weekId === week.id);
-
-        return record || createEmptyMonthRecord(week);
-    });
-
-    return {
-        records,
-        monthRecords,
-        selectedMonthKey,
-        selectedMonthLabel
-    };
-}
-
-function createEmptyMonthRecords(monthWeeks) {
-    return monthWeeks.map(createEmptyMonthRecord);
-}
-
-function createEmptyMonthRecord(week) {
-    return {
-        weekId: week.id,
-        weekLabel: week.label || week.id,
-        shortLabel: getWeekShortLabel(week),
-        startDate: week.startDate || "",
-        monthKey: getWeekMonthKey(week),
-        cm: "",
-        lineName: "",
-        status: STATUS.NO_DATA,
-        activity1: null,
-        activity2: null,
-        activity3: null,
-        score: null,
-        weeklyContribution: null
-    };
-}
-
-function getProfileSummary(profile) {
-    const records = profile.records;
-    const validScores = records.map(record => record.score).filter(Number.isFinite);
-
-    const bestRecord = records.reduce((best, record) => {
-        if (!best) return record;
-
-        return record.score > best.score ? record : best;
-    }, null);
-
-    const latestRecord = records[records.length - 1] || null;
-    const previousRecord = records[records.length - 2] || null;
-
-    const monthValidRecords = profile.monthRecords.filter(record => Number.isFinite(record.score));
-    const monthScores = monthValidRecords.map(record => record.score);
-    const monthTotal = monthScores.reduce((sum, score) => sum + score, 0);
-
-    const monthContributionValues = profile.monthRecords
-        .map(record => record.weeklyContribution)
-        .filter(Number.isFinite);
-
-    const monthContribution = monthContributionValues.length
-        ? monthContributionValues.reduce((sum, value) => sum + value, 0) / monthContributionValues.length
-        : null;
-
-
-    const firstMonthRecord = monthValidRecords[0] || null;
-    const lastMonthRecord = monthValidRecords[monthValidRecords.length - 1] || null;
-
-    const monthDelta =
-        firstMonthRecord && lastMonthRecord
-            ? lastMonthRecord.score - firstMonthRecord.score
-            : null;
-
-    const latestDelta =
-        latestRecord && previousRecord
-            ? latestRecord.score - previousRecord.score
-            : null;
-
-    return {
-        totalWeeks: records.length,
-        bestRecord,
-        latestRecord,
-        previousRecord,
-        averageScore: calculateAverage(validScores),
-        monthTotal,
-        monthContribution,
-        monthDelta,
-        latestDelta
-    };
-}
-
-function getRecordActivities(record) {
-
-    if (!Number.isFinite(record.score)) {
-        return [];
-    }
-
-    if (Array.isArray(record.activities) && record.activities.length) {
-        return record.activities.filter(activity => activity.show !== false);
-    }
-
-    const activities = [
-        {
-            label: t("profile.activity", { number: 1 }),
-            value: record.activity1,
-            show: true
-        },
-        {
-            label: t("profile.activity", { number: 2 }),
-            value: record.activity2,
-            show: true
-        }
-    ];
-
-    if (Number.isFinite(record.activity3) && record.activity3 !== 0) {
-        activities.push({
-            label: t("profile.activity", { number: 3 }),
-            value: record.activity3,
-            show: true
-        });
-    }
-
-    return activities;
-}
-
-/* ================================
-   Profile Render
-================================ */
-
-function renderProfileChart(monthRecords) {
-    const width = 760;
-    const height = 280;
-
-    const padding = {
-        top: 32,
-        right: 26,
-        bottom: 52,
-        left: 70
-    };
-
-    const chartWidth = width - padding.left - padding.right;
-    const chartHeight = height - padding.top - padding.bottom;
-
-    const validScores = monthRecords
-        .map(record => record.score)
-        .filter(Number.isFinite);
-
-    if (!validScores.length) {
-        return `
-            <div class="profile-empty">
-                ${escapeHTML(t("profile.chartNoData"))}
-            </div>
-        `;
-    }
-
-    const maxScore = Math.max(...validScores, 1);
-    const niceMax = Math.ceil(maxScore / 100000) * 100000 || maxScore;
-
-    const getX = index => {
-        if (monthRecords.length <= 1) {
-            return padding.left + chartWidth / 2;
-        }
-
-        return padding.left + (index / (monthRecords.length - 1)) * chartWidth;
-    };
-
-    const getY = score => {
-        return padding.top + (1 - score / niceMax) * chartHeight;
-    };
-
-    const points = monthRecords.map((record, index) => {
-        const hasScore = Number.isFinite(record.score);
-
-        return {
-            ...record,
-            index,
-            hasScore,
-            x: getX(index),
-            y: hasScore ? getY(record.score) : padding.top + chartHeight
-        };
-    });
-
-    const validPoints = points.filter(point => point.hasScore);
-
-    const linePath = validPoints
-        .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
-        .join(" ");
-
-    const areaPath = validPoints.length
-        ? `${linePath} L ${validPoints[validPoints.length - 1].x} ${padding.top + chartHeight} L ${validPoints[0].x} ${padding.top + chartHeight} Z`
+    const returnHTML = returning.length
+        ? `
+            <tr class="group-row"><th colspan="${columns.length}" scope="rowgroup">
+                ${escapeHTML(t("table.returnSection", { count: returning.length }))}
+            </th></tr>
+            ${returning.map(row => renderRow(columns, row, null, maxScore)).join("")}
+        `
         : "";
 
-    const gridLines = [0, 0.25, 0.5, 0.75, 1].map(ratio => {
-        const y = padding.top + ratio * chartHeight;
-        const value = Math.round(niceMax * (1 - ratio));
-
-        return `
-                <line class="chart-grid" x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}"></line>
-                <text class="chart-label" x="${padding.left - 12}" y="${y + 4}" text-anchor="end">
-                    ${formatCompactNumber(value)}
-                </text>
-            `;
-    }).join("");
-
-    const dots = points.map(point => renderChartPoint(point, height)).join("");
-
-    return `
-            <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHTML(t("profile.chartAria"))}">
-                <defs>
-                    <linearGradient id="scoreAreaGradient" x1="0" x2="0" y1="0" y2="1">
-                        <stop offset="0%" stop-color="rgba(37, 99, 235, 0.22)"></stop>
-                        <stop offset="100%" stop-color="rgba(14, 165, 233, 0.02)"></stop>
-                    </linearGradient>
-                </defs>
-
-                ${gridLines}
-
-                <line class="chart-axis" x1="${padding.left}" y1="${padding.top + chartHeight}" x2="${width - padding.right}" y2="${padding.top + chartHeight}"></line>
-                <line class="chart-axis" x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${padding.top + chartHeight}"></line>
-
-                ${areaPath ? `<path class="chart-area" d="${areaPath}"></path>` : ""}
-                ${linePath ? `<path class="chart-line" d="${linePath}"></path>` : ""}
-
-                ${dots}
-            </svg>
-        `;
+    els.tableBody.innerHTML = regularHTML + returnHTML;
 }
 
-function renderChartPoint(point, height) {
-    const label = escapeHTML(point.shortLabel);
-    const value = point.hasScore ? formatNumber(point.score) : t("common.noData");
+function getRowClass(row) {
+    const classes = ["data-row"];
 
-    if (!point.hasScore) {
-        return `
-        <circle class="chart-dot-empty" cx="${point.x}" cy="${point.y}" r="5">
-            <title>${label}：${escapeHTML(t("common.noData"))}</title>
-        </circle>
-        <text class="chart-label" x="${point.x}" y="${height - 24}" text-anchor="middle">${label}</text>
+    if (row.status === STATUS.ELDER) classes.push("row-elder");
+    if (row.status === STATUS.CAPTAIN) classes.push("row-captain");
+    if (row.status === STATUS.VICE_CAPTAIN) classes.push("row-vice");
+    if (row.isReturn) classes.push("row-return");
+    if (row.isHeavy) classes.push("row-heavy");
+
+    return classes.join(" ");
+}
+
+function renderRow(columns, row, rank, maxScore) {
+    return `
+        <tr class="${getRowClass(row)}">
+            ${columns.map(column => renderCell(column, row, rank, maxScore)).join("")}
+        </tr>
     `;
+}
+
+function cell(column, content, extraClass = "", title = "") {
+    return `
+        <td class="${column.className} ${extraClass}" data-label="${escapeHTML(column.label)}" ${title ? `title="${escapeHTML(title)}"` : ""}>
+            ${content}
+        </td>
+    `;
+}
+
+function renderCell(column, row, rank, maxScore) {
+    switch (column.key) {
+        case "rank":
+            return cell(column, rank ? `<span class="rank-badge">${rank}</span>` : `<span class="rank-badge rank-muted">–</span>`);
+
+        case "member":
+            return cell(column, renderMemberCell(row));
+
+        case "score":
+            return cell(column, `<strong>${escapeHTML(formatNumber(row.score))}</strong>`, "num");
+
+        case "invested":
+            return cell(column, escapeHTML(formatNumber(row.invested)), "num");
+
+        case "uninvested":
+            return cell(column, escapeHTML(formatNumber(row.uninvested)), `num ${row.isHeavy ? "is-heavy" : ""}`);
+
+        case "mix":
+            return cell(column, renderMixBar(row, maxScore));
+
+        case "contribution":
+            return cell(column, escapeHTML(formatPercent(row.contribution, 2)), "num", t("tip.contribution"));
+
+        case "investedRank":
+            return cell(column, renderRankShift(row), "num");
+
+        case "weeks":
+            return cell(column, escapeHTML(t("common.weeksOf", { seen: row.weeksSeen, total: buildMonthModel(state.period).totalWeeks })), "num");
+
+        case "delta":
+            return cell(column, renderDelta(row), "num");
+
+        case "target":
+            return cell(column, escapeHTML(getTargetText(row)));
+
+        case "bottom":
+            return cell(column, renderBottom(row));
+
+        case "status":
+            return cell(column, row.status ? renderBadge(row.status) : "—");
+
+        default:
+            return cell(column, "");
+    }
+}
+
+function renderMemberCell(row) {
+    const badges = [];
+
+    if (state.view === VIEW.MONTH && row.status && ![STATUS.PASS, STATUS.RETURN].includes(row.status)) {
+        badges.push(renderBadge(row.status));
+    }
+
+    if (row.isHeavy) {
+        badges.push(`
+            <span class="badge badge-heavy" title="${escapeHTML(t("flag.heavyTitle", { pct: formatPercent(row.uninvestedShare) }))}">
+                ${icon("alert")}${escapeHTML(t("flag.heavy"))}
+            </span>
+        `);
     }
 
     return `
-            <circle class="chart-dot" cx="${point.x}" cy="${point.y}" r="6">
-                <title>${label}：${value}</title>
-            </circle>
-            <text class="chart-value" x="${point.x}" y="${point.y - 12}" text-anchor="middle">${formatCompactNumber(point.score)}</text>
-            <text class="chart-label" x="${point.x}" y="${height - 24}" text-anchor="middle">${label}</text>
-        `;
-}
-
-function renderProfileTimeline(records) {
-    if (!records.length) {
-        return `
-            <div class="profile-empty">
-                ${escapeHTML(t("profile.timelineNoData"))}
+        <div class="member">
+            <span class="avatar avatar-sm" aria-hidden="true">${escapeHTML(getInitial(row.name))}</span>
+            <div class="member-text">
+                <button class="member-link" type="button" data-profile-key="${escapeHTML(row.key)}"
+                    title="${escapeHTML(t("profile.open", { name: row.name }))}">
+                    <span class="member-name">${escapeHTML(row.name || "-")}</span>
+                    ${row.lineName && row.lineName !== row.name ? `<span class="member-line">${escapeHTML(row.lineName)}</span>` : ""}
+                </button>
+                ${badges.length ? `<div class="member-badges">${badges.join("")}</div>` : ""}
             </div>
-        `;
-    }
-
-    return records
-        .slice()
-        .reverse()
-        .map(renderProfileTimelineRow)
-        .join("");
-}
-
-function formatOptionalNumber(value) {
-    return Number.isFinite(value) ? formatNumber(value) : "-";
-}
-
-function renderProfileTimelineRow(record) {
-    const activities = getRecordActivities(record);
-    const dynamicColumnCount = activities.length + 2;
-
-    const activityHTML = activities
-        .map(activity => `
-        <div class="profile-week-score">
-            <span class="profile-week-caption">${escapeHTML(activity.label)}</span>
-            ${formatOptionalNumber(activity.value)}
         </div>
-    `)
-        .join("");
-
-    return `
-            <div class="profile-week-row" style="--profile-week-columns: ${dynamicColumnCount}">
-                <div>
-                    <div class="profile-week-label">${escapeHTML(record.weekLabel)}</div>
-                    <div class="profile-week-small">${escapeHTML(record.startDate || t("common.notProvidedDate"))}</div>
-                </div>
-
-                <div class="profile-week-score">
-                    <span class="profile-week-caption">${escapeHTML(t("profile.weeklyTotal"))}</span>
-                    ${formatOptionalNumber(record.score)}
-                </div>
-
-                ${activityHTML}
-
-                <div class="profile-week-score">
-                    <span class="profile-week-caption">${escapeHTML(t("profile.status"))}</span>
-                    <span class="badge ${getBadgeClass(record.status)}">${escapeHTML(tx(record.status) || "-")}</span>
-                </div>
-            </div>
-        `;
+    `;
 }
 
-function renderMemberProfile(profile) {
-    const summary = getProfileSummary(profile);
+function getInitial(name) {
+    return Array.from(cleanText(name))[0]?.toUpperCase() || "?";
+}
 
-    if (!profile.records.length) {
-        renderEmptyMemberProfile();
+function renderBadge(status) {
+    const classMap = {
+        [STATUS.PASS]: "badge-pass",
+        [STATUS.OUT]: "badge-out",
+        [STATUS.RETURN]: "badge-return",
+        [STATUS.ELDER]: "badge-elder",
+        [STATUS.CAPTAIN]: "badge-captain",
+        [STATUS.VICE_CAPTAIN]: "badge-vice",
+        [STATUS.DOWNGRADE]: "badge-out"
+    };
 
-        return;
+    return `<span class="badge ${classMap[status] || "badge-other"}">${escapeHTML(statusLabel(status))}</span>`;
+}
+
+/**
+ * 投入 / 未投入堆疊條：長度依清單內最高總分縮放（看量），
+ * 兩段比例看組成（看是否由未投入撐起）。
+ */
+function renderMixBar(row, maxScore) {
+    const scale = maxScore > 0 ? row.score / maxScore : 0;
+
+    if (row.invested === null) {
+        return `
+            <div class="mix" title="${escapeHTML(t("common.noSplit"))}">
+                <div class="mix-track">
+                    <span class="mix-seg mix-unknown" style="width:${scale * 100}%"></span>
+                </div>
+                <span class="mix-label">${escapeHTML(t("common.noSplitShort"))}</span>
+            </div>
+        `;
     }
 
-    const latestRecord = summary.latestRecord;
-    const bestRecord = summary.bestRecord;
-
-    const displayName = latestRecord.cm || latestRecord.lineName || t("common.unnamedMember");
-    const isLatestElder = cleanText(latestRecord.status) === STATUS.ELDER;
-
-    if (els.profileDialog) {
-        els.profileDialog.classList.toggle("profile-elder", isLatestElder);
-    }
-
-    els.profileName.textContent = displayName;
-    els.profileMeta.textContent = t("profile.weeksAppearedMeta", {
-        weeks: summary.totalWeeks,
-        status: tx(latestRecord.status) || t("profile.latestStatusUnmarked"),
-        month: profile.selectedMonthLabel
+    const investedWidth = row.score > 0 ? (row.invested / row.score) * scale * 100 : 0;
+    const uninvestedWidth = row.score > 0 ? (row.uninvested / row.score) * scale * 100 : 0;
+    const tip = t("tip.mix", {
+        invested: formatNumber(row.invested),
+        investedPct: formatPercent(row.investedShare),
+        uninvested: formatNumber(row.uninvested),
+        uninvestedPct: formatPercent(row.uninvestedShare)
     });
 
-    els.profileBody.innerHTML = `
-            ${isLatestElder ? renderElderProfileBanner() : ""}
-
-            <div class="profile-grid">
-                <article class="profile-stat">
-                    <div class="profile-stat-label">${escapeHTML(t("profile.bestScore"))}</div>
-                    <div class="profile-stat-value">${formatNumber(bestRecord.score)}</div>
-                    <div class="profile-stat-note">${escapeHTML(bestRecord.weekLabel)}</div>
-                </article>
-
-                <article class="profile-stat">
-                    <div class="profile-stat-label">${escapeHTML(t("profile.averageScore"))}</div>
-                    <div class="profile-stat-value">${formatNumber(summary.averageScore)}</div>
-                    <div class="profile-stat-note">${escapeHTML(t("profile.averageNote"))}</div>
-                </article>
-
-                <article class="profile-stat">
-                    <div class="profile-stat-label">${escapeHTML(t("profile.monthTotal", { month: profile.selectedMonthLabel }))}</div>
-                    <div class="profile-stat-value">${formatNumber(summary.monthTotal)}</div>
-                    <div class="profile-stat-note">${escapeHTML(t("profile.monthTotalNote"))}</div>
-                </article>
-
-                <article class="profile-stat">
-                    <div class="profile-stat-label">${escapeHTML(t("profile.monthTrend"))}</div>
-                    <div class="profile-stat-value">${escapeHTML(formatDelta(summary.monthDelta))}</div>
-                    <div class="profile-stat-note">${escapeHTML(t("profile.monthTrendNote"))}</div>
-                </article>
-
-                <article class="profile-stat">
-                    <div class="profile-stat-label">${escapeHTML(t("profile.monthContribution", { month: profile.selectedMonthLabel }))}</div>
-                    <div class="profile-stat-value">${escapeHTML(formatPercent(summary.monthContribution))}</div>
-                    <div class="profile-stat-note">${escapeHTML(t("profile.monthContributionNote"))}</div>
-                </article>
-
-            </div>
-
-            <section class="profile-section">
-                <div class="profile-section-head">
-                    <h3 class="profile-section-title">${escapeHTML(t("profile.chartTitle", { month: profile.selectedMonthLabel }))}</h3>
-                    <span class="profile-section-subtitle">${escapeHTML(t("profile.chartSubtitle"))}</span>
-                </div>
-
-                <div class="profile-chart">
-                    ${renderProfileChart(profile.monthRecords)}
-                </div>
-            </section>
-
-            <section class="profile-section">
-                <div class="profile-section-head">
-                    <h3 class="profile-section-title">${escapeHTML(t("profile.timelineTitle"))}</h3>
-                    <span class="profile-section-subtitle">${escapeHTML(t("profile.timelineSubtitle"))}</span>
-                </div>
-
-                <div class="profile-timeline">
-                    ${renderProfileTimeline(profile.records)}
-                </div>
-            </section>
-        `;
-}
-
-function renderEmptyMemberProfile() {
-    els.profileName.textContent = t("profile.emptyTitle");
-    els.profileMeta.textContent = t("profile.emptyMeta");
-    els.profileBody.innerHTML = `
-        <div class="profile-empty">
-            ${escapeHTML(t("profile.emptyBody"))}
-        </div>
-    `;
-}
-
-function renderElderProfileBanner() {
     return `
-        <div class="elder-profile-banner">
-            <div class="elder-profile-icon" aria-hidden="true">♕</div>
-
-            <div>
-                <div class="elder-profile-title">${escapeHTML(t("profile.elderBannerTitle"))}</div>
-                <div class="elder-profile-text">
-                    ${escapeHTML(t("profile.elderBannerText"))}
-                </div>
+        <div class="mix" title="${escapeHTML(tip)}">
+            <div class="mix-track">
+                ${investedWidth > 0 ? `<span class="mix-seg mix-invested" style="width:${investedWidth}%"></span>` : ""}
+                ${uninvestedWidth > 0 ? `<span class="mix-seg mix-uninvested" style="width:${uninvestedWidth}%"></span>` : ""}
             </div>
-
-            <div class="elder-profile-tag">
-                ${escapeHTML(t("profile.elderReward"))}
-            </div>
+            <span class="mix-label">${escapeHTML(t("tip.investedShort", { pct: formatPercent(row.investedShare, 0) }))}</span>
         </div>
     `;
 }
 
-/* ================================
-   Modal
-================================ */
+function renderRankShift(row) {
+    if (row.isReturn) return `<span class="muted">${escapeHTML(t("common.notRanked"))}</span>`;
+    if (!Number.isFinite(row.investedRank)) return "—";
 
-function openProfileModal() {
-    els.profileModal.hidden = false;
-    document.body.classList.add("profile-open");
+    const shift = row.rankShift;
+    const title = t("tip.rankShift", { total: row.totalRank, invested: row.investedRank });
+    let shiftHTML = `<span class="shift shift-same">${icon("minus")}</span>`;
+
+    if (shift > 0) shiftHTML = `<span class="shift shift-up">${icon("arrowUp")}${shift}</span>`;
+    if (shift < 0) shiftHTML = `<span class="shift shift-down">${icon("arrowDown")}${Math.abs(shift)}</span>`;
+
+    return `<span class="rank-shift" title="${escapeHTML(title)}">#${row.investedRank} ${shiftHTML}</span>`;
 }
 
-function closeProfileModal() {
-    els.profileModal.hidden = true;
-    document.body.classList.remove("profile-open");
+function renderDelta(row) {
+    if (row.isReturn) return `<span class="muted">${escapeHTML(t("common.notCalculated"))}</span>`;
 
-    if (els.profileDialog) {
-        els.profileDialog.classList.remove("profile-elder");
+    if (!Number.isFinite(row.delta)) {
+        return `<span class="trend trend-new">${escapeHTML(t("trend.new"))}</span>`;
     }
-}
 
-async function openMemberProfile(profileKeyValue) {
-    const initialKeys = String(profileKeyValue || "")
-        .split("|")
-        .map(key => key.trim())
-        .filter(Boolean);
+    const title = t("trend.lastWeek", { score: formatNumber(row.previousScore) });
+    const [trendClass, iconName] =
+        row.delta > 0 ? ["trend-up", "trendingUp"] : row.delta < 0 ? ["trend-down", "trendingDown"] : ["trend-same", "minus"];
 
-    if (!initialKeys.length) return;
-
-    openProfileModal();
-
-    els.profileName.textContent = t("profile.title");
-    els.profileMeta.textContent = t("profile.analyzing");
-    els.profileBody.innerHTML = `
-        <div class="profile-loading">
-            ${escapeHTML(t("profile.loadingDetail"))}
-        </div>
+    return `
+        <span class="trend ${trendClass}" title="${escapeHTML(title)}">
+            ${icon(iconName)}${escapeHTML(formatNumber(Math.abs(row.delta)))}
+        </span>
     `;
+}
 
-    try {
-        const profile = await buildMemberProfile(initialKeys);
+function getTargetText(row) {
+    if (row.invested !== null) {
+        if (row.invested >= CONFIG.ELDER_SCORE) return t("target.elderReached");
+        if (row.invested >= CONFIG.PASS_SCORE) return t("target.toElder", { value: formatNumber(CONFIG.ELDER_SCORE - row.invested) });
 
-        renderMemberProfile(profile);
-    } catch (error) {
-        console.error(error);
-
-        els.profileName.textContent = t("profile.readFailedTitle");
-        els.profileMeta.textContent = t("profile.readFailedMeta");
-        els.profileBody.innerHTML = `
-            <div class="profile-empty">
-                ${escapeHTML(t("profile.readFailedBody"))}
-            </div>
-        `;
+        return t("target.toPass", { value: formatNumber(CONFIG.PASS_SCORE - row.invested) });
     }
+
+    // 舊資料：週表的距離欄位本來就是以投入分計算
+    if (row.passDistanceRaw) return t("target.toPass", { value: formatNumber(parseNumber(row.passDistanceRaw)) });
+    if (row.elderDistanceRaw) return t("target.toElder", { value: formatNumber(parseNumber(row.elderDistanceRaw)) });
+
+    return t("target.elderReached");
+}
+
+function renderBottom(row) {
+    if (!isBottomEligible(row)) {
+        return `<span class="muted">${escapeHTML(t("common.notCalculated"))}</span>`;
+    }
+
+    if (!row.bottomWeeks) return `<span class="muted">—</span>`;
+
+    const always = row.bottomEligibleWeeks >= CONFIG.HISTORY_MIN_WEEKS && row.bottomWeeks === row.bottomEligibleWeeks;
+    const key = always ? "bottom.always" : "bottom.ever";
+
+    return `
+        <span class="pill ${always ? "pill-risk" : "pill-watch"}">
+            ${escapeHTML(t(key, { count: row.bottomWeeks, total: row.bottomEligibleWeeks }))}
+        </span>
+    `;
 }
 
 /* ================================
-   App Loading
+   Render: All
 ================================ */
 
-async function loadWeek(weekId) {
-    const week = findWeekById(weekId);
+function renderAll() {
+    ensureValidPeriod();
+    writeHash();
 
-    state.currentWeek = week;
-    state.hasRenderedTableOnce = false;
+    let scope;
+    let rows;
+    let title;
 
-    showLoading(t("common.dataLoading"));
+    if (state.view === VIEW.MONTH) {
+        const result = getMonthRows();
 
-    const rows = cloneRows(await getWeekRows(week));
-    const previousRows = await getPreviousRows(week.id);
+        rows = result.rows;
+        scope = { ...result.month, rows };
+        title = t("table.titleMonth", { month: formatMonthLabel(result.month.monthKey) });
+        renderNotice(result.month.missingSplitWeeks);
+        renderPodium(result.month);
+    } else {
+        const result = getWeekRows();
 
-    showLoading(t("loadingSteps.bottomFive"));
-    await loadHistoryBottomFive(week);
+        rows = result.rows;
+        scope = { ...result.model, rows };
+        title = t("table.titleWeek", { week: result.model.week.label || result.model.week.id });
+        renderNotice(result.model.hasSplit ? 0 : 1);
+        renderPodium(null);
+    }
 
-    showLoading(t("loadingSteps.monthlyTotal"));
-    await loadMonthlyPersonalTotals(week);
+    renderStats(scope);
 
-    showLoading(t("loadingSteps.monthlyContribution"));
-    await loadMonthlyPersonalContributions(week);
+    const columns = getColumns();
+    const visible = sortRows(rows.filter(row => matchesFilter(row) && matchesKeyword(row)));
+    const maxScore = Math.max(0, ...rows.map(row => row.score));
 
-    showLoading(t("loadingSteps.achievements"));
-    await loadMonthlyAchievements(week);
+    els.tableTitle.textContent = title;
+    els.resultHint.textContent = t("table.hint", {
+        shown: visible.length,
+        total: rows.length,
+        returning: rows.filter(row => row.isReturn).length
+    });
 
-    state.currentRows = prepareCurrentRows(rows, previousRows);
-
-    renderHead();
-    renderStatusFilter(state.currentRows);
-    renderAchievementsPodium();
-    renderStats(state.currentRows);
-    renderBody();
+    renderHead(columns);
+    renderBody(columns, visible, maxScore);
 }
 
 function renderError(error) {
     console.error(error);
 
-    const achievementsSection = ensureAchievementsSection();
-
-    if (achievementsSection) {
-        achievementsSection.innerHTML = "";
-    }
-
     els.stats.innerHTML = "";
-    els.resultHint.textContent = t("error.dataReadFailed");
+    els.podium.innerHTML = "";
     els.tableHead.innerHTML = "";
-
+    els.resultHint.textContent = t("error.dataReadFailed");
     els.tableBody.innerHTML = `
-        <tr>
-            <td class="empty-state" colspan="${DISPLAY_HEADERS.length}">
-                ${t("error.dataReadFailedBody")}
-            </td>
-        </tr>
+        <tr><td class="empty-state">${escapeHTML(t("error.dataReadFailedBody"))}</td></tr>
     `;
 }
 
-async function initApp() {
-    try {
-        await loadI18n();
+function renderLoading() {
+    els.tableBody.innerHTML = `
+        <tr><td class="empty-state"><span class="loader" aria-hidden="true"></span>${escapeHTML(t("common.loading"))}</td></tr>
+    `;
+}
 
-        await loadUpdatedAt();
+/* ================================
+   Profile
+================================ */
 
-        renderHead();
-        renderLoading(t("common.readingWeeks"));
+function getMemberHistory(key) {
+    // 舊到新
+    return state.weeks
+        .slice()
+        .reverse()
+        .map(week => {
+            const model = state.weekData.get(week.id);
+            const person = model?.byKey.get(key);
 
-        await loadWeeks();
+            return person ? { model, person } : null;
+        })
+        .filter(Boolean);
+}
 
-        if (!state.weeks.length) {
-            throw new Error(t("error.weeksCsvEmpty"));
+function renderProfile(key) {
+    const history = getMemberHistory(key);
+
+    if (!history.length) {
+        els.profileName.textContent = t("profile.emptyTitle");
+        els.profileAvatar.textContent = "?";
+        els.profileMeta.textContent = "";
+        els.profileBody.innerHTML = `<div class="empty-state">${escapeHTML(t("profile.emptyBody"))}</div>`;
+        return;
+    }
+
+    const latest = history[history.length - 1].person;
+    const monthKey =
+        state.view === VIEW.MONTH ? state.period : state.weekData.get(state.period)?.monthKey;
+    const month = buildMonthModel(monthKey);
+    const member = month.byKey.get(key);
+
+    els.profileDialog.classList.toggle("is-elder", latest.status === STATUS.ELDER);
+    els.profileName.textContent = latest.cm;
+    els.profileAvatar.textContent = getInitial(latest.cm);
+    els.profileMeta.textContent = t("profile.meta", {
+        line: latest.lineName || "-",
+        weeks: history.length,
+        status: latest.status ? statusLabel(latest.status) : t("common.none")
+    });
+
+    // 所有月份彙總（舊到新）
+    const monthSeries = state.months
+        .slice()
+        .reverse()
+        .map(monthKeyItem => {
+            const item = buildMonthModel(monthKeyItem).byKey.get(key);
+
+            return {
+                label: formatMonthShort(monthKeyItem),
+                fullLabel: formatMonthLabel(monthKeyItem),
+                score: item ? item.score : null,
+                invested: item ? item.invested : null,
+                uninvested: item ? item.uninvested : null,
+                contribution: item ? item.contribution : null,
+                weeksSeen: item ? item.weeksSeen : 0
+            };
+        })
+        .filter(item => item.score !== null);
+
+    const weekSeries = month.weekModels.map(model => {
+        const person = model.byKey.get(key);
+
+        return {
+            label: getWeekShortLabel(model.week),
+            fullLabel: model.week.label || model.week.id,
+            score: person ? person.score : null,
+            invested: person ? person.invested : null,
+            uninvested: person ? person.uninvested : null,
+            contribution: person ? person.contribution : null
+        };
+    });
+
+    const monthLabel = formatMonthLabel(monthKey);
+
+    els.profileBody.innerHTML = `
+        ${latest.status === STATUS.ELDER ? `
+            <div class="elder-banner">
+                <span class="icon-chip" aria-hidden="true">${icon("crown")}</span>
+                <div>
+                    <strong>${escapeHTML(t("profile.elderTitle"))}</strong>
+                    <p>${escapeHTML(t("profile.elderText"))}</p>
+                </div>
+            </div>` : ""}
+
+        <section class="profile-section">
+            <h3 class="section-title">${escapeHTML(t("profile.monthSummary", { month: monthLabel }))}</h3>
+            ${member ? renderProfileMonthTiles(member, month) : `<div class="empty-state">${escapeHTML(t("profile.noMonthData", { month: monthLabel }))}</div>`}
+        </section>
+
+        <section class="profile-section">
+            <div class="section-head">
+                <h3 class="section-title">${escapeHTML(t("profile.monthlyChartTitle"))}</h3>
+                ${chartLegend()}
+            </div>
+            <div class="chart-box">${renderStackedColumns(monthSeries, t("profile.monthlyChartAria"))}</div>
+        </section>
+
+        <section class="profile-section">
+            <div class="section-head">
+                <h3 class="section-title">${escapeHTML(t("profile.weeklyChartTitle", { month: monthLabel }))}</h3>
+                ${chartLegend()}
+            </div>
+            <div class="chart-box">${renderStackedColumns(weekSeries, t("profile.weeklyChartAria", { month: monthLabel }))}</div>
+        </section>
+
+        <section class="profile-section">
+            <h3 class="section-title">${escapeHTML(t("profile.timelineTitle"))}</h3>
+            ${renderProfileTimeline(history)}
+        </section>
+    `;
+}
+
+function renderProfileMonthTiles(member, month) {
+    const tiles = [
+        { label: t("col.monthScore"), value: formatNumber(member.score) },
+        { label: t("metric.invested"), value: formatNumber(member.invested), swatch: "invested", note: Number.isFinite(member.investedShare) ? formatPercent(member.investedShare) : t("common.noSplitShort") },
+        { label: t("metric.uninvested"), value: formatNumber(member.uninvested), swatch: "uninvested", note: Number.isFinite(member.uninvestedShare) ? formatPercent(member.uninvestedShare) : t("common.noSplitShort") },
+        { label: t("col.contribution"), value: formatPercent(member.contribution, 2), note: t("profile.contributionNote") },
+        {
+            label: t("profile.rank"),
+            value: member.isReturn
+                ? t("common.notRanked")
+                : `#${member.totalRank ?? "—"} / #${member.investedRank ?? "—"}`,
+            note: t("profile.rankNote")
+        },
+        { label: t("col.weeks"), value: t("common.weeksOf", { seen: member.weeksSeen, total: month.totalWeeks }) }
+    ];
+
+    return `
+        ${member.isHeavy ? `<div class="flag-banner">${escapeHTML(t("flag.heavyTitle", { pct: formatPercent(member.uninvestedShare) }))}</div>` : ""}
+        <div class="tile-grid">
+            ${tiles.map(tile => `
+                <div class="tile">
+                    <div class="tile-label">
+                        ${tile.swatch ? `<i class="swatch swatch-${tile.swatch}" aria-hidden="true"></i>` : ""}
+                        ${escapeHTML(tile.label)}
+                    </div>
+                    <div class="tile-value">${escapeHTML(tile.value)}</div>
+                    ${tile.note ? `<div class="tile-note">${escapeHTML(tile.note)}</div>` : ""}
+                </div>
+            `).join("")}
+        </div>
+    `;
+}
+
+function chartLegend() {
+    return `
+        <div class="legend" aria-hidden="true">
+            <span class="legend-item"><i class="swatch swatch-invested"></i>${escapeHTML(t("metric.invested"))}</span>
+            <span class="legend-item"><i class="swatch swatch-uninvested"></i>${escapeHTML(t("metric.uninvested"))}</span>
+        </div>
+    `;
+}
+
+function niceMax(value) {
+    if (value <= 0) return 1;
+
+    const exponent = 10 ** Math.floor(Math.log10(value));
+    const fraction = value / exponent;
+    const nice = fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 2.5 ? 2.5 : fraction <= 5 ? 5 : 10;
+
+    return nice * exponent;
+}
+
+/** 圓角頂端、平底的長條路徑。 */
+/** 圓角膠囊（兩端全圓）路徑，與參考圖的膠囊直條一致。 */
+function capsulePath(x, y, width, height) {
+    if (height <= 0) return "";
+
+    const r = Math.min(width / 2, height / 2);
+
+    return [
+        `M ${x} ${y + r}`,
+        `A ${r} ${r} 0 0 1 ${x + width} ${y + r}`,
+        `L ${x + width} ${y + height - r}`,
+        `A ${r} ${r} 0 0 1 ${x} ${y + height - r}`,
+        "Z"
+    ].join(" ");
+}
+
+/**
+ * 投入（下，深色）/ 未投入（上，萊姆色）堆疊膠囊直條圖。
+ * 單一 y 軸，段與段之間 2px 間隔；無資料的週別以虛線膠囊表示。
+ */
+function renderStackedColumns(series, ariaLabel) {
+    const valid = series.filter(item => Number.isFinite(item.score));
+
+    if (!valid.length) {
+        return `<div class="empty-state">${escapeHTML(t("profile.chartNoData"))}</div>`;
+    }
+
+    // 依實際容器寬度繪製，避免手機上被等比縮小後文字過小
+    const available = els.profileBody.clientWidth - 64;
+    const width = Math.round(Math.min(720, Math.max(300, available || 720)));
+    const height = width < 480 ? 210 : 250;
+    const pad = { top: 16, right: 12, bottom: 34, left: 52 };
+    const plotWidth = width - pad.left - pad.right;
+    const plotHeight = height - pad.top - pad.bottom;
+    const yMax = niceMax(Math.max(...valid.map(item => item.score)));
+    const band = plotWidth / series.length;
+    const barWidth = Math.max(10, Math.min(28, band * 0.5));
+    const gap = 2;
+    const y = value => pad.top + plotHeight - (value / yMax) * plotHeight;
+    const baseline = y(0);
+
+    const ticks = [0, 0.25, 0.5, 0.75, 1].map(ratioValue => {
+        const value = yMax * ratioValue;
+        const ty = y(value);
+
+        return `
+            <line class="chart-grid" x1="${pad.left}" x2="${width - pad.right}" y1="${ty}" y2="${ty}"></line>
+            <text class="chart-tick" x="${pad.left - 8}" y="${ty + 4}" text-anchor="end">${escapeHTML(formatCompact(value))}</text>
+        `;
+    }).join("");
+
+    const labelEvery = Math.ceil(series.length / Math.max(1, Math.floor(plotWidth / 64)));
+
+    const bars = series.map((item, index) => {
+        const cx = pad.left + band * index + band / 2;
+        const x = cx - barWidth / 2;
+        const label = index % labelEvery === 0 || index === series.length - 1
+            ? `<text class="chart-tick" x="${cx}" y="${height - 12}" text-anchor="middle">${escapeHTML(item.label)}</text>`
+            : "";
+
+        if (!Number.isFinite(item.score)) {
+            return `
+                <g class="bar-group">
+                    <rect class="bar-missing" x="${x}" y="${pad.top + plotHeight * 0.1}" width="${barWidth}" height="${plotHeight * 0.9}" rx="${barWidth / 2}"></rect>
+                    <rect class="bar-hit" x="${pad.left + band * index}" y="${pad.top}" width="${band}" height="${plotHeight}"
+                        tabindex="0" data-tip="${escapeHTML(`${item.fullLabel}\n${t("common.noRecord")}`)}" aria-label="${escapeHTML(`${item.fullLabel} ${t("common.noRecord")}`)}"></rect>
+                    ${label}
+                </g>
+            `;
         }
 
-        await loadWeek(state.weeks[0].id);
-    } catch (error) {
-        renderError(error);
+        const tipLines = [
+            item.fullLabel,
+            `${t("metric.score")}：${formatNumber(item.score)}`,
+            `${t("metric.invested")}：${formatNumber(item.invested)}`,
+            `${t("metric.uninvested")}：${formatNumber(item.uninvested)}`
+        ];
+
+        if (Number.isFinite(item.contribution)) {
+            tipLines.push(`${t("col.contribution")}：${formatPercent(item.contribution, 2)}`);
+        }
+
+        let shapes = "";
+
+        if (item.invested === null) {
+            shapes = `<path class="bar-unknown" d="${capsulePath(x, y(item.score), barWidth, baseline - y(item.score))}"></path>`;
+        } else {
+            const investedTop = y(item.invested);
+            const investedHeight = baseline - investedTop;
+            const uninvestedTop = y(item.score);
+            const uninvestedHeight = Math.max(0, investedTop - uninvestedTop - (investedHeight > 0 ? gap : 0));
+
+            shapes = `
+                ${item.uninvested > 0 && uninvestedHeight > 0
+                    ? `<path class="bar-uninvested" d="${capsulePath(x, uninvestedTop, barWidth, uninvestedHeight)}"></path>`
+                    : ""}
+                ${investedHeight > 0
+                    ? `<path class="bar-invested" d="${capsulePath(x, investedTop, barWidth, investedHeight)}"></path>`
+                    : ""}
+            `;
+        }
+
+        return `
+            <g class="bar-group">
+                ${shapes}
+                <rect class="bar-hit" x="${pad.left + band * index}" y="${pad.top}" width="${band}" height="${plotHeight}"
+                    tabindex="0" data-tip="${escapeHTML(tipLines.join("\n"))}" aria-label="${escapeHTML(tipLines.join("，"))}"></rect>
+                ${label}
+            </g>
+        `;
+    }).join("");
+
+    return `
+        <svg class="chart" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="${escapeHTML(ariaLabel)}">
+            ${ticks}
+            ${bars}
+        </svg>
+    `;
+}
+
+function renderProfileTimeline(history) {
+    const rows = history
+        .slice()
+        .reverse()
+        .map(({ model, person }) => {
+            const activities = person.activities
+                .filter(activity => activity.total || activity.invested || activity.uninvested)
+                .map(activity => {
+                    const split = activity.invested !== null
+                        ? ` (${formatNumber(activity.invested)} / ${formatNumber(activity.uninvested)})`
+                        : "";
+
+                    return `${t("profile.activity", { number: activity.number })} ${formatNumber(activity.total)}${split}`;
+                })
+                .join("｜");
+
+            return `
+                <tr>
+                    <td data-label="${escapeHTML(t("profile.week"))}">
+                        <div class="timeline-week">${escapeHTML(model.week.label || model.week.id)}</div>
+                        ${activities ? `<div class="timeline-sub">${escapeHTML(activities)}</div>` : ""}
+                    </td>
+                    <td class="num" data-label="${escapeHTML(t("metric.invested"))}">${escapeHTML(formatNumber(person.invested))}</td>
+                    <td class="num" data-label="${escapeHTML(t("metric.uninvested"))}">${escapeHTML(formatNumber(person.uninvested))}</td>
+                    <td class="num" data-label="${escapeHTML(t("metric.score"))}"><strong>${escapeHTML(formatNumber(person.score))}</strong></td>
+                    <td class="num" data-label="${escapeHTML(t("col.contribution"))}">${escapeHTML(formatPercent(person.contribution, 2))}</td>
+                    <td data-label="${escapeHTML(t("col.status"))}">${person.status ? renderBadge(person.status) : "—"}</td>
+                </tr>
+            `;
+        })
+        .join("");
+
+    return `
+        <div class="table-wrap">
+            <table class="timeline-table">
+                <thead>
+                    <tr>
+                        <th scope="col">${escapeHTML(t("profile.week"))}</th>
+                        <th scope="col" class="col-num">${escapeHTML(t("metric.invested"))}</th>
+                        <th scope="col" class="col-num">${escapeHTML(t("metric.uninvested"))}</th>
+                        <th scope="col" class="col-num">${escapeHTML(t("metric.score"))}</th>
+                        <th scope="col" class="col-num">${escapeHTML(t("col.contribution"))}</th>
+                        <th scope="col">${escapeHTML(t("col.status"))}</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        </div>
+        <p class="panel-hint">${escapeHTML(t("profile.activityHint"))}</p>
+    `;
+}
+
+let lastFocusedElement = null;
+
+function openProfile(key) {
+    if (!key) return;
+
+    state.profileKey = key;
+    lastFocusedElement = document.activeElement;
+
+    els.profileModal.hidden = false;
+    document.body.classList.add("modal-open");
+
+    renderProfile(key);
+
+    els.profileDialog.scrollTop = 0;
+    els.profileDialog.focus();
+}
+
+function closeProfile() {
+    els.profileModal.hidden = true;
+    document.body.classList.remove("modal-open");
+    state.profileKey = null;
+    hideTooltip();
+
+    if (lastFocusedElement && typeof lastFocusedElement.focus === "function") {
+        lastFocusedElement.focus();
     }
 }
 
+/* ================================
+   Chart Tooltip
+================================ */
+
+function showTooltip(target, clientX, clientY) {
+    const text = target.dataset.tip;
+
+    if (!text) return;
+
+    els.tooltip.textContent = text;
+    els.tooltip.hidden = false;
+
+    const rect = els.tooltip.getBoundingClientRect();
+    const margin = 12;
+    let left = clientX + margin;
+    let top = clientY - rect.height - margin;
+
+    if (left + rect.width > window.innerWidth - 8) left = clientX - rect.width - margin;
+    if (top < 8) top = clientY + margin;
+
+    els.tooltip.style.left = `${Math.max(8, left)}px`;
+    els.tooltip.style.top = `${top}px`;
+}
+
+function hideTooltip() {
+    els.tooltip.hidden = true;
+}
 
 /* ================================
    Events
 ================================ */
 
-const debouncedRenderBody = debounce(renderBody, 180);
+function bindEvents() {
+    els.languageSelect.addEventListener("change", event => setLocale(event.target.value));
 
-els.weekSelect.addEventListener("change", async event => {
+    document.addEventListener("click", event => {
+        const button = event.target.closest("#viewTabs [data-view], #railNav [data-view]");
+
+        if (!button || button.dataset.view === state.view) return;
+
+        state.view = button.dataset.view;
+        state.filter = FILTER.ALL;
+        state.sort = { key: SORT_DEFAULT[state.view], dir: SORT_DEFAULT[state.view] === "sheetOrder" ? "asc" : "desc" };
+        ensureValidPeriod();
+        renderControls();
+        renderAll();
+    });
+
+    document.querySelectorAll("[data-scroll]").forEach(link => {
+        link.addEventListener("click", event => {
+            event.preventDefault();
+            document.getElementById(link.getAttribute("href").slice(1))?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+    });
+
+    els.stats.addEventListener("click", event => {
+        const shortcut = event.target.closest("[data-filter-shortcut]");
+
+        if (!shortcut) return;
+
+        state.filter = shortcut.dataset.filterShortcut;
+        renderControls();
+        renderAll();
+        document.getElementById("tableAnchor").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    els.periodSelect.addEventListener("change", event => {
+        state.period = event.target.value;
+        renderControls();
+        renderAll();
+    });
+
+    els.filterSelect.addEventListener("change", event => {
+        state.filter = event.target.value;
+        renderAll();
+    });
+
+    els.sortSelect.addEventListener("change", event => {
+        state.sort = { key: event.target.value, dir: event.target.value === "sheetOrder" ? "asc" : "desc" };
+        renderAll();
+    });
+
+    els.searchInput.addEventListener("input", debounce(event => {
+        state.keyword = event.target.value;
+        renderAll();
+    }));
+
+    els.tableHead.addEventListener("click", event => {
+        const button = event.target.closest("[data-sort]");
+
+        if (!button) return;
+
+        const key = button.dataset.sort;
+
+        state.sort = state.sort.key === key
+            ? { key, dir: state.sort.dir === "desc" ? "asc" : "desc" }
+            : { key, dir: "desc" };
+
+        els.sortSelect.value = key;
+        renderAll();
+    });
+
+    document.addEventListener("click", event => {
+        const trigger = event.target.closest("[data-profile-key]");
+
+        if (trigger) {
+            openProfile(trigger.dataset.profileKey);
+            return;
+        }
+
+        if (event.target.closest("[data-modal-close]")) {
+            closeProfile();
+        }
+    });
+
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && !els.profileModal.hidden) {
+            closeProfile();
+        }
+    });
+
+    els.profileBody.addEventListener("pointermove", event => {
+        const target = event.target.closest("[data-tip]");
+
+        if (target) showTooltip(target, event.clientX, event.clientY);
+        else hideTooltip();
+    });
+
+    els.profileBody.addEventListener("pointerleave", hideTooltip);
+
+    els.profileBody.addEventListener("focusin", event => {
+        const target = event.target.closest("[data-tip]");
+
+        if (!target) return;
+
+        const rect = target.getBoundingClientRect();
+
+        showTooltip(target, rect.left + rect.width / 2, rect.top + rect.height / 3);
+    });
+
+    els.profileBody.addEventListener("focusout", hideTooltip);
+
+    window.addEventListener("hashchange", () => {
+        readHash();
+        ensureValidPeriod();
+        renderControls();
+        renderAll();
+    });
+}
+
+/* ================================
+   Init
+================================ */
+
+async function initApp() {
+    hydrateIcons();
+    bindEvents();
+
     try {
-        els.searchInput.value = "";
-        els.statusFilter.value = STATUS.ALL;
+        await loadI18n();
+        renderLoading();
 
-        await loadWeek(event.target.value);
+        await Promise.all([loadUpdatedAt(), loadWeeks()]);
+
+        renderUpdatedAt();
+        readHash();
+
+        if (!state.period) {
+            state.period = state.view === VIEW.MONTH ? state.months[0] : state.weeks[0].id;
+        }
+
+        ensureValidPeriod();
+        renderControls();
+        renderAll();
     } catch (error) {
         renderError(error);
     }
-});
-
-els.searchInput.addEventListener("input", debouncedRenderBody);
-els.statusFilter.addEventListener("change", renderBody);
-els.languageSelect.addEventListener("change", event => {
-    setLocale(event.target.value);
-});
-
-document.addEventListener("click", event => {
-    const button = event.target.closest("[data-profile-keys]");
-
-    if (!button) return;
-
-    openMemberProfile(button.dataset.profileKeys || "");
-});
-
-els.profileClose.addEventListener("click", closeProfileModal);
-
-els.profileModal.addEventListener("click", event => {
-    if (event.target.matches("[data-profile-close]")) {
-        closeProfileModal();
-    }
-});
-
-document.addEventListener("keydown", event => {
-    if (event.key === "Escape" && !els.profileModal.hidden) {
-        closeProfileModal();
-    }
-});
+}
 
 initApp();

@@ -1,641 +1,590 @@
 {
-    "zh-Hant": {
-        "page": {
-            "title": "每週成績總覽",
-            "htmlLang": "zh-Hant"
-        },
-        "hero": {
-            "eyebrow": "Weekly Score Dashboard",
-            "title": "Coin999-長長久久 隊伍 每週成績總覽",
-            "subtitle": "檢視每週活動分數、與上週比較，以及本月最後五名。",
-            "updatedAt": "資料最後同步時間：{time}"
-        },
-        "controls": {
-            "languageSelectAria": "選擇語言",
-            "weekSelectAria": "選擇週別",
-            "searchPlaceholder": "搜尋 CM...",
-            "statusFilterAria": "篩選狀態"
-        },
-        "common": {
-            "loading": "載入中...",
-            "syncing": "資料同步中...",
-            "dataLoading": "資料載入中...",
-            "readingWeeks": "讀取週別資料中...",
-            "noData": "無資料",
-            "notCalculated": "不計算",
-            "newOrNoData": "新 / 無資料",
-            "noneSymbol": "—",
-            "notProvidedDate": "未提供日期",
-            "unnamedMember": "未命名成員",
-            "normal": "一般",
-            "points": "分"
-        },
-        "status": {
-            "all": "全部",
-            "allStatus": "全部狀態",
-            "pass": "PASS",
-            "out": "淘汰",
-            "return": "回歸",
-            "downgrade": "降級",
-            "elder": "長老",
-            "captain": "隊長",
-            "viceCaptain": "副隊長",
-            "noData": "無資料"
-        },
-        "statusTitle": {
-            "elder": "長老",
-            "captain": "隊長",
-            "viceCaptain": "副隊長",
-            "pass": "本週合格",
-            "out": "本週淘汰",
-            "downgrade": "本週降級"
-        },
-        "headers": {
-            "rank": "編號",
-            "cm": "CM",
-            "activity1Total": "活動1總分",
-            "activity2Total": "活動2總分",
-            "activity3Total": "活動3總分",
-            "weeklyTotal": "一週總分",
-            "monthTotal": "本月總分",
-            "monthContribution": "本月貢獻度",
-            "passDistance": "距離合格分數",
-            "elderDistance": "距離長老分數",
-            "compareLastWeek": "較上週",
-            "bottomFiveThisMonth": "本月後五",
-            "status": "狀態"
-        },
-        "specialCm": {
-            "returnSection": "【回歸帳號】",
-            "total": "總計"
-        },
-        "filters": {
-            "everBottomFive": "曾經最後五",
-            "monthTotalScoreSort": "本月總分排序",
-            "monthContributionSort": "本月貢獻度排序"
-        },
-        "stats": {
-            "weeklyTotalSum": "一週總分加總"
-        },
-        "month": {
-            "currentMonth": "本月",
-            "label": "{year}年{month}月"
-        },
-        "history": {
-            "noMonthData": "{scope}沒有資料",
-            "noBottomFive": "{scope}沒有進入最後五名",
-            "bottomFiveWeeks": "{scope}曾在後五名週別：{weeks}",
-            "excludedTitle": "{status}不納入{scope}後五名統計",
-            "alwaysBottomFive": "都後五 {bottomWeeks}/{weeksSeen}",
-            "everBottomFive": "曾後五 {bottomWeeks}/{weeksSeen}"
-        },
-        "monthlyTotal": {
-            "noData": "{scope}沒有本月總分資料",
-            "returnExcludedTitle": "{scope}總分：{score}｜回歸號不納入本月總分排序｜出現 {weeksSeen}/{totalWeeks} 週",
-            "rankTitle": "{scope}總分：{score}｜本月總分第 {rank} 名｜出現 {weeksSeen}/{totalWeeks} 週",
-            "displayRankTitle": "本月總分排序第 {rank} 名",
-            "hintTop": "{scope}本月總分最高：{name}｜{score} 分｜已排除回歸號｜目前依本月總分由高到低排序",
-            "hintEmpty": "目前沒有可排序的本月總分資料"
-        },
-        "monthlyContribution": {
-            "noData": "{scope}沒有本月貢獻度資料",
-            "returnIncludedTitle": "{scope}平均貢獻度：{contribution}｜回歸號僅供參考｜有貢獻度資料 {contributionWeeks} 週｜出現 {weeksSeen}/{totalWeeks} 週",
-            "rankTitle": "{scope}平均貢獻度：{contribution}｜本月貢獻度第 {rank} 名｜有貢獻度資料 {contributionWeeks} 週｜出現 {weeksSeen}/{totalWeeks} 週",
-            "displayRankTitle": "本月貢獻度排序第 {rank} 名",
-            "hintTop": "{scope}本月貢獻度最高：{name}｜平均貢獻度 {contribution}｜已排除回歸號｜目前依本月貢獻度由高到低排序",
-            "hintEmpty": "目前沒有可排序的本月貢獻度資料"
-        },
-        "achievement": {
-            "kicker": "Achievement Podium",
-            "title": "{scope}成就徽章",
-            "note": "依本月每週分數自動計算",
-            "pending": "待產生",
-            "viewProfileTitle": "查看 {name} 的個人資料",
-            "mvpTitle": "本月 MVP",
-            "mvpSubtitle": "本月總分最高",
-            "mvpEmpty": "暫無本月總分資料",
-            "improverTitle": "進步王",
-            "improverSubtitle": "本月最高低分落差最大",
-            "improverEmpty": "週數不足，暫無進步資料",
-            "stableTitle": "穩定王",
-            "stableSubtitle": "波動最小且平均高",
-            "stableEmpty": "週數不足，暫無穩定資料",
-            "burstTitle": "爆發王",
-            "burstSubtitle": "單週最高分最高",
-            "burstEmpty": "暫無單週分數資料",
-            "potentialTitle": "潛力股",
-            "potentialSubtitle": "最近兩週連續上升",
-            "potentialEmpty": "週數不足或無連續上升",
-            "metricMonthTotal": "本月總分",
-            "metricImprovement": "進步幅度",
-            "metricAverageVolatility": "平均 / 波動",
-            "metricBestWeek": "單週最高",
-            "metricRecentRise": "近三筆漲幅",
-            "detailAppeared": "{tag}｜出現 {weeksSeen}/{totalWeeks} 週",
-            "detailScoreChange": "{tag}｜{firstScore} → {lastScore}",
-            "detailStable": "{tag}｜平均高於本月均值 {average}",
-            "detailBestWeek": "{tag}｜{week}",
-            "detailRecentRise": "{tag}｜{scores}",
-            "fallbackWeek": "本月週別"
-        },
-        "table": {
-            "title": "成績列表",
-            "empty": "找不到符合條件的資料。",
-            "shownZero": "目前顯示 0 筆成員資料",
-            "hint": "目前顯示可計算 {shownPeople} / {allPeople} 筆｜不計算排除 {shownExcluded} / {allExcluded} 筆｜{scope}曾後五 {everCount} 人｜都後五 {riskCount} 人"
-        },
-        "rank": {
-            "returnAccountNumber": "回歸帳號編號 {number}",
-            "number": "編號 {number}"
-        },
-        "trend": {
-            "noData": "無資料",
-            "lastWeek": "上週：{score}",
-            "lastWeekNoData": "上週無資料"
-        },
-        "profile": {
-            "kicker": "Member Analytics",
-            "title": "成員資料",
-            "thisMember": "此成員",
-            "metaLoading": "載入中...",
-            "closeAria": "關閉個人資料",
-            "bodyLoading": "資料分析中...",
-            "analyzing": "資料分析中...",
-            "loadingDetail": "正在彙整歷史最高分、本月折線圖與週別紀錄...",
-            "emptyTitle": "查無成員資料",
-            "emptyMeta": "沒有找到對應的歷史紀錄。",
-            "emptyBody": "找不到這位成員的歷史資料。",
-            "readFailedTitle": "資料讀取失敗",
-            "readFailedMeta": "個人資料分析時發生錯誤。",
-            "readFailedBody": "個人資料讀取失敗，請確認每週 CSV 檔案是否都能正常讀取。",
-            "weeksAppearedMeta": "共出現 {weeks} 週｜最新狀態：{status}｜{month}走勢分析",
-            "latestStatusUnmarked": "未標記",
-            "bestScore": "歷史最高分",
-            "averageScore": "歷史平均分",
-            "averageNote": "依出現週數平均",
-            "monthTotal": "{month}總分",
-            "monthTotalNote": "本月已出現週別加總",
-            "monthContribution": "{month}貢獻度",
-            "monthContributionNote": "本月各週整週貢獻度平均",
-            "monthTrend": "本月走勢",
-            "monthTrendNote": "以本月第一筆與最後一筆比較",
-            "chartTitle": "{month}分數折線圖",
-            "chartSubtitle": "顯示目前選取月份的每週總分",
-            "chartAria": "本月分數折線圖",
-            "chartNoData": "這個月份沒有可繪製的分數資料。",
-            "timelineTitle": "歷史週別紀錄",
-            "timelineSubtitle": "最新週別在最上方",
-            "timelineNoData": "查無這位成員的週別紀錄。",
-            "weeklyTotal": "一週總分",
-            "status": "狀態",
-            "activity": "活動 {number}",
-            "elderBannerTitle": "長老榮耀已啟用",
-            "elderBannerText": "此成員目前為長老身份，已達成本週高階標準。系統已套用專屬獎勵視覺與榮耀標記。",
-            "elderReward": "ELDER REWARD"
-        },
-        "error": {
-            "fetchFailed": "讀取失敗：{url}",
-            "weekNotFound": "找不到週別資料",
-            "previousWeekReadFailed": "上一週資料讀取失敗：",
-            "weeksCsvEmpty": "weeks.csv 沒有週別資料",
-            "dataReadFailed": "資料讀取失敗",
-            "dataReadFailedBody": "資料讀取失敗，請確認 <strong>data/weeks.csv</strong> 與每週 CSV 檔案路徑是否正確。",
-            "historyBottomFiveReadFailed": "本月後五資料讀取失敗：{file}",
-            "monthlyPersonalTotalReadFailed": "本月個人總分讀取失敗：{file}",
-            "monthlyContributionReadFailed": "本月個人貢獻度讀取失敗：{file}",
-            "monthlyAchievementReadFailed": "本月成就徽章資料讀取失敗：{file}"
-        },
-        "loadingSteps": {
-            "bottomFive": "分析本月後五名中...",
-            "monthlyTotal": "計算本月個人總分中...",
-            "monthlyContribution": "計算本月個人貢獻度中...",
-            "achievements": "產生成就徽章中..."
-        }
+  "zh-Hant": {
+    "page": {
+      "title": "Coin999-長長久久 隊伍成績總覽",
+      "htmlLang": "zh-Hant"
     },
-    "en": {
-        "page": {
-            "title": "Weekly Score Overview",
-            "htmlLang": "en"
-        },
-        "hero": {
-            "eyebrow": "Weekly Score Dashboard",
-            "title": "Coin999 Forever Team Weekly Score Overview",
-            "subtitle": "Review weekly activity scores, compare with last week, and track this month’s bottom five.",
-            "updatedAt": "Data last synced: {time}"
-        },
-        "controls": {
-            "languageSelectAria": "Select language",
-            "weekSelectAria": "Select week",
-            "searchPlaceholder": "Search CM...",
-            "statusFilterAria": "Filter status"
-        },
-        "common": {
-            "loading": "Loading...",
-            "syncing": "Syncing data...",
-            "dataLoading": "Loading data...",
-            "readingWeeks": "Reading weekly data...",
-            "noData": "No data",
-            "notCalculated": "Excluded",
-            "newOrNoData": "New / No data",
-            "noneSymbol": "—",
-            "notProvidedDate": "Date not provided",
-            "unnamedMember": "Unnamed member",
-            "normal": "Normal",
-            "points": "pts"
-        },
-        "status": {
-            "all": "All",
-            "allStatus": "All statuses",
-            "pass": "PASS",
-            "out": "Eliminated",
-            "return": "Returned",
-            "downgrade": "Downgraded",
-            "elder": "Elder",
-            "captain": "Captain",
-            "viceCaptain": "Vice Captain",
-            "noData": "No data"
-        },
-        "statusTitle": {
-            "elder": "Elder",
-            "captain": "Captain",
-            "viceCaptain": "Vice Captain",
-            "pass": "Passed this week",
-            "out": "Eliminated this week",
-            "downgrade": "Downgraded this week"
-        },
-        "headers": {
-            "rank": "No.",
-            "cm": "CM",
-            "activity1Total": "Activity 1 Total",
-            "activity2Total": "Activity 2 Total",
-            "activity3Total": "Activity 3 Total",
-            "weeklyTotal": "Weekly Total",
-            "monthTotal": "Monthly Total",
-            "monthContribution": "Monthly Contribution",
-            "passDistance": "To Pass",
-            "elderDistance": "To Elder",
-            "compareLastWeek": "vs Last Week",
-            "bottomFiveThisMonth": "Monthly Bottom 5",
-            "status": "Status"
-        },
-        "specialCm": {
-            "returnSection": "【Returned Accounts】",
-            "total": "Total"
-        },
-        "filters": {
-            "everBottomFive": "Ever Bottom 5",
-            "monthTotalScoreSort": "Monthly Total Ranking",
-            "monthContributionSort": "Monthly Contribution Ranking"
-        },
-        "stats": {
-            "weeklyTotalSum": "Weekly Total Sum"
-        },
-        "month": {
-            "currentMonth": "This Month",
-            "label": "{year}-{month}"
-        },
-        "history": {
-            "noMonthData": "No data for {scope}",
-            "noBottomFive": "Never entered the bottom five in {scope}",
-            "bottomFiveWeeks": "Bottom-five weeks in {scope}: {weeks}",
-            "excludedTitle": "{status} is excluded from {scope} bottom-five statistics",
-            "alwaysBottomFive": "Always Bottom 5 {bottomWeeks}/{weeksSeen}",
-            "everBottomFive": "Ever Bottom 5 {bottomWeeks}/{weeksSeen}"
-        },
-        "monthlyTotal": {
-            "noData": "No monthly total data for {scope}",
-            "returnExcludedTitle": "{scope} total: {score}｜Returned accounts are excluded from monthly ranking｜Appeared {weeksSeen}/{totalWeeks} weeks",
-            "rankTitle": "{scope} total: {score}｜Monthly rank #{rank}｜Appeared {weeksSeen}/{totalWeeks} weeks",
-            "displayRankTitle": "Monthly total ranking #{rank}",
-            "hintTop": "Top monthly total in {scope}: {name}｜{score} pts｜Returned accounts excluded｜Sorted by monthly total descending",
-            "hintEmpty": "No monthly total data available for ranking"
-        },
-        "monthlyContribution": {
-            "noData": "No monthly contribution data for {scope}",
-            "returnIncludedTitle": "{scope} average contribution: {contribution}｜Returned accounts are for reference only｜Contribution data in {contributionWeeks} weeks｜Appeared {weeksSeen}/{totalWeeks} weeks",
-            "rankTitle": "{scope} average contribution: {contribution}｜Monthly contribution rank #{rank}｜Contribution data in {contributionWeeks} weeks｜Appeared {weeksSeen}/{totalWeeks} weeks",
-            "displayRankTitle": "Monthly contribution ranking #{rank}",
-            "hintTop": "Top monthly contribution in {scope}: {name}｜Average contribution {contribution}｜Returned accounts excluded｜Sorted by monthly contribution descending",
-            "hintEmpty": "No monthly contribution data available for ranking"
-        },
-        "achievement": {
-            "kicker": "Achievement Podium",
-            "title": "{scope} Achievement Badges",
-            "note": "Automatically calculated from weekly scores this month",
-            "pending": "Pending",
-            "viewProfileTitle": "View {name}'s profile",
-            "mvpTitle": "Monthly MVP",
-            "mvpSubtitle": "Highest monthly total",
-            "mvpEmpty": "No monthly total data yet",
-            "improverTitle": "Most Improved",
-            "improverSubtitle": "Largest monthly high-low gap",
-            "improverEmpty": "Not enough weeks for improvement data",
-            "stableTitle": "Most Stable",
-            "stableSubtitle": "Lowest fluctuation with high average",
-            "stableEmpty": "Not enough weeks for stability data",
-            "burstTitle": "Top Burst",
-            "burstSubtitle": "Highest single-week score",
-            "burstEmpty": "No weekly score data yet",
-            "potentialTitle": "Rising Star",
-            "potentialSubtitle": "Continuous growth in recent weeks",
-            "potentialEmpty": "Not enough weeks or no continuous growth",
-            "metricMonthTotal": "Monthly Total",
-            "metricImprovement": "Improvement",
-            "metricAverageVolatility": "Avg / Volatility",
-            "metricBestWeek": "Best Week",
-            "metricRecentRise": "Recent 3-Record Rise",
-            "detailAppeared": "{tag}｜Appeared {weeksSeen}/{totalWeeks} weeks",
-            "detailScoreChange": "{tag}｜{firstScore} → {lastScore}",
-            "detailStable": "{tag}｜Average above monthly mean {average}",
-            "detailBestWeek": "{tag}｜{week}",
-            "detailRecentRise": "{tag}｜{scores}",
-            "fallbackWeek": "Monthly week"
-        },
-        "table": {
-            "title": "Score table",
-            "empty": "No matching data found.",
-            "shownZero": "Currently showing 0 member records",
-            "hint": "Showing calculable {shownPeople} / {allPeople}｜Excluded {shownExcluded} / {allExcluded}｜Ever Bottom 5 in {scope}: {everCount}｜Always Bottom 5: {riskCount}"
-        },
-        "rank": {
-            "returnAccountNumber": "Returned account No. {number}",
-            "number": "No. {number}"
-        },
-        "trend": {
-            "noData": "No data",
-            "lastWeek": "Last week: {score}",
-            "lastWeekNoData": "No data last week"
-        },
-        "profile": {
-            "kicker": "Member Analytics",
-            "title": "Member Profile",
-            "thisMember": "this member",
-            "metaLoading": "Loading...",
-            "closeAria": "Close profile",
-            "bodyLoading": "Analyzing data...",
-            "analyzing": "Analyzing data...",
-            "loadingDetail": "Compiling historical best score, monthly chart, and weekly records...",
-            "emptyTitle": "No member data",
-            "emptyMeta": "No matching historical records were found.",
-            "emptyBody": "No history was found for this member.",
-            "readFailedTitle": "Failed to read data",
-            "readFailedMeta": "An error occurred while analyzing this profile.",
-            "readFailedBody": "Failed to read profile data. Please confirm every weekly CSV file can be loaded correctly.",
-            "weeksAppearedMeta": "Appeared {weeks} weeks｜Latest status: {status}｜{month} trend analysis",
-            "latestStatusUnmarked": "Unmarked",
-            "bestScore": "Historical Best",
-            "averageScore": "Historical Average",
-            "averageNote": "Average based on appeared weeks",
-            "monthTotal": "{month} Total",
-            "monthTotalNote": "Sum of appeared weeks this month",
-            "monthContribution": "{month} Contribution",
-            "monthContributionNote": "Average of weekly contribution values this month",
-            "monthTrend": "Monthly Trend",
-            "monthTrendNote": "Compared using the first and latest record this month",
-            "chartTitle": "{month} Score Line Chart",
-            "chartSubtitle": "Shows weekly total scores for the selected month",
-            "chartAria": "Monthly score line chart",
-            "chartNoData": "No score data available to draw for this month.",
-            "timelineTitle": "Historical Weekly Records",
-            "timelineSubtitle": "Latest week shown first",
-            "timelineNoData": "No weekly records found for this member.",
-            "weeklyTotal": "Weekly Total",
-            "status": "Status",
-            "activity": "Activity {number}",
-            "elderBannerTitle": "Elder honor activated",
-            "elderBannerText": "This member is currently an Elder and has met this week’s advanced standard. Exclusive reward visuals and honor markers are applied.",
-            "elderReward": "ELDER REWARD"
-        },
-        "error": {
-            "fetchFailed": "Failed to read: {url}",
-            "weekNotFound": "Weekly data not found",
-            "previousWeekReadFailed": "Failed to read previous week data:",
-            "weeksCsvEmpty": "weeks.csv has no weekly records",
-            "dataReadFailed": "Failed to read data",
-            "dataReadFailedBody": "Failed to read data. Please confirm <strong>data/weeks.csv</strong> and each weekly CSV file path are correct.",
-            "historyBottomFiveReadFailed": "Failed to read monthly bottom-five data: {file}",
-            "monthlyPersonalTotalReadFailed": "Failed to read monthly personal total data: {file}",
-            "monthlyContributionReadFailed": "Failed to read monthly contribution data: {file}",
-            "monthlyAchievementReadFailed": "Failed to read monthly achievement badge data: {file}"
-        },
-        "loadingSteps": {
-            "bottomFive": "Analyzing this month’s bottom five...",
-            "monthlyTotal": "Calculating monthly personal totals...",
-            "monthlyContribution": "Calculating monthly contribution...",
-            "achievements": "Generating achievement badges..."
-        }
+    "hero": {
+      "eyebrow": "Team Contribution Dashboard",
+      "title": "Coin999-長長久久 隊伍成績總覽",
+      "subtitle": "以月為單位檢視每位成員的總分、實際投入與未投入分數，看清楚誰的貢獻是真正投入出來的。",
+      "updatedAt": "資料最後同步：{time}"
     },
-    "vi": {
-        "page": {
-            "title": "Tổng quan điểm hằng tuần",
-            "htmlLang": "vi"
-        },
-        "hero": {
-            "eyebrow": "Weekly Score Dashboard",
-            "title": "Tổng quan điểm hằng tuần của đội Coin999 Mãi Mãi Bền Lâu",
-            "subtitle": "Xem điểm hoạt động hằng tuần, so sánh với tuần trước và theo dõi 5 người cuối tháng này.",
-            "updatedAt": "Dữ liệu được đồng bộ lần cuối: {time}"
-        },
-        "controls": {
-            "languageSelectAria": "Chọn ngôn ngữ",
-            "weekSelectAria": "Chọn tuần",
-            "searchPlaceholder": "Tìm CM...",
-            "statusFilterAria": "Lọc trạng thái"
-        },
-        "common": {
-            "loading": "Đang tải...",
-            "syncing": "Đang đồng bộ dữ liệu...",
-            "dataLoading": "Đang tải dữ liệu...",
-            "readingWeeks": "Đang đọc dữ liệu tuần...",
-            "noData": "Không có dữ liệu",
-            "notCalculated": "Không tính",
-            "newOrNoData": "Mới / Không có dữ liệu",
-            "noneSymbol": "—",
-            "notProvidedDate": "Chưa có ngày",
-            "unnamedMember": "Thành viên chưa đặt tên",
-            "normal": "Thông thường",
-            "points": "điểm"
-        },
-        "status": {
-            "all": "Tất cả",
-            "allStatus": "Tất cả trạng thái",
-            "pass": "PASS",
-            "out": "Bị loại",
-            "return": "Quay lại",
-            "downgrade": "Hạ cấp",
-            "elder": "Trưởng lão",
-            "captain": "Đội trưởng",
-            "viceCaptain": "Đội phó",
-            "noData": "Không có dữ liệu"
-        },
-        "statusTitle": {
-            "elder": "Trưởng lão",
-            "captain": "Đội trưởng",
-            "viceCaptain": "Đội phó",
-            "pass": "Đạt tuần này",
-            "out": "Bị loại tuần này",
-            "downgrade": "Bị hạ cấp tuần này"
-        },
-        "headers": {
-            "rank": "STT",
-            "cm": "CM",
-            "activity1Total": "Tổng HĐ 1",
-            "activity2Total": "Tổng HĐ 2",
-            "activity3Total": "Tổng HĐ 3",
-            "weeklyTotal": "Tổng tuần",
-            "monthTotal": "Tổng tháng",
-            "monthContribution": "Đóng góp tháng",
-            "passDistance": "Cách điểm đạt",
-            "elderDistance": "Cách điểm trưởng lão",
-            "compareLastWeek": "So với tuần trước",
-            "bottomFiveThisMonth": "5 cuối tháng",
-            "status": "Trạng thái"
-        },
-        "specialCm": {
-            "returnSection": "【Tài khoản quay lại】",
-            "total": "Tổng cộng"
-        },
-        "filters": {
-            "everBottomFive": "Từng ở 5 cuối",
-            "monthTotalScoreSort": "Xếp hạng tổng tháng",
-            "monthContributionSort": "Xếp hạng đóng góp tháng"
-        },
-        "stats": {
-            "weeklyTotalSum": "Tổng điểm tuần"
-        },
-        "month": {
-            "currentMonth": "Tháng này",
-            "label": "{month}/{year}"
-        },
-        "history": {
-            "noMonthData": "Không có dữ liệu cho {scope}",
-            "noBottomFive": "Không vào nhóm 5 cuối trong {scope}",
-            "bottomFiveWeeks": "Các tuần ở nhóm 5 cuối trong {scope}: {weeks}",
-            "excludedTitle": "{status} không được tính vào thống kê 5 cuối của {scope}",
-            "alwaysBottomFive": "Luôn 5 cuối {bottomWeeks}/{weeksSeen}",
-            "everBottomFive": "Từng 5 cuối {bottomWeeks}/{weeksSeen}"
-        },
-        "monthlyTotal": {
-            "noData": "Không có dữ liệu tổng tháng cho {scope}",
-            "returnExcludedTitle": "Tổng {scope}: {score}｜Tài khoản quay lại không tính vào xếp hạng tháng｜Xuất hiện {weeksSeen}/{totalWeeks} tuần",
-            "rankTitle": "Tổng {scope}: {score}｜Xếp hạng tháng #{rank}｜Xuất hiện {weeksSeen}/{totalWeeks} tuần",
-            "displayRankTitle": "Xếp hạng tổng tháng #{rank}",
-            "hintTop": "Tổng tháng cao nhất trong {scope}: {name}｜{score} điểm｜Đã loại trừ tài khoản quay lại｜Đang sắp xếp theo tổng tháng giảm dần",
-            "hintEmpty": "Hiện không có dữ liệu tổng tháng để xếp hạng"
-        },
-        "monthlyContribution": {
-            "noData": "Không có dữ liệu đóng góp tháng cho {scope}",
-            "returnIncludedTitle": "Đóng góp trung bình {scope}: {contribution}｜Tài khoản quay lại chỉ để tham khảo｜Có dữ liệu đóng góp {contributionWeeks} tuần｜Xuất hiện {weeksSeen}/{totalWeeks} tuần",
-            "rankTitle": "Đóng góp trung bình {scope}: {contribution}｜Xếp hạng đóng góp tháng #{rank}｜Có dữ liệu đóng góp {contributionWeeks} tuần｜Xuất hiện {weeksSeen}/{totalWeeks} tuần",
-            "displayRankTitle": "Xếp hạng đóng góp tháng #{rank}",
-            "hintTop": "Đóng góp tháng cao nhất trong {scope}: {name}｜Đóng góp trung bình {contribution}｜Đã loại trừ tài khoản quay lại｜Đang sắp xếp theo đóng góp tháng giảm dần",
-            "hintEmpty": "Hiện không có dữ liệu đóng góp tháng để xếp hạng"
-        },
-        "achievement": {
-            "kicker": "Achievement Podium",
-            "title": "Huy hiệu thành tích {scope}",
-            "note": "Tự động tính theo điểm từng tuần trong tháng",
-            "pending": "Chưa có",
-            "viewProfileTitle": "Xem hồ sơ của {name}",
-            "mvpTitle": "MVP tháng",
-            "mvpSubtitle": "Tổng điểm tháng cao nhất",
-            "mvpEmpty": "Chưa có dữ liệu tổng tháng",
-            "improverTitle": "Tiến bộ nhất",
-            "improverSubtitle": "Chênh lệch cao-thấp trong tháng lớn nhất",
-            "improverEmpty": "Chưa đủ số tuần để tính tiến bộ",
-            "stableTitle": "Ổn định nhất",
-            "stableSubtitle": "Dao động thấp và điểm trung bình cao",
-            "stableEmpty": "Chưa đủ số tuần để tính ổn định",
-            "burstTitle": "Bứt phá nhất",
-            "burstSubtitle": "Điểm đơn tuần cao nhất",
-            "burstEmpty": "Chưa có dữ liệu điểm tuần",
-            "potentialTitle": "Tiềm năng",
-            "potentialSubtitle": "Tăng liên tục trong các tuần gần đây",
-            "potentialEmpty": "Chưa đủ tuần hoặc chưa tăng liên tục",
-            "metricMonthTotal": "Tổng tháng",
-            "metricImprovement": "Mức tiến bộ",
-            "metricAverageVolatility": "TB / Dao động",
-            "metricBestWeek": "Tuần cao nhất",
-            "metricRecentRise": "Mức tăng 3 lần gần nhất",
-            "detailAppeared": "{tag}｜Xuất hiện {weeksSeen}/{totalWeeks} tuần",
-            "detailScoreChange": "{tag}｜{firstScore} → {lastScore}",
-            "detailStable": "{tag}｜Trung bình cao hơn mức TB tháng {average}",
-            "detailBestWeek": "{tag}｜{week}",
-            "detailRecentRise": "{tag}｜{scores}",
-            "fallbackWeek": "Tuần trong tháng"
-        },
-        "table": {
-            "title": "Bảng điểm",
-            "empty": "Không tìm thấy dữ liệu phù hợp.",
-            "shownZero": "Hiện đang hiển thị 0 bản ghi thành viên",
-            "hint": "Đang hiển thị có thể tính {shownPeople} / {allPeople}｜Không tính {shownExcluded} / {allExcluded}｜Từng 5 cuối trong {scope}: {everCount} người｜Luôn 5 cuối: {riskCount} người"
-        },
-        "rank": {
-            "returnAccountNumber": "STT tài khoản quay lại {number}",
-            "number": "STT {number}"
-        },
-        "trend": {
-            "noData": "Không có dữ liệu",
-            "lastWeek": "Tuần trước: {score}",
-            "lastWeekNoData": "Tuần trước không có dữ liệu"
-        },
-        "profile": {
-            "kicker": "Member Analytics",
-            "title": "Hồ sơ thành viên",
-            "thisMember": "thành viên này",
-            "metaLoading": "Đang tải...",
-            "closeAria": "Đóng hồ sơ",
-            "bodyLoading": "Đang phân tích dữ liệu...",
-            "analyzing": "Đang phân tích dữ liệu...",
-            "loadingDetail": "Đang tổng hợp điểm cao nhất lịch sử, biểu đồ tháng và bản ghi tuần...",
-            "emptyTitle": "Không có dữ liệu thành viên",
-            "emptyMeta": "Không tìm thấy bản ghi lịch sử phù hợp.",
-            "emptyBody": "Không tìm thấy lịch sử của thành viên này.",
-            "readFailedTitle": "Đọc dữ liệu thất bại",
-            "readFailedMeta": "Đã xảy ra lỗi khi phân tích hồ sơ cá nhân.",
-            "readFailedBody": "Không đọc được dữ liệu hồ sơ. Vui lòng kiểm tra tất cả file CSV hằng tuần có thể tải bình thường.",
-            "weeksAppearedMeta": "Xuất hiện {weeks} tuần｜Trạng thái mới nhất: {status}｜Phân tích xu hướng {month}",
-            "latestStatusUnmarked": "Chưa đánh dấu",
-            "bestScore": "Điểm cao nhất lịch sử",
-            "averageScore": "Điểm trung bình lịch sử",
-            "averageNote": "Tính trung bình theo số tuần xuất hiện",
-            "monthTotal": "Tổng {month}",
-            "monthTotalNote": "Cộng các tuần đã xuất hiện trong tháng",
-            "monthContribution": "Đóng góp {month}",
-            "monthContributionNote": "Trung bình đóng góp hằng tuần trong tháng",
-            "monthTrend": "Xu hướng tháng",
-            "monthTrendNote": "So sánh bản ghi đầu tiên và mới nhất trong tháng",
-            "chartTitle": "Biểu đồ điểm {month}",
-            "chartSubtitle": "Hiển thị tổng điểm hằng tuần của tháng đã chọn",
-            "chartAria": "Biểu đồ đường điểm tháng",
-            "chartNoData": "Tháng này không có dữ liệu điểm để vẽ biểu đồ.",
-            "timelineTitle": "Bản ghi tuần lịch sử",
-            "timelineSubtitle": "Tuần mới nhất hiển thị ở trên cùng",
-            "timelineNoData": "Không tìm thấy bản ghi tuần của thành viên này.",
-            "weeklyTotal": "Tổng tuần",
-            "status": "Trạng thái",
-            "activity": "Hoạt động {number}",
-            "elderBannerTitle": "Đã kích hoạt vinh danh Trưởng lão",
-            "elderBannerText": "Thành viên này hiện là Trưởng lão và đã đạt tiêu chuẩn nâng cao của tuần này. Hệ thống đã áp dụng hiệu ứng phần thưởng và dấu vinh danh riêng.",
-            "elderReward": "ELDER REWARD"
-        },
-        "error": {
-            "fetchFailed": "Đọc thất bại: {url}",
-            "weekNotFound": "Không tìm thấy dữ liệu tuần",
-            "previousWeekReadFailed": "Đọc dữ liệu tuần trước thất bại:",
-            "weeksCsvEmpty": "weeks.csv không có dữ liệu tuần",
-            "dataReadFailed": "Đọc dữ liệu thất bại",
-            "dataReadFailedBody": "Đọc dữ liệu thất bại. Vui lòng xác nhận <strong>data/weeks.csv</strong> và đường dẫn từng file CSV hằng tuần là chính xác.",
-            "historyBottomFiveReadFailed": "Đọc dữ liệu 5 người cuối tháng thất bại: {file}",
-            "monthlyPersonalTotalReadFailed": "Đọc dữ liệu tổng điểm cá nhân trong tháng thất bại: {file}",
-            "monthlyContributionReadFailed": "Đọc dữ liệu đóng góp cá nhân trong tháng thất bại: {file}",
-            "monthlyAchievementReadFailed": "Đọc dữ liệu huy hiệu thành tích trong tháng thất bại: {file}"
-        },
-        "loadingSteps": {
-            "bottomFive": "Đang phân tích 5 người cuối tháng này...",
-            "monthlyTotal": "Đang tính tổng điểm cá nhân trong tháng...",
-            "monthlyContribution": "Đang tính đóng góp cá nhân trong tháng...",
-            "achievements": "Đang tạo huy hiệu thành tích..."
-        }
+    "controls": {
+      "bar": "檢視設定",
+      "language": "語言",
+      "viewMonth": "月度總覽",
+      "viewWeek": "單週明細",
+      "period": "期間",
+      "month": "選擇月份",
+      "week": "選擇週別",
+      "searchLabel": "搜尋成員",
+      "searchPlaceholder": "搜尋 CM / LINE 名稱",
+      "filter": "篩選",
+      "sort": "排序",
+      "nav": "導覽"
+    },
+    "common": {
+      "loading": "資料載入中...",
+      "none": "未標記",
+      "noSplit": "此期間尚無投入 / 未投入拆分資料",
+      "noSplitShort": "未拆分",
+      "notCalculated": "不計算",
+      "notRanked": "不排名",
+      "weeksOf": "{seen}/{total} 週",
+      "noRecord": "本週無紀錄"
+    },
+    "status": {
+      "pass": "PASS",
+      "out": "淘汰",
+      "return": "回歸",
+      "downgrade": "降級",
+      "elder": "長老",
+      "captain": "隊長",
+      "viceCaptain": "副隊長"
+    },
+    "metric": {
+      "score": "總分",
+      "invested": "實際投入",
+      "uninvested": "未投入"
+    },
+    "col": {
+      "rank": "#",
+      "member": "成員",
+      "monthScore": "本月總分",
+      "weekScore": "一週總分",
+      "mix": "投入 / 未投入組成",
+      "contribution": "貢獻度",
+      "investedRank": "投入排名",
+      "weeks": "出現週數",
+      "delta": "較上週",
+      "target": "距離目標",
+      "bottom": "本月後五",
+      "status": "狀態"
+    },
+    "filter": {
+      "all": "全部成員",
+      "heavy": "未投入過半",
+      "leaders": "隊長 / 副隊長",
+      "elder": "長老",
+      "return": "回歸帳號",
+      "everBottom": "本月曾後五"
+    },
+    "sort": {
+      "prefix": "排序：{label}"
+    },
+    "sortKey": {
+      "score": "總分",
+      "invested": "實際投入",
+      "uninvested": "未投入",
+      "investedShare": "投入佔比",
+      "contribution": "貢獻度",
+      "weeksSeen": "出現週數",
+      "sheetOrder": "週表順序",
+      "delta": "較上週"
+    },
+    "stats": {
+      "teamMonthTotal": "全隊本月總分",
+      "teamWeekTotal": "全隊一週總分",
+      "shareOfTeam": "佔全隊 {pct}",
+      "heavy": "未投入過半人數",
+      "heavyNote": "未投入佔個人總分 ≥ {pct}（不含回歸）",
+      "members": "參與成員",
+      "membersNote": "一般 {regular} 位｜回歸 {returning} 位",
+      "statusMix": "長老 / PASS / 淘汰",
+      "statusMixNote": "本週狀態人數",
+      "mixAria": "全隊組成：實際投入 {invested}，未投入 {uninvested}"
+    },
+    "notice": {
+      "missingSplit": "此期間有 {count} 個週別的資料尚未包含投入 / 未投入拆分，相關數字會顯示為「—」。需重新同步該週資料後才會顯示。",
+      "failedWeeks": "以下週別資料讀取失敗：{weeks}"
+    },
+    "table": {
+      "titleMonth": "{month} 成員貢獻",
+      "titleWeek": "{week}",
+      "hint": "顯示 {shown} / {total} 位成員（含回歸帳號 {returning} 位，不列入排名）",
+      "returnSection": "回歸帳號（{count} 位，不列入排名）",
+      "empty": "找不到符合條件的成員。"
+    },
+    "flag": {
+      "heavy": "未投入過半",
+      "heavyTitle": "未投入佔個人總分 {pct}，分數主要由未投入撐起"
+    },
+    "tip": {
+      "contribution": "個人分數 ÷ 全隊總分（含回歸帳號）",
+      "mix": "實際投入 {invested}（{investedPct}）／未投入 {uninvested}（{uninvestedPct}）",
+      "investedShort": "投入 {pct}",
+      "rankShift": "總分第 {total} 名 → 實際投入第 {invested} 名"
+    },
+    "trend": {
+      "new": "新 / 無資料",
+      "lastWeek": "上週：{score}"
+    },
+    "target": {
+      "elderReached": "已達長老",
+      "toElder": "距長老 {value}",
+      "toPass": "距合格 {value}"
+    },
+    "bottom": {
+      "ever": "曾後五 {count}/{total}",
+      "always": "都後五 {count}/{total}"
+    },
+    "month": {
+      "label": "{year}年{month}月",
+      "short": "{year}/{month}"
+    },
+    "footnote": {
+      "invested": "實際投入：週表「投入」欄位的分數，合格 / 長老判定與後五名都以此為準。",
+      "uninvested": "未投入：週表「未投入」欄位的分數，會計入總分，但不計入合格判定。",
+      "contribution": "貢獻度 = 個人分數 ÷ 全隊總分（全隊總分包含回歸帳號），全員加總為 100%。",
+      "icons": "圖示：Lucide Icons（ISC 授權）"
+    },
+    "achievement": {
+      "title": "{scope} 成就徽章",
+      "noteInvested": "依每週「實際投入」計算，回歸帳號不列入",
+      "noteScore": "此月份尚無拆分資料，暫依每週總分計算",
+      "mvpTitle": "本月 MVP",
+      "mvpSubtitle": "本月累計最高",
+      "mvpEmpty": "暫無資料",
+      "improverTitle": "進步王",
+      "improverSubtitle": "本月低點後漲幅最大",
+      "improverEmpty": "週數不足",
+      "stableTitle": "穩定王",
+      "stableSubtitle": "平均高且波動最小",
+      "stableEmpty": "週數不足",
+      "burstTitle": "爆發王",
+      "burstSubtitle": "單週最高",
+      "burstEmpty": "暫無資料",
+      "potentialTitle": "潛力股",
+      "potentialSubtitle": "最近三週連續上升",
+      "potentialEmpty": "暫無連續上升"
+    },
+    "profile": {
+      "kicker": "Member Analytics",
+      "close": "關閉",
+      "open": "查看 {name} 的個人資料",
+      "meta": "LINE：{line}｜共出現 {weeks} 週｜最新狀態：{status}",
+      "emptyTitle": "查無成員資料",
+      "emptyBody": "找不到這位成員的歷史資料。",
+      "monthSummary": "{month} 摘要",
+      "noMonthData": "{month} 沒有這位成員的資料。",
+      "contributionNote": "佔全隊（含回歸）",
+      "rank": "總分排名 / 投入排名",
+      "rankNote": "不含回歸帳號",
+      "monthlyChartTitle": "歷月投入 / 未投入",
+      "monthlyChartAria": "歷月投入與未投入堆疊直條圖",
+      "weeklyChartTitle": "{month} 每週投入 / 未投入",
+      "weeklyChartAria": "{month} 每週投入與未投入堆疊直條圖",
+      "chartNoData": "沒有可繪製的資料。",
+      "timelineTitle": "歷史週別紀錄",
+      "week": "週別",
+      "activity": "活動{number}",
+      "activityHint": "活動明細格式：活動總分（實際投入 / 未投入）。",
+      "elderTitle": "長老",
+      "elderText": "此成員最新一週實際投入已達長老標準。"
+    },
+    "error": {
+      "fetchFailed": "讀取失敗：{url}",
+      "weeksEmpty": "weeks.csv 沒有週別資料",
+      "dataReadFailed": "資料讀取失敗",
+      "dataReadFailedBody": "資料讀取失敗，請確認 data/weeks.csv 與每週 CSV 檔案是否存在。"
+    },
+    "nav": {
+      "stats": "統計摘要",
+      "table": "成員列表",
+      "help": "說明"
     }
+  },
+  "en": {
+    "page": {
+      "title": "Coin999 Team Score Overview",
+      "htmlLang": "en"
+    },
+    "hero": {
+      "eyebrow": "Team Contribution Dashboard",
+      "title": "Coin999 Team Score Overview",
+      "subtitle": "See each member's monthly total, actual invested score and non-invested score — and who really earned their contribution.",
+      "updatedAt": "Last synced: {time}"
+    },
+    "controls": {
+      "bar": "View settings",
+      "language": "Language",
+      "viewMonth": "Monthly",
+      "viewWeek": "Weekly",
+      "period": "Period",
+      "month": "Select month",
+      "week": "Select week",
+      "searchLabel": "Search members",
+      "searchPlaceholder": "Search CM / LINE name",
+      "filter": "Filter",
+      "sort": "Sort",
+      "nav": "Navigation"
+    },
+    "common": {
+      "loading": "Loading data...",
+      "none": "Not set",
+      "noSplit": "No invested / non-invested split for this period",
+      "noSplitShort": "No split",
+      "notCalculated": "N/A",
+      "notRanked": "Unranked",
+      "weeksOf": "{seen}/{total} wks",
+      "noRecord": "No record"
+    },
+    "status": {
+      "pass": "PASS",
+      "out": "Eliminated",
+      "return": "Returning",
+      "downgrade": "Downgraded",
+      "elder": "Elder",
+      "captain": "Captain",
+      "viceCaptain": "Vice Captain"
+    },
+    "metric": {
+      "score": "Total",
+      "invested": "Invested",
+      "uninvested": "Non-invested"
+    },
+    "col": {
+      "rank": "#",
+      "member": "Member",
+      "monthScore": "Month total",
+      "weekScore": "Week total",
+      "mix": "Invested / non-invested",
+      "contribution": "Contribution",
+      "investedRank": "Invested rank",
+      "weeks": "Weeks",
+      "delta": "vs last week",
+      "target": "Next target",
+      "bottom": "Bottom 5 (month)",
+      "status": "Status"
+    },
+    "filter": {
+      "all": "All members",
+      "heavy": "Mostly non-invested",
+      "leaders": "Captain / Vice",
+      "elder": "Elder",
+      "return": "Returning accounts",
+      "everBottom": "Bottom 5 this month"
+    },
+    "sort": {
+      "prefix": "Sort: {label}"
+    },
+    "sortKey": {
+      "score": "Total",
+      "invested": "Invested",
+      "uninvested": "Non-invested",
+      "investedShare": "Invested share",
+      "contribution": "Contribution",
+      "weeksSeen": "Weeks",
+      "sheetOrder": "Sheet order",
+      "delta": "vs last week"
+    },
+    "stats": {
+      "teamMonthTotal": "Team month total",
+      "teamWeekTotal": "Team week total",
+      "shareOfTeam": "{pct} of team",
+      "heavy": "Mostly non-invested",
+      "heavyNote": "Non-invested ≥ {pct} of own total (excl. returning)",
+      "members": "Members",
+      "membersNote": "Regular {regular} | Returning {returning}",
+      "statusMix": "Elder / PASS / Out",
+      "statusMixNote": "Status count this week",
+      "mixAria": "Team mix: invested {invested}, non-invested {uninvested}"
+    },
+    "notice": {
+      "missingSplit": "{count} week(s) in this period have no invested / non-invested split yet; those values show as “—” until the week is re-synced.",
+      "failedWeeks": "Failed to load: {weeks}"
+    },
+    "table": {
+      "titleMonth": "{month} member contribution",
+      "titleWeek": "{week}",
+      "hint": "Showing {shown} / {total} members ({returning} returning, unranked)",
+      "returnSection": "Returning accounts ({count}, unranked)",
+      "empty": "No matching members."
+    },
+    "flag": {
+      "heavy": "Mostly non-invested",
+      "heavyTitle": "Non-invested is {pct} of this member's total"
+    },
+    "tip": {
+      "contribution": "Member score ÷ team total (incl. returning accounts)",
+      "mix": "Invested {invested} ({investedPct}) / non-invested {uninvested} ({uninvestedPct})",
+      "investedShort": "{pct} invested",
+      "rankShift": "Total rank #{total} → invested rank #{invested}"
+    },
+    "trend": {
+      "new": "New / no data",
+      "lastWeek": "Last week: {score}"
+    },
+    "target": {
+      "elderReached": "Elder reached",
+      "toElder": "{value} to Elder",
+      "toPass": "{value} to pass"
+    },
+    "bottom": {
+      "ever": "Bottom 5 {count}/{total}",
+      "always": "Always bottom 5 {count}/{total}"
+    },
+    "month": {
+      "label": "{month}/{year}",
+      "short": "{month}/{year}"
+    },
+    "footnote": {
+      "invested": "Invested: the sheet's “invested” column. Pass / Elder status and bottom 5 are based on it.",
+      "uninvested": "Non-invested: the sheet's “non-invested” column. Counts toward the total but not toward passing.",
+      "contribution": "Contribution = member score ÷ team total (including returning accounts); all members sum to 100%.",
+      "icons": "Icons: Lucide Icons (ISC License)"
+    },
+    "achievement": {
+      "title": "{scope} achievements",
+      "noteInvested": "Based on weekly invested score; returning accounts excluded",
+      "noteScore": "No split data for this month yet; based on weekly total",
+      "mvpTitle": "Monthly MVP",
+      "mvpSubtitle": "Highest month total",
+      "mvpEmpty": "No data",
+      "improverTitle": "Most Improved",
+      "improverSubtitle": "Biggest rise from a low",
+      "improverEmpty": "Not enough weeks",
+      "stableTitle": "Most Consistent",
+      "stableSubtitle": "High average, low variance",
+      "stableEmpty": "Not enough weeks",
+      "burstTitle": "Best Week",
+      "burstSubtitle": "Highest single week",
+      "burstEmpty": "No data",
+      "potentialTitle": "Rising Star",
+      "potentialSubtitle": "3 weeks of growth",
+      "potentialEmpty": "No streak yet"
+    },
+    "profile": {
+      "kicker": "Member Analytics",
+      "close": "Close",
+      "open": "View {name}'s profile",
+      "meta": "LINE: {line} | {weeks} weeks | Latest status: {status}",
+      "emptyTitle": "Member not found",
+      "emptyBody": "No history found for this member.",
+      "monthSummary": "{month} summary",
+      "noMonthData": "No data for this member in {month}.",
+      "contributionNote": "of team (incl. returning)",
+      "rank": "Total rank / invested rank",
+      "rankNote": "Excludes returning accounts",
+      "monthlyChartTitle": "Invested / non-invested by month",
+      "monthlyChartAria": "Stacked columns of invested and non-invested score by month",
+      "weeklyChartTitle": "{month} by week",
+      "weeklyChartAria": "Stacked columns of invested and non-invested score by week in {month}",
+      "chartNoData": "No data to chart.",
+      "timelineTitle": "Weekly history",
+      "week": "Week",
+      "activity": "Activity {number}",
+      "activityHint": "Activity detail: activity total (invested / non-invested).",
+      "elderTitle": "Elder",
+      "elderText": "This member's latest invested score meets the Elder standard."
+    },
+    "error": {
+      "fetchFailed": "Failed to read: {url}",
+      "weeksEmpty": "weeks.csv has no weeks",
+      "dataReadFailed": "Failed to load data",
+      "dataReadFailedBody": "Failed to load data. Check that data/weeks.csv and the weekly CSV files exist."
+    },
+    "nav": {
+      "stats": "Summary",
+      "table": "Members",
+      "help": "Notes"
+    }
+  },
+  "vi": {
+    "page": {
+      "title": "Coin999 – Tổng quan thành tích đội",
+      "htmlLang": "vi"
+    },
+    "hero": {
+      "eyebrow": "Team Contribution Dashboard",
+      "title": "Coin999 – Tổng quan thành tích đội",
+      "subtitle": "Xem tổng điểm theo tháng, điểm đầu tư thực tế và điểm không đầu tư của từng thành viên.",
+      "updatedAt": "Đồng bộ lần cuối: {time}"
+    },
+    "controls": {
+      "bar": "Thiết lập hiển thị",
+      "language": "Ngôn ngữ",
+      "viewMonth": "Theo tháng",
+      "viewWeek": "Theo tuần",
+      "period": "Kỳ",
+      "month": "Chọn tháng",
+      "week": "Chọn tuần",
+      "searchLabel": "Tìm thành viên",
+      "searchPlaceholder": "Tìm CM / tên LINE",
+      "filter": "Lọc",
+      "sort": "Sắp xếp",
+      "nav": "Điều hướng"
+    },
+    "common": {
+      "loading": "Đang tải dữ liệu...",
+      "none": "Chưa đánh dấu",
+      "noSplit": "Kỳ này chưa có dữ liệu tách đầu tư / không đầu tư",
+      "noSplitShort": "Chưa tách",
+      "notCalculated": "Không tính",
+      "notRanked": "Không xếp hạng",
+      "weeksOf": "{seen}/{total} tuần",
+      "noRecord": "Không có dữ liệu"
+    },
+    "status": {
+      "pass": "PASS",
+      "out": "Loại",
+      "return": "Quay lại",
+      "downgrade": "Hạ cấp",
+      "elder": "Trưởng lão",
+      "captain": "Đội trưởng",
+      "viceCaptain": "Đội phó"
+    },
+    "metric": {
+      "score": "Tổng điểm",
+      "invested": "Đầu tư thực tế",
+      "uninvested": "Không đầu tư"
+    },
+    "col": {
+      "rank": "#",
+      "member": "Thành viên",
+      "monthScore": "Tổng tháng",
+      "weekScore": "Tổng tuần",
+      "mix": "Đầu tư / không đầu tư",
+      "contribution": "Đóng góp",
+      "investedRank": "Hạng đầu tư",
+      "weeks": "Số tuần",
+      "delta": "So với tuần trước",
+      "target": "Mục tiêu",
+      "bottom": "Top 5 cuối (tháng)",
+      "status": "Trạng thái"
+    },
+    "filter": {
+      "all": "Tất cả",
+      "heavy": "Không đầu tư quá nửa",
+      "leaders": "Đội trưởng / Đội phó",
+      "elder": "Trưởng lão",
+      "return": "Tài khoản quay lại",
+      "everBottom": "Từng ở top 5 cuối tháng này"
+    },
+    "sort": {
+      "prefix": "Sắp xếp: {label}"
+    },
+    "sortKey": {
+      "score": "Tổng điểm",
+      "invested": "Đầu tư thực tế",
+      "uninvested": "Không đầu tư",
+      "investedShare": "Tỷ lệ đầu tư",
+      "contribution": "Đóng góp",
+      "weeksSeen": "Số tuần",
+      "sheetOrder": "Thứ tự bảng",
+      "delta": "So với tuần trước"
+    },
+    "stats": {
+      "teamMonthTotal": "Tổng điểm đội trong tháng",
+      "teamWeekTotal": "Tổng điểm đội trong tuần",
+      "shareOfTeam": "{pct} của đội",
+      "heavy": "Không đầu tư quá nửa",
+      "heavyNote": "Không đầu tư ≥ {pct} tổng điểm cá nhân (không tính quay lại)",
+      "members": "Thành viên",
+      "membersNote": "Thường {regular} | Quay lại {returning}",
+      "statusMix": "Trưởng lão / PASS / Loại",
+      "statusMixNote": "Số người theo trạng thái tuần này",
+      "mixAria": "Cơ cấu đội: đầu tư {invested}, không đầu tư {uninvested}"
+    },
+    "notice": {
+      "missingSplit": "Có {count} tuần trong kỳ này chưa có dữ liệu tách đầu tư / không đầu tư; các giá trị đó hiển thị “—” cho đến khi đồng bộ lại.",
+      "failedWeeks": "Không tải được: {weeks}"
+    },
+    "table": {
+      "titleMonth": "Đóng góp thành viên {month}",
+      "titleWeek": "{week}",
+      "hint": "Hiển thị {shown} / {total} thành viên (gồm {returning} tài khoản quay lại, không xếp hạng)",
+      "returnSection": "Tài khoản quay lại ({count}, không xếp hạng)",
+      "empty": "Không có thành viên phù hợp."
+    },
+    "flag": {
+      "heavy": "Không đầu tư quá nửa",
+      "heavyTitle": "Không đầu tư chiếm {pct} tổng điểm của thành viên"
+    },
+    "tip": {
+      "contribution": "Điểm cá nhân ÷ tổng điểm đội (gồm tài khoản quay lại)",
+      "mix": "Đầu tư {invested} ({investedPct}) / không đầu tư {uninvested} ({uninvestedPct})",
+      "investedShort": "Đầu tư {pct}",
+      "rankShift": "Hạng tổng #{total} → hạng đầu tư #{invested}"
+    },
+    "trend": {
+      "new": "Mới / không có dữ liệu",
+      "lastWeek": "Tuần trước: {score}"
+    },
+    "target": {
+      "elderReached": "Đã đạt Trưởng lão",
+      "toElder": "Còn {value} đến Trưởng lão",
+      "toPass": "Còn {value} để đạt"
+    },
+    "bottom": {
+      "ever": "Top 5 cuối {count}/{total}",
+      "always": "Luôn top 5 cuối {count}/{total}"
+    },
+    "month": {
+      "label": "Tháng {month}/{year}",
+      "short": "{month}/{year}"
+    },
+    "footnote": {
+      "invested": "Đầu tư thực tế: cột “đầu tư” trong bảng tuần; dùng để xét đạt / Trưởng lão và top 5 cuối.",
+      "uninvested": "Không đầu tư: cột “không đầu tư”; được cộng vào tổng điểm nhưng không dùng để xét đạt.",
+      "contribution": "Đóng góp = điểm cá nhân ÷ tổng điểm đội (gồm tài khoản quay lại); tổng tất cả là 100%.",
+      "icons": "Biểu tượng: Lucide Icons (giấy phép ISC)"
+    },
+    "achievement": {
+      "title": "Huy hiệu {scope}",
+      "noteInvested": "Tính theo điểm đầu tư thực tế mỗi tuần; không tính tài khoản quay lại",
+      "noteScore": "Tháng này chưa có dữ liệu tách; tạm tính theo tổng điểm tuần",
+      "mvpTitle": "MVP tháng",
+      "mvpSubtitle": "Cao nhất tháng",
+      "mvpEmpty": "Chưa có dữ liệu",
+      "improverTitle": "Tiến bộ nhất",
+      "improverSubtitle": "Tăng mạnh nhất từ đáy",
+      "improverEmpty": "Chưa đủ tuần",
+      "stableTitle": "Ổn định nhất",
+      "stableSubtitle": "Trung bình cao, dao động thấp",
+      "stableEmpty": "Chưa đủ tuần",
+      "burstTitle": "Bùng nổ",
+      "burstSubtitle": "Tuần cao nhất",
+      "burstEmpty": "Chưa có dữ liệu",
+      "potentialTitle": "Tiềm năng",
+      "potentialSubtitle": "Tăng 3 tuần liên tiếp",
+      "potentialEmpty": "Chưa có chuỗi tăng"
+    },
+    "profile": {
+      "kicker": "Member Analytics",
+      "close": "Đóng",
+      "open": "Xem hồ sơ của {name}",
+      "meta": "LINE: {line} | {weeks} tuần | Trạng thái mới nhất: {status}",
+      "emptyTitle": "Không tìm thấy thành viên",
+      "emptyBody": "Không có lịch sử của thành viên này.",
+      "monthSummary": "Tóm tắt {month}",
+      "noMonthData": "Không có dữ liệu của thành viên trong {month}.",
+      "contributionNote": "của đội (gồm quay lại)",
+      "rank": "Hạng tổng / hạng đầu tư",
+      "rankNote": "Không tính tài khoản quay lại",
+      "monthlyChartTitle": "Đầu tư / không đầu tư theo tháng",
+      "monthlyChartAria": "Biểu đồ cột chồng đầu tư và không đầu tư theo tháng",
+      "weeklyChartTitle": "{month} theo tuần",
+      "weeklyChartAria": "Biểu đồ cột chồng theo tuần trong {month}",
+      "chartNoData": "Không có dữ liệu để vẽ.",
+      "timelineTitle": "Lịch sử theo tuần",
+      "week": "Tuần",
+      "activity": "Hoạt động {number}",
+      "activityHint": "Chi tiết hoạt động: tổng hoạt động (đầu tư / không đầu tư).",
+      "elderTitle": "Trưởng lão",
+      "elderText": "Điểm đầu tư tuần gần nhất của thành viên đạt chuẩn Trưởng lão."
+    },
+    "error": {
+      "fetchFailed": "Không đọc được: {url}",
+      "weeksEmpty": "weeks.csv không có dữ liệu tuần",
+      "dataReadFailed": "Không tải được dữ liệu",
+      "dataReadFailedBody": "Không tải được dữ liệu. Hãy kiểm tra data/weeks.csv và các file CSV theo tuần."
+    },
+    "nav": {
+      "stats": "Tóm tắt",
+      "table": "Thành viên",
+      "help": "Ghi chú"
+    }
+  }
 }
