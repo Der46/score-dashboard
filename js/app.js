@@ -19,7 +19,13 @@ const CONFIG = {
     UNINVESTED_HEAVY_SHARE: 0.5,
 
     BOTTOM_N: 5,
-    HISTORY_MIN_WEEKS: 2
+    HISTORY_MIN_WEEKS: 2,
+
+    // 成員關注參考：列出人數、最少需有幾週資料（避免剛加入的成員被列入）
+    WATCH_N: 5,
+    WATCH_MIN_WEEKS: 2,
+    // 最近一週 / 本月週平均 較比較基準下滑達此比例才列為理由
+    WATCH_DROP_SHARE: 0.3
 };
 
 const STATUS = {
@@ -88,6 +94,7 @@ const els = {
     notice: document.getElementById("notice"),
     stats: document.getElementById("stats"),
     podium: document.getElementById("podium"),
+    watchList: document.getElementById("watchList"),
     tableTitle: document.getElementById("tableTitle"),
     resultHint: document.getElementById("resultHint"),
     tableHead: document.getElementById("tableHead"),
@@ -1294,6 +1301,179 @@ function renderAchievementCard(config, result) {
 }
 
 /* ================================
+   Render: Watch List（成員關注參考）
+================================ */
+
+/**
+ * 依本月數據整理的關注參考，僅供管理者參考。
+ * 只列本月最新一週仍在隊伍內的成員；回歸帳號與隊長 / 副隊長不列入（同後五名規則）。
+ *
+ * 綜合分數（越高越需要關注）：
+ *   未達合格週比例 ×3 + 落在後五名週比例 ×2 + 週平均排名百分位 ×2
+ *   + 最近一週下滑 ×1 + 較上月下滑 ×1 + 未投入過半 ×1
+ */
+function calculateWatchList(month) {
+    const useInvested = month.hasSplit;
+    const metric = person => (useInvested ? person.invested : person.score);
+    const minWeeks = Math.min(CONFIG.WATCH_MIN_WEEKS, month.totalWeeks);
+
+    const monthIndex = state.months.indexOf(month.monthKey);
+    const previousMonthKey = state.months[monthIndex + 1];
+    const previousMonth = previousMonthKey ? buildMonthModel(previousMonthKey) : null;
+    const previousMetric = person => (previousMonth?.hasSplit ? person.invested : person.score);
+
+    // 只看本月最新一週仍在週表上的成員（月中已離隊者不列入）
+    const latestWeek = month.weekModels[month.weekModels.length - 1];
+
+    const candidates = month.members
+        .filter(member =>
+            latestWeek?.byKey.has(member.key) &&
+            isBottomEligible(member) &&
+            member.weeks.length >= minWeeks
+        )
+        .map(member => {
+            const values = member.weeks.map(entry => metric(entry.person));
+            const avg = average(values);
+            const belowPassWeeks = member.weeks.filter(({ person }) =>
+                person.status === STATUS.OUT || (person.invested !== null && person.invested < CONFIG.PASS_SCORE)
+            ).length;
+
+            const last = values[values.length - 1];
+            const earlierAvg = values.length >= 2 ? average(values.slice(0, -1)) : null;
+            const lastDrop = earlierAvg > 0 ? (earlierAvg - last) / earlierAvg : null;
+
+            const previousMember = previousMonth?.byKey.get(member.key);
+            const previousAvg = previousMember?.weeks.length
+                ? average(previousMember.weeks.map(entry => previousMetric(entry.person)))
+                : null;
+            const monthDrop = previousAvg > 0 ? (previousAvg - avg) / previousAvg : null;
+
+            return { member, values, avg, belowPassWeeks, lastDrop, monthDrop };
+        });
+
+    // 週平均由低到高排名（1 = 最低）
+    const byAvg = candidates.slice().sort((a, b) => a.avg - b.avg);
+
+    byAvg.forEach((item, index) => {
+        item.avgRankFromBottom = index + 1;
+        item.lowPercentile = byAvg.length > 1 ? 1 - index / (byAvg.length - 1) : 1;
+    });
+
+    candidates.forEach(item => {
+        const weeks = item.member.weeks.length;
+        const bottomRate = item.member.bottomEligibleWeeks ? item.member.bottomWeeks / item.member.bottomEligibleWeeks : 0;
+        const isLastDrop = Number.isFinite(item.lastDrop) && item.lastDrop >= CONFIG.WATCH_DROP_SHARE;
+        const isMonthDrop = Number.isFinite(item.monthDrop) && item.monthDrop >= CONFIG.WATCH_DROP_SHARE;
+
+        item.weight =
+            (item.belowPassWeeks / weeks) * 3 +
+            bottomRate * 2 +
+            item.lowPercentile * 2 +
+            (isLastDrop ? 1 : 0) +
+            (isMonthDrop ? 1 : 0) +
+            (item.member.isHeavy ? 1 : 0);
+
+        item.reasons = buildWatchReasons(item, { weeks, isLastDrop, isMonthDrop, total: candidates.length, useInvested });
+    });
+
+    const list = candidates
+        .sort((a, b) => b.weight - a.weight || a.avg - b.avg || a.member.cm.localeCompare(b.member.cm))
+        .slice(0, CONFIG.WATCH_N);
+
+    return { list, useInvested, poolSize: candidates.length };
+}
+
+function buildWatchReasons(item, { weeks, isLastDrop, isMonthDrop, total, useInvested }) {
+    const { member } = item;
+    const reasons = [];
+    const metricLabel = t(useInvested ? "metric.invested" : "metric.score");
+
+    if (item.belowPassWeeks > 0) {
+        reasons.push({
+            tone: item.belowPassWeeks === weeks ? "risk" : "watch",
+            text: t("watch.reasonBelowPass", { count: item.belowPassWeeks, total: weeks, pass: formatCompact(CONFIG.PASS_SCORE) })
+        });
+    }
+
+    if (member.bottomWeeks > 0) {
+        reasons.push({
+            tone: member.bottomWeeks === member.bottomEligibleWeeks ? "risk" : "watch",
+            text: t("watch.reasonBottom", { count: member.bottomWeeks, total: member.bottomEligibleWeeks, n: CONFIG.BOTTOM_N })
+        });
+    }
+
+    reasons.push({
+        tone: "neutral",
+        text: t("watch.reasonAvg", {
+            metric: metricLabel,
+            value: formatNumber(Math.round(item.avg)),
+            rank: total - item.avgRankFromBottom + 1,
+            total
+        })
+    });
+
+    if (isLastDrop) {
+        reasons.push({ tone: "watch", text: t("watch.reasonLastDrop", { pct: formatPercent(item.lastDrop, 0) }) });
+    }
+
+    if (isMonthDrop) {
+        reasons.push({ tone: "watch", text: t("watch.reasonMonthDrop", { pct: formatPercent(item.monthDrop, 0) }) });
+    }
+
+    if (member.isHeavy) {
+        reasons.push({ tone: "watch", text: t("watch.reasonHeavy", { pct: formatPercent(member.uninvestedShare, 0) }) });
+    }
+
+    return reasons;
+}
+
+function renderWatchList(month) {
+    if (state.view !== VIEW.MONTH || !month) {
+        els.watchList.hidden = true;
+        els.watchList.innerHTML = "";
+        return;
+    }
+
+    const { list, useInvested } = calculateWatchList(month);
+
+    els.watchList.hidden = false;
+    els.watchList.innerHTML = `
+        <div class="section-head">
+            <div class="panel-heading">
+                <span class="icon-chip" aria-hidden="true">${icon("eye")}</span>
+                <h2 class="section-title">${escapeHTML(t("watch.title", { scope: formatMonthLabel(month.monthKey) }))}</h2>
+            </div>
+            <span class="section-note">${escapeHTML(t(useInvested ? "watch.noteInvested" : "watch.noteScore", {
+                n: CONFIG.WATCH_MIN_WEEKS,
+                week: getWeekShortLabel(month.weekModels[month.weekModels.length - 1].week)
+            }))}</span>
+        </div>
+        ${list.length
+            ? `<ol class="watch-row">${list.map((item, index) => renderWatchCard(item, index)).join("")}</ol>`
+            : `<p class="watch-empty">${escapeHTML(t("watch.empty"))}</p>`}
+    `;
+}
+
+function renderWatchCard(item, index) {
+    const { member } = item;
+
+    return `
+        <li class="watch-card">
+            <button class="watch-name" type="button" data-profile-key="${escapeHTML(member.key)}"
+                title="${escapeHTML(t("profile.open", { name: member.cm }))}">
+                <span class="watch-index">${index + 1}</span>
+                <span class="watch-cm">${escapeHTML(member.cm)}</span>
+                <span class="mini-arrow" aria-hidden="true">${icon("arrowUpRight")}</span>
+            </button>
+            ${member.lineName ? `<div class="watch-line">${escapeHTML(member.lineName)}</div>` : ""}
+            <ul class="watch-reasons">
+                ${item.reasons.map(reason => `<li class="watch-reason tone-${reason.tone}">${escapeHTML(reason.text)}</li>`).join("")}
+            </ul>
+        </li>
+    `;
+}
+
+/* ================================
    Render: Table
 ================================ */
 
@@ -1622,6 +1802,7 @@ function renderAll() {
         title = t("table.titleMonth", { month: formatMonthLabel(result.month.monthKey) });
         renderNotice(result.month.missingSplitWeeks);
         renderPodium(result.month);
+        renderWatchList(result.month);
     } else {
         const result = getWeekRows();
 
@@ -1630,6 +1811,7 @@ function renderAll() {
         title = t("table.titleWeek", { week: result.model.week.label || result.model.week.id });
         renderNotice(result.model.hasSplit ? 0 : 1);
         renderPodium(null);
+        renderWatchList(null);
     }
 
     renderStats(scope);
@@ -1654,6 +1836,7 @@ function renderError(error) {
 
     els.stats.innerHTML = "";
     els.podium.innerHTML = "";
+    els.watchList.innerHTML = "";
     els.tableHead.innerHTML = "";
     els.resultHint.textContent = t("error.dataReadFailed");
     els.tableBody.innerHTML = `

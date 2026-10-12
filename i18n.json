@@ -193,6 +193,18 @@
       "stats": "統計摘要",
       "table": "成員列表",
       "help": "說明"
+    },
+    "watch": {
+      "title": "{scope} 成員關注參考",
+      "noteInvested": "依本月每週「實際投入」綜合整理，僅供管理者參考；只列 {week} 仍在隊伍內的成員，回歸帳號、隊長與副隊長不列入，本月資料少於 {n} 週者不列入",
+      "noteScore": "此月份尚無拆分資料，暫依每週總分綜合整理，僅供管理者參考；只列 {week} 仍在隊伍內的成員，回歸帳號、隊長與副隊長不列入，本月資料少於 {n} 週者不列入",
+      "reasonBelowPass": "本月 {count}/{total} 週未達合格線（{pass}）",
+      "reasonBottom": "本月 {count}/{total} 週落在全隊後 {n} 名",
+      "reasonAvg": "本月週平均{metric} {value}，排第 {rank}/{total} 名",
+      "reasonLastDrop": "最近一週較本月前幾週平均下滑 {pct}",
+      "reasonMonthDrop": "週平均較上月下滑 {pct}",
+      "reasonHeavy": "未投入佔個人總分 {pct}",
+      "empty": "本月沒有符合條件的成員"
     }
   },
   "en": {
@@ -389,6 +401,18 @@
       "stats": "Summary",
       "table": "Members",
       "help": "Notes"
+    },
+    "watch": {
+      "title": "{scope} members to check in with",
+      "noteInvested": "Compiled from this month's weekly invested scores, for managers' reference only. Only members still on the team in {week} are included; returning accounts, captain and vice captains are excluded, as are members with fewer than {n} weeks of data",
+      "noteScore": "No split data for this month yet, compiled from weekly totals, for managers' reference only. Only members still on the team in {week} are included; returning accounts, captain and vice captains are excluded, as are members with fewer than {n} weeks of data",
+      "reasonBelowPass": "Below the pass line ({pass}) in {count}/{total} weeks this month",
+      "reasonBottom": "In the team's bottom {n} in {count}/{total} weeks this month",
+      "reasonAvg": "Weekly average {metric} {value}, ranked {rank}/{total}",
+      "reasonLastDrop": "Latest week down {pct} vs. earlier weeks this month",
+      "reasonMonthDrop": "Weekly average down {pct} vs. last month",
+      "reasonHeavy": "Uninvested is {pct} of personal total",
+      "empty": "No members match this month"
     }
   },
   "vi": {
@@ -585,6 +609,18 @@
       "stats": "Tóm tắt",
       "table": "Thành viên",
       "help": "Ghi chú"
+    },
+    "watch": {
+      "title": "{scope} thành viên cần quan tâm",
+      "noteInvested": "Tổng hợp từ điểm đầu tư thực tế hằng tuần trong tháng, chỉ để quản lý tham khảo. Chỉ tính thành viên vẫn còn trong đội ở {week}; không tính tài khoản quay lại, đội trưởng, đội phó và thành viên có dưới {n} tuần dữ liệu",
+      "noteScore": "Tháng này chưa có dữ liệu tách, tạm tổng hợp theo tổng điểm tuần, chỉ để quản lý tham khảo. Chỉ tính thành viên vẫn còn trong đội ở {week}; không tính tài khoản quay lại, đội trưởng, đội phó và thành viên có dưới {n} tuần dữ liệu",
+      "reasonBelowPass": "{count}/{total} tuần trong tháng chưa đạt mức đạt ({pass})",
+      "reasonBottom": "{count}/{total} tuần trong tháng nằm trong {n} hạng cuối của đội",
+      "reasonAvg": "Trung bình tuần ({metric}) {value}, xếp hạng {rank}/{total}",
+      "reasonLastDrop": "Tuần gần nhất giảm {pct} so với các tuần trước trong tháng",
+      "reasonMonthDrop": "Trung bình tuần giảm {pct} so với tháng trước",
+      "reasonHeavy": "Chưa đầu tư chiếm {pct} tổng điểm cá nhân",
+      "empty": "Tháng này không có thành viên phù hợp"
     }
   }
 }

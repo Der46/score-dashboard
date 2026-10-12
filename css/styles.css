@@ -826,6 +826,115 @@ button.podium-lime:hover {
 }
 
 /* ================================
+   Watch List（成員關注參考）
+================================ */
+
+.watch-row {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.watch-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px 18px 18px;
+    background: var(--card);
+    border-radius: var(--radius-lg);
+    min-width: 0;
+}
+
+.watch-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 0;
+    background: none;
+    border: 0;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.watch-name:hover .watch-cm {
+    text-decoration: underline;
+}
+
+.watch-index {
+    flex: 0 0 auto;
+    display: inline-grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--chip);
+    font-size: 12.5px;
+    font-weight: 600;
+}
+
+.watch-cm {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.watch-line {
+    font-size: 12.5px;
+    color: var(--ink-3);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.watch-reasons {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 8px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.watch-reason {
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    background: var(--chip);
+    font-size: 12.5px;
+    line-height: 1.4;
+    color: var(--ink-2);
+}
+
+.watch-reason.tone-watch {
+    background: var(--warn-soft);
+    color: var(--warn);
+}
+
+.watch-reason.tone-risk {
+    background: var(--bad-soft);
+    color: var(--bad);
+}
+
+.watch-empty {
+    margin: 0;
+    padding: 16px 18px;
+    background: var(--card);
+    border-radius: var(--radius-lg);
+    font-size: 13px;
+    color: var(--ink-3);
+}
+
+/* ================================
    Panel / Table
 ================================ */
 
@@ -1424,6 +1533,19 @@ td.is-heavy {
 
     .podium-card {
         flex: 0 0 min(230px, 70vw);
+        scroll-snap-align: start;
+    }
+
+    .watch-row {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        padding-bottom: 4px;
+        scrollbar-width: thin;
+    }
+
+    .watch-card {
+        flex: 0 0 min(260px, 78vw);
         scroll-snap-align: start;
     }
 }
