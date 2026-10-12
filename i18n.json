@@ -202,7 +202,6 @@
       "reasonBottom": "本月 {count}/{total} 週落在全隊後 {n} 名",
       "reasonAvg": "本月週平均{metric} {value}，排第 {rank}/{total} 名",
       "reasonLastDrop": "最近一週較本月前幾週平均下滑 {pct}",
-      "reasonMonthDrop": "週平均較上月下滑 {pct}",
       "reasonHeavy": "未投入佔個人總分 {pct}",
       "empty": "本月沒有符合條件的成員"
     }
@@ -410,7 +409,6 @@
       "reasonBottom": "In the team's bottom {n} in {count}/{total} weeks this month",
       "reasonAvg": "Weekly average {metric} {value}, ranked {rank}/{total}",
       "reasonLastDrop": "Latest week down {pct} vs. earlier weeks this month",
-      "reasonMonthDrop": "Weekly average down {pct} vs. last month",
       "reasonHeavy": "Uninvested is {pct} of personal total",
       "empty": "No members match this month"
     }
@@ -618,7 +616,6 @@
       "reasonBottom": "{count}/{total} tuần trong tháng nằm trong {n} hạng cuối của đội",
       "reasonAvg": "Trung bình tuần ({metric}) {value}, xếp hạng {rank}/{total}",
       "reasonLastDrop": "Tuần gần nhất giảm {pct} so với các tuần trước trong tháng",
-      "reasonMonthDrop": "Trung bình tuần giảm {pct} so với tháng trước",
       "reasonHeavy": "Chưa đầu tư chiếm {pct} tổng điểm cá nhân",
       "empty": "Tháng này không có thành viên phù hợp"
     }

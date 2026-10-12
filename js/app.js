@@ -24,7 +24,7 @@ const CONFIG = {
     // 成員關注參考：列出人數、最少需有幾週資料（避免剛加入的成員被列入）
     WATCH_N: 5,
     WATCH_MIN_WEEKS: 2,
-    // 最近一週 / 本月週平均 較比較基準下滑達此比例才列為理由
+    // 最近一週較本月前幾週平均下滑達此比例才列為理由
     WATCH_DROP_SHARE: 0.3
 };
 
@@ -1310,17 +1310,12 @@ function renderAchievementCard(config, result) {
  *
  * 綜合分數（越高越需要關注）：
  *   未達合格週比例 ×3 + 落在後五名週比例 ×2 + 週平均排名百分位 ×2
- *   + 最近一週下滑 ×1 + 較上月下滑 ×1 + 未投入過半 ×1
+ *   + 最近一週下滑 ×1 + 未投入過半 ×1
  */
 function calculateWatchList(month) {
     const useInvested = month.hasSplit;
     const metric = person => (useInvested ? person.invested : person.score);
     const minWeeks = Math.min(CONFIG.WATCH_MIN_WEEKS, month.totalWeeks);
-
-    const monthIndex = state.months.indexOf(month.monthKey);
-    const previousMonthKey = state.months[monthIndex + 1];
-    const previousMonth = previousMonthKey ? buildMonthModel(previousMonthKey) : null;
-    const previousMetric = person => (previousMonth?.hasSplit ? person.invested : person.score);
 
     // 只看本月最新一週仍在週表上的成員（月中已離隊者不列入）
     const latestWeek = month.weekModels[month.weekModels.length - 1];
@@ -1342,13 +1337,7 @@ function calculateWatchList(month) {
             const earlierAvg = values.length >= 2 ? average(values.slice(0, -1)) : null;
             const lastDrop = earlierAvg > 0 ? (earlierAvg - last) / earlierAvg : null;
 
-            const previousMember = previousMonth?.byKey.get(member.key);
-            const previousAvg = previousMember?.weeks.length
-                ? average(previousMember.weeks.map(entry => previousMetric(entry.person)))
-                : null;
-            const monthDrop = previousAvg > 0 ? (previousAvg - avg) / previousAvg : null;
-
-            return { member, values, avg, belowPassWeeks, lastDrop, monthDrop };
+            return { member, values, avg, belowPassWeeks, lastDrop };
         });
 
     // 週平均由低到高排名（1 = 最低）
@@ -1363,17 +1352,15 @@ function calculateWatchList(month) {
         const weeks = item.member.weeks.length;
         const bottomRate = item.member.bottomEligibleWeeks ? item.member.bottomWeeks / item.member.bottomEligibleWeeks : 0;
         const isLastDrop = Number.isFinite(item.lastDrop) && item.lastDrop >= CONFIG.WATCH_DROP_SHARE;
-        const isMonthDrop = Number.isFinite(item.monthDrop) && item.monthDrop >= CONFIG.WATCH_DROP_SHARE;
 
         item.weight =
             (item.belowPassWeeks / weeks) * 3 +
             bottomRate * 2 +
             item.lowPercentile * 2 +
             (isLastDrop ? 1 : 0) +
-            (isMonthDrop ? 1 : 0) +
             (item.member.isHeavy ? 1 : 0);
 
-        item.reasons = buildWatchReasons(item, { weeks, isLastDrop, isMonthDrop, total: candidates.length, useInvested });
+        item.reasons = buildWatchReasons(item, { weeks, isLastDrop, total: candidates.length, useInvested });
     });
 
     const list = candidates
@@ -1383,7 +1370,7 @@ function calculateWatchList(month) {
     return { list, useInvested, poolSize: candidates.length };
 }
 
-function buildWatchReasons(item, { weeks, isLastDrop, isMonthDrop, total, useInvested }) {
+function buildWatchReasons(item, { weeks, isLastDrop, total, useInvested }) {
     const { member } = item;
     const reasons = [];
     const metricLabel = t(useInvested ? "metric.invested" : "metric.score");
@@ -1414,10 +1401,6 @@ function buildWatchReasons(item, { weeks, isLastDrop, isMonthDrop, total, useInv
 
     if (isLastDrop) {
         reasons.push({ tone: "watch", text: t("watch.reasonLastDrop", { pct: formatPercent(item.lastDrop, 0) }) });
-    }
-
-    if (isMonthDrop) {
-        reasons.push({ tone: "watch", text: t("watch.reasonMonthDrop", { pct: formatPercent(item.monthDrop, 0) }) });
     }
 
     if (member.isHeavy) {
