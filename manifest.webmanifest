@@ -1,0 +1,15 @@
+{
+    "name": "Coin999-長長久久 隊伍成績總覽",
+    "short_name": "隊伍成績",
+    "lang": "zh-Hant",
+    "start_url": "./",
+    "scope": "./",
+    "display": "standalone",
+    "background_color": "#c4cec6",
+    "theme_color": "#1b1b19",
+    "icons": [
+        { "src": "./icons/icon.svg", "sizes": "any", "type": "image/svg+xml" },
+        { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+        { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    ]
+}

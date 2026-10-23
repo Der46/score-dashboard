@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>隊伍貢獻總覽</title>
+  <!-- 底色：與側邊欄同色的深色圓角方塊 -->
+  <rect width="512" height="512" rx="112" fill="#1b1b19" />
+
+  <!-- 頒獎台長條：第二名 / 第一名 / 第三名 -->
+  <path d="M112 392V246Q112 224 134 224H178Q200 224 200 246V392Z" fill="#f4f5ef" />
+  <path d="M212 392V166Q212 144 234 144H278Q300 144 300 166V392Z" fill="#e3f37c" />
+  <path d="M312 392V318Q312 296 334 296H378Q400 296 400 318V392Z" fill="#55584f" />
+
+  <!-- 底線 -->
+  <rect x="96" y="388" width="320" height="12" rx="6" fill="#a3a69c" />
+
+  <!-- 星芒 -->
+  <path d="M356 168Q356 216 404 216Q356 216 356 264Q356 216 308 216Q356 216 356 168Z"
+    fill="#e3f37c" stroke="#e3f37c" stroke-width="10" stroke-linejoin="round" />
+</svg>
