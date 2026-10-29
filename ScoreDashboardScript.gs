@@ -5,6 +5,11 @@
 const PASS_SCORE = 200000;
 const ELDER_SCORE = 500000;
 
+// 票券換算：第 1 ~ 649 張每張 1,500 分，第 650 張起每張 2,000 分
+const TICKET_BASE_RATE = 1500;
+const TICKET_TIER_RATE = 2000;
+const TICKET_TIER_FIRST_COUNT = 650;
+
 const MEMBER_SHEET_NAME = "成員名單";
 
 // 成員名單：一般帳號 A2 起最多 50 列，回歸帳號 A53 起
@@ -1135,6 +1140,7 @@ function normalizeScoreValue_(value) {
  * 3. 找不到、CSV 重複、週表 CM 重複者不寫入，並列在結果中
  * 4. 週表中沒出現在 CSV 的成員保留原分數
  * 5. 寫入後重新排序週表
+ * 6. 勾選「票券」時，CSV 分數視為票券張數，換算成分數再寫入（見票券換算）
  * ===================================================== */
 
 function importOcrCsvToWeeklySheet() {
@@ -1145,11 +1151,14 @@ function importOcrCsvToWeeklySheet() {
       "說明：\n" +
       "1. CSV 的 name 會比對週表 A 欄 CM。\n" +
       "2. score 寫入投入、unused_score 寫入未投入。\n" +
-      "3. 沒出現在 CSV 的成員會保留原分數。",
+      "3. 沒出現在 CSV 的成員會保留原分數。\n" +
+      "4. 勾選「票券」：CSV 為票券張數，第 1 ~ 649 張每張 1,500 分，\n" +
+      "   第 650 張起每張 2,000 分（投入、未投入各自計算）。",
     submitLabel: "開始匯入",
     callbackName: "importOcrCsvForWeeklySheet",
     withActivityPicker: true,
-    withCsvFile: true
+    withCsvFile: true,
+    withTicketOption: true
   });
 }
 
@@ -1170,6 +1179,7 @@ function importOcrCsvForWeeklySheet(payload) {
     throw new Error(`活動編號不正確：${payload && payload.activityNumber}`);
   }
 
+  const isTicket = Boolean(payload && payload.ticket);
   const ocrRows = parseOcrScoreCsv_(payload && payload.csvText);
 
   if (ocrRows.length === 0) {
@@ -1178,7 +1188,7 @@ function importOcrCsvForWeeklySheet(payload) {
 
   try {
     const layout = runWithRetry_("讀取週表版面資訊", () => readLayoutInfo_(weeklySheet), 3);
-    const result = writeOcrScoresToWeeklySheet_(weeklySheet, layout, activityNumber, ocrRows);
+    const result = writeOcrScoresToWeeklySheet_(weeklySheet, layout, activityNumber, ocrRows, isTicket);
 
     runWithRetry_("匯入後排序週表", () => {
       SpreadsheetApp.flush();
@@ -1276,9 +1286,10 @@ function parseOcrScoreCell_(value, rowNumber, columnName) {
  * 將 OCR 成績寫入週表指定活動
  *
  * 只寫入該活動的投入 / 未投入兩欄，不動其他欄位與公式。
+ * isTicket 為 true 時，先將票券張數換算成分數再寫入。
  * ===================================================== */
 
-function writeOcrScoresToWeeklySheet_(weeklySheet, layout, activityNumber, ocrRows) {
+function writeOcrScoresToWeeklySheet_(weeklySheet, layout, activityNumber, ocrRows, isTicket) {
   const investedCol = ACTIVITY_INVESTED_COLS[activityNumber];
 
   const blocks = listScoreBlocks_(layout).map(block => ({
@@ -1327,9 +1338,11 @@ function writeOcrScoresToWeeklySheet_(weeklySheet, layout, activityNumber, ocrRo
     seenNames[key] = true;
   });
 
+  const scoresByRow = isTicket ? convertTicketScores_(updatesByRow) : updatesByRow;
+
   blocks.forEach(block => {
     const scoreValues = block.values.map((row, index) =>
-      updatesByRow[block.firstRow + index] || [row[investedCol - 1], row[investedCol]]
+      scoresByRow[block.firstRow + index] || [row[investedCol - 1], row[investedCol]]
     );
 
     runWithRetry_("寫入 OCR 分數", () =>
@@ -1344,8 +1357,33 @@ function writeOcrScoresToWeeklySheet_(weeklySheet, layout, activityNumber, ocrRo
     notInCsvCount: memberCount - writtenCount,
     unmatchedNames,
     duplicateCsvNames,
-    ambiguousNames
+    ambiguousNames,
+    isTicket
   };
+}
+
+
+/* =====================================================
+ * 票券換算
+ *
+ * 票券活動的 CSV 是票券張數，依累進費率換成分數：
+ * 第 1 ~ 649 張每張 1,500 分，第 650 張起每張 2,000 分
+ * 例：649 張 = 973,500；650 張 = 975,500；700 張 = 1,075,500
+ *
+ * 投入、未投入各自換算；換算後四捨五入為整數。
+ * ===================================================== */
+
+function ticketsToScore_(tickets) {
+  const baseTickets = Math.min(tickets, TICKET_TIER_FIRST_COUNT - 1);
+  const tierTickets = Math.max(tickets - baseTickets, 0);
+
+  return Math.round(baseTickets * TICKET_BASE_RATE + tierTickets * TICKET_TIER_RATE);
+}
+
+function convertTicketScores_(updatesByRow) {
+  return Object.fromEntries(
+    Object.entries(updatesByRow).map(([row, tickets]) => [row, tickets.map(ticketsToScore_)])
+  );
 }
 
 
@@ -1356,10 +1394,15 @@ function writeOcrScoresToWeeklySheet_(weeklySheet, layout, activityNumber, ocrRo
 function buildOcrImportReport_(weeklySheetName, activityNumber, csvRowCount, result) {
   const formatNames = names => names.length === 0 ? "" : `\n  ${names.join("、")}`;
 
+  const ticketReport = result.isTicket
+    ? "票券換算：第 1 ~ 649 張每張 1,500 分，第 650 張起每張 2,000 分\n"
+    : "";
+
   return (
     "CSV 匯入完成！\n\n" +
     `週表：${weeklySheetName}\n` +
-    `活動：活動${activityNumber}\n` +
+    `活動：活動${activityNumber}${result.isTicket ? "（票券）" : ""}\n` +
+    ticketReport +
     `CSV 筆數：${csvRowCount} 筆\n` +
     `已寫入：${result.writtenCount} 筆\n` +
     `週表中未出現在 CSV（保留原分數）：${result.notInCsvCount} 筆\n` +
@@ -1424,8 +1467,10 @@ function listWeeklySheetNames_(ss) {
  *                     （不可以底線結尾，否則 google.script.run 無法呼叫）
  * withActivityPicker  是否顯示活動 1 / 2 / 3 下拉選單
  * withCsvFile         是否顯示 CSV 檔案選擇
+ * withTicketOption    是否顯示「票券」換算選項
  *
- * callback 接收 { weeklySheetName, activityNumber, csvText }，回傳結果訊息。
+ * callback 接收 { weeklySheetName, activityNumber, csvText, ticket }，
+ * 回傳結果訊息。
  * 預設選取目前所在的週表；不在週表上則選最新一週。
  * ===================================================== */
 
@@ -1449,6 +1494,7 @@ function showWeeklySheetPickerDialog_(options) {
     callbackName: options.callbackName,
     withActivityPicker: Boolean(options.withActivityPicker),
     withCsvFile: Boolean(options.withCsvFile),
+    withTicketOption: Boolean(options.withTicketOption),
     weeklySheetNames,
     defaultName: weeklySheetNames.includes(activeSheetName) ? activeSheetName : weeklySheetNames[0]
   };
@@ -1470,6 +1516,7 @@ function showWeeklySheetPickerDialog_(options) {
   button { padding: 6px 16px; font-size: 14px; cursor: pointer; }
   #submit { background: #1a73e8; color: #fff; border: none; border-radius: 4px; }
   #submit:disabled { background: #9aa0a6; cursor: default; }
+  label.checkbox { display: flex; align-items: center; gap: 6px; margin-bottom: 14px; }
   .hidden { display: none; }
   .error { color: #c5221f; }
 </style>
@@ -1495,6 +1542,10 @@ function showWeeklySheetPickerDialog_(options) {
       <input id="csvFile" type="file" accept=".csv,text/csv">
     </div>
 
+    <div id="ticketField" class="hidden">
+      <label class="checkbox"><input id="ticket" type="checkbox">票券（CSV 為票券張數）</label>
+    </div>
+
     <p id="formError" class="error hidden"></p>
 
     <div class="buttons">
@@ -1516,12 +1567,14 @@ function showWeeklySheetPickerDialog_(options) {
   const weekSelect = byId("week");
   const activitySelect = byId("activity");
   const fileInput = byId("csvFile");
+  const ticketInput = byId("ticket");
   const submit = byId("submit");
 
   byId("description").textContent = config.description;
   submit.textContent = config.submitLabel;
   byId("activityField").classList.toggle("hidden", !config.withActivityPicker);
   byId("fileField").classList.toggle("hidden", !config.withCsvFile);
+  byId("ticketField").classList.toggle("hidden", !config.withTicketOption);
 
   config.weeklySheetNames.forEach(name => {
     const option = document.createElement("option");
@@ -1573,7 +1626,7 @@ function showWeeklySheetPickerDialog_(options) {
       .then(csvText => {
         submit.disabled = true;
         submit.textContent = "處理中…";
-        [weekSelect, activitySelect, fileInput].forEach(el => { el.disabled = true; });
+        [weekSelect, activitySelect, fileInput, ticketInput].forEach(el => { el.disabled = true; });
 
         google.script.run
           .withSuccessHandler(message => showResult(message || "完成。", false))
@@ -1581,7 +1634,8 @@ function showWeeklySheetPickerDialog_(options) {
           [config.callbackName]({
             weeklySheetName: weekSelect.value,
             activityNumber: Number(activitySelect.value),
-            csvText
+            csvText,
+            ticket: config.withTicketOption && ticketInput.checked
           });
       })
       .catch(err => showFormError(err.message));
@@ -1594,7 +1648,7 @@ function showWeeklySheetPickerDialog_(options) {
     HtmlService
       .createHtmlOutput(html)
       .setWidth(440)
-      .setHeight(config.withCsvFile ? 480 : 360),
+      .setHeight(config.withTicketOption ? 560 : config.withCsvFile ? 480 : 360),
     options.title
   );
 }
