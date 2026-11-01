@@ -867,18 +867,6 @@ button.podium-lime:hover {
     text-decoration: underline;
 }
 
-.watch-index {
-    flex: 0 0 auto;
-    display: inline-grid;
-    place-items: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: var(--chip);
-    font-size: 12.5px;
-    font-weight: 600;
-}
-
 .watch-cm {
     flex: 1 1 auto;
     min-width: 0;
@@ -919,11 +907,6 @@ button.podium-lime:hover {
 .watch-reason.tone-watch {
     background: var(--warn-soft);
     color: var(--warn);
-}
-
-.watch-reason.tone-risk {
-    background: var(--bad-soft);
-    color: var(--bad);
 }
 
 .watch-empty {
@@ -1147,7 +1130,8 @@ td.is-heavy {
 }
 
 .badge-pass { background: var(--good-soft); color: var(--good); }
-.badge-out { background: var(--bad-soft); color: var(--bad); }
+/* 未達合格：提醒用的琥珀色，而不是代表錯誤的紅色 */
+.badge-out { background: var(--warn-soft); color: var(--warn); }
 .badge-return { background: var(--chip); color: var(--ink-2); }
 .badge-elder { background: var(--lime); color: var(--ink); }
 .badge-captain { background: var(--dark); color: var(--on-dark); }
@@ -1155,8 +1139,6 @@ td.is-heavy {
 .badge-other { background: var(--chip); color: var(--ink-2); }
 .badge-heavy { background: var(--warn-soft); color: var(--warn); }
 
-.pill-watch { background: var(--warn-soft); color: var(--warn); }
-.pill-risk { background: var(--bad-soft); color: var(--bad); }
 
 .trend {
     padding: 0;
@@ -1908,6 +1890,51 @@ td.is-heavy {
         transition: none !important;
         scroll-behavior: auto !important;
     }
+}
+
+/* ================================
+   Pending List（還差一點就合格）
+================================ */
+
+.pending-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pending-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    background: var(--card);
+    border-radius: 999px;
+    min-width: 0;
+}
+
+.pending-name {
+    min-height: 24px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.pending-name:hover {
+    text-decoration: underline;
+}
+
+.pending-gap {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-2);
+    white-space: nowrap;
 }
 
 /* ================================

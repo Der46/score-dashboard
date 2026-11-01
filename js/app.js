@@ -62,7 +62,6 @@ const FILTER = {
     LEADERS: "leaders",
     ELDER: "elder",
     RETURN: "return",
-    EVER_BOTTOM: "everBottom",
     STATUS_PREFIX: "status:"
 };
 
@@ -103,6 +102,7 @@ const els = {
     notice: document.getElementById("notice"),
     stats: document.getElementById("stats"),
     podium: document.getElementById("podium"),
+    pendingList: document.getElementById("pendingList"),
     watchList: document.getElementById("watchList"),
     tableTitle: document.getElementById("tableTitle"),
     resultHint: document.getElementById("resultHint"),
@@ -1010,8 +1010,6 @@ function getFilterOptions() {
     ];
 
     if (state.view === VIEW.WEEK) {
-        options.push({ value: FILTER.EVER_BOTTOM, label: t("filter.everBottom") });
-
         const model = state.weekData.get(state.period);
         const statuses = Array.from(new Set((model?.people || []).map(person => person.status).filter(Boolean)))
             .filter(status => ![STATUS.ELDER, STATUS.RETURN, ...LEADER_STATUSES].includes(status));
@@ -1032,7 +1030,6 @@ function matchesFilter(row) {
     if (filter === FILTER.LEADERS) return LEADER_STATUSES.includes(row.status);
     if (filter === FILTER.ELDER) return row.status === STATUS.ELDER;
     if (filter === FILTER.RETURN) return row.isReturn;
-    if (filter === FILTER.EVER_BOTTOM) return row.bottomWeeks > 0;
 
     if (filter.startsWith(FILTER.STATUS_PREFIX)) {
         return row.status === filter.slice(FILTER.STATUS_PREFIX.length);
@@ -1480,10 +1477,10 @@ function renderAchievementCard(config, result) {
 ================================ */
 
 /**
- * 依本月數據整理的關注參考，僅供管理者參考。
+ * 依本月數據整理的「加油提醒」：挑出還沒達到合格線或最近下滑的成員，畫面上只顯示差距與自身變化。
  * 只列本月最新一週仍在隊伍內的成員；回歸帳號與隊長 / 副隊長不列入（同後五名規則）。
  *
- * 綜合分數（越高越需要關注）：
+ * 挑選用的綜合分數（越高越需要提醒；只用來挑人，不顯示）：
  *   未達合格週比例 ×3 + 落在後五名週比例 ×2 + 週平均排名百分位 ×2
  *   + 最近一週下滑 ×1 + 未投入過半 ×1
  */
@@ -1519,7 +1516,6 @@ function calculateWatchList(month) {
     const byAvg = candidates.slice().sort((a, b) => a.avg - b.avg);
 
     byAvg.forEach((item, index) => {
-        item.avgRankFromBottom = index + 1;
         item.lowPercentile = byAvg.length > 1 ? 1 - index / (byAvg.length - 1) : 1;
     });
 
@@ -1535,44 +1531,41 @@ function calculateWatchList(month) {
             (isLastDrop ? 1 : 0) +
             (item.member.isHeavy ? 1 : 0);
 
-        item.reasons = buildWatchReasons(item, { weeks, isLastDrop, total: candidates.length, useInvested });
+        item.reasons = buildWatchReasons(item, { weeks, isLastDrop, useInvested });
     });
 
+    // 依綜合分數挑出要提醒的成員，但顯示時改依名稱排序、不加編號，
+    // 讓清單是提醒而不是「誰最差」的排行。
     const list = candidates
         .sort((a, b) => b.weight - a.weight || a.avg - b.avg || a.member.cm.localeCompare(b.member.cm))
-        .slice(0, CONFIG.WATCH_N);
+        .slice(0, CONFIG.WATCH_N)
+        .sort((a, b) => a.member.cm.localeCompare(b.member.cm));
 
     return { list, useInvested };
 }
 
-function buildWatchReasons(item, { weeks, isLastDrop, total, useInvested }) {
+/**
+ * 提醒理由只說明「離合格線還差多少」與自身的變化，
+ * 不顯示名次、後五名等跟其他成員比較的排行，避免變成點名批評。
+ */
+function buildWatchReasons(item, { weeks, isLastDrop, useInvested }) {
     const { member } = item;
     const reasons = [];
     const metricLabel = t(useInvested ? "metric.invested" : "metric.score");
 
     if (item.belowPassWeeks > 0) {
         reasons.push({
-            tone: item.belowPassWeeks === weeks ? "risk" : "watch",
+            tone: "watch",
             text: t("watch.reasonBelowPass", { count: item.belowPassWeeks, total: weeks, pass: formatCompact(CONFIG.PASS_SCORE) })
         });
     }
 
-    if (member.bottomWeeks > 0) {
+    if (item.avg < CONFIG.PASS_SCORE) {
         reasons.push({
-            tone: member.bottomWeeks === member.bottomEligibleWeeks ? "risk" : "watch",
-            text: t("watch.reasonBottom", { count: member.bottomWeeks, total: member.bottomEligibleWeeks, n: CONFIG.BOTTOM_N })
+            tone: "neutral",
+            text: t("watch.reasonAvgGap", { metric: metricLabel, gap: formatNumber(Math.round(CONFIG.PASS_SCORE - item.avg)) })
         });
     }
-
-    reasons.push({
-        tone: "neutral",
-        text: t("watch.reasonAvg", {
-            metric: metricLabel,
-            value: formatNumber(Math.round(item.avg)),
-            rank: total - item.avgRankFromBottom + 1,
-            total
-        })
-    });
 
     if (isLastDrop) {
         reasons.push({ tone: "watch", text: t("watch.reasonLastDrop", { pct: formatPercent(item.lastDrop, 0) }) });
@@ -1598,28 +1591,24 @@ function renderWatchList(month) {
     els.watchList.innerHTML = `
         <div class="section-head">
             <div class="panel-heading">
-                <span class="icon-chip" aria-hidden="true">${icon("eye")}</span>
+                <span class="icon-chip" aria-hidden="true">${icon("sprout")}</span>
                 <h2 class="section-title">${escapeHTML(t("watch.title", { scope: formatMonthLabel(month.monthKey) }))}</h2>
             </div>
-            <span class="section-note">${escapeHTML(t(useInvested ? "watch.noteInvested" : "watch.noteScore", {
-                n: CONFIG.WATCH_MIN_WEEKS,
-                week: getWeekShortLabel(month.weekModels[month.weekModels.length - 1].week)
-            }))}</span>
+            <span class="section-note">${escapeHTML(t(useInvested ? "watch.noteInvested" : "watch.noteScore"))}</span>
         </div>
         ${list.length
-            ? `<ol class="watch-row">${list.map((item, index) => renderWatchCard(item, index)).join("")}</ol>`
+            ? `<ul class="watch-row">${list.map(item => renderWatchCard(item)).join("")}</ul>`
             : `<p class="watch-empty">${escapeHTML(t("watch.empty"))}</p>`}
     `;
 }
 
-function renderWatchCard(item, index) {
+function renderWatchCard(item) {
     const { member } = item;
 
     return `
         <li class="watch-card">
             <button class="watch-name" type="button" data-profile-key="${escapeHTML(member.key)}"
                 aria-label="${escapeHTML(t("profile.open", { name: member.cm }))}">
-                <span class="watch-index">${index + 1}</span>
                 <span class="watch-cm">${escapeHTML(member.cm)}</span>
                 <span class="mini-arrow" aria-hidden="true">${icon("arrowUpRight")}</span>
             </button>
@@ -1628,6 +1617,79 @@ function renderWatchCard(item, index) {
                 ${item.reasons.map(reason => `<li class="watch-reason tone-${reason.tone}">${escapeHTML(reason.text)}</li>`).join("")}
             </ul>
         </li>
+    `;
+}
+
+/* ================================
+   Render: Pending List（還差一點就合格）
+================================ */
+
+/**
+ * 某週還沒達到合格線的成員與差距（實際投入離合格線還差多少），差距小的在前。
+ * 回歸帳號與隊長 / 副隊長不列入（同後五名規則）。
+ * 舊週沒有投入拆分時改用週表的「距離合格分數」欄位；兩者都沒有時回傳 null。
+ */
+function calculatePendingList(model) {
+    const eligible = model.people.filter(isBottomEligible);
+
+    const items = eligible
+        .map(person => {
+            let gap = null;
+
+            if (person.invested !== null) gap = CONFIG.PASS_SCORE - person.invested;
+            else if (person.passDistanceRaw) gap = parseNumber(person.passDistanceRaw);
+
+            return { person, gap };
+        })
+        .filter(item => item.gap !== null);
+
+    if (eligible.length && !items.length) return null;
+
+    return items
+        .filter(item => item.gap > 0)
+        .sort((a, b) => a.gap - b.gap || a.person.cm.localeCompare(b.person.cm));
+}
+
+/**
+ * 提醒語氣：只顯示每個人還差多少，不顯示分數、名次或「未合格」字樣。
+ */
+function renderPendingList(model) {
+    if (!model) {
+        els.pendingList.hidden = true;
+        els.pendingList.innerHTML = "";
+        return;
+    }
+
+    const list = calculatePendingList(model);
+    let body;
+
+    if (list === null) {
+        body = `<p class="watch-empty">${escapeHTML(t("pending.noSplit"))}</p>`;
+    } else if (!list.length) {
+        body = `<p class="watch-empty">${escapeHTML(t("pending.empty"))}</p>`;
+    } else {
+        body = `
+            <ul class="pending-row">
+                ${list.map(({ person, gap }) => `
+                    <li class="pending-item">
+                        <button class="pending-name" type="button" data-profile-key="${escapeHTML(person.key)}"
+                            aria-label="${escapeHTML(t("profile.open", { name: person.cm }))}">${escapeHTML(person.cm)}</button>
+                        <span class="pending-gap">${escapeHTML(t("pending.gap", { gap: formatNumber(gap) }))}</span>
+                    </li>
+                `).join("")}
+            </ul>
+        `;
+    }
+
+    els.pendingList.hidden = false;
+    els.pendingList.innerHTML = `
+        <div class="section-head">
+            <div class="panel-heading">
+                <span class="icon-chip" aria-hidden="true">${icon("target")}</span>
+                <h2 class="section-title" id="pendingTitle">${escapeHTML(t("pending.title", { week: getWeekShortLabel(model.week) }))}</h2>
+            </div>
+        </div>
+        ${body}
     `;
 }
 
@@ -1660,7 +1722,6 @@ function getColumns() {
         { key: "contribution", label: t("col.contribution"), sort: "contribution", className: "col-num" },
         { key: "delta", label: t("col.delta"), sort: "delta", className: "col-num" },
         { key: "target", label: t("col.target"), className: "col-text" },
-        { key: "bottom", label: t("col.bottom"), className: "col-text" },
         { key: "status", label: t("col.status"), className: "col-text" }
     ];
 }
@@ -1778,9 +1839,6 @@ function renderCell(column, row, rank, maxScore) {
 
         case "target":
             return cell(column, escapeHTML(getTargetText(row)));
-
-        case "bottom":
-            return cell(column, renderBottom(row));
 
         case "status":
             return cell(column, row.status ? renderBadge(row.status) : "—");
@@ -1929,22 +1987,6 @@ function getTargetText(row) {
     return t("target.elderReached");
 }
 
-function renderBottom(row) {
-    if (!isBottomEligible(row)) {
-        return `<span class="muted">${escapeHTML(t("common.notCalculated"))}</span>`;
-    }
-
-    if (!row.bottomWeeks) return `<span class="muted">—</span>`;
-
-    const always = row.bottomEligibleWeeks >= CONFIG.HISTORY_MIN_WEEKS && row.bottomWeeks === row.bottomEligibleWeeks;
-    const key = always ? "bottom.always" : "bottom.ever";
-
-    return `
-        <span class="pill ${always ? "pill-risk" : "pill-watch"}">
-            ${escapeHTML(t(key, { count: row.bottomWeeks, total: row.bottomEligibleWeeks }))}
-        </span>
-    `;
-}
 
 /* ================================
    Render: All
@@ -1981,10 +2023,13 @@ function renderAll() {
 
     if (current.month) {
         renderNotice(current.month.missingSplitWeeks, current.month.weekModels);
+        // 月檢視：以該月最新一週當作「這週」
+        renderPendingList(current.month.weekModels[current.month.weekModels.length - 1]);
         renderPodium(current.month);
         renderWatchList(current.month);
     } else {
         renderNotice(current.model.hasSplit ? 0 : 1, [current.model]);
+        renderPendingList(current.model);
         renderPodium(null);
         renderWatchList(null);
     }
@@ -2028,6 +2073,7 @@ function renderError(error) {
 
     els.stats.innerHTML = "";
     els.podium.innerHTML = "";
+    els.pendingList.hidden = true;
     els.watchList.innerHTML = "";
     els.tableHead.innerHTML = "";
     els.resultHint.textContent = title;
