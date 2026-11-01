@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 const DATA_DIR = path.resolve(__dirname, "../data");
+const BOM = String.fromCharCode(0xfeff);
 
 const TARGET_HEADERS = [
     "type",
@@ -148,13 +149,25 @@ function escapeCSVCell(value) {
     return text;
 }
 
-function objectsToCSV(objects) {
+// 保留原檔所有欄位與順序，只在後面補上缺少的貢獻度欄位，
+// 避免把投入 / 未投入等其他欄位刪掉。
+function getOutputHeaders(originalHeaders) {
+    const headers = originalHeaders.filter(Boolean);
+
+    TARGET_HEADERS.forEach(header => {
+        if (!headers.includes(header)) headers.push(header);
+    });
+
+    return headers;
+}
+
+function objectsToCSV(headers, objects) {
     const lines = [];
 
-    lines.push(TARGET_HEADERS.map(escapeCSVCell).join(","));
+    lines.push(headers.map(escapeCSVCell).join(","));
 
     objects.forEach(row => {
-        const line = TARGET_HEADERS
+        const line = headers
             .map(header => escapeCSVCell(row[header] ?? ""))
             .join(",");
 
@@ -238,8 +251,11 @@ function backupFile(filePath) {
 }
 
 function processFile(filePath) {
-    const originalText = fs.readFileSync(filePath, "utf8");
-    const { objects } = csvToObjects(originalText);
+    const rawText = fs.readFileSync(filePath, "utf8");
+    // 保留原檔是否有 BOM，避免回補後整個檔案出現不必要的差異。
+    const bom = rawText.startsWith(BOM) ? BOM : "";
+    const originalText = rawText.slice(bom.length);
+    const { headers, objects } = csvToObjects(originalText);
 
     if (!objects.length) {
         console.log(`略過空檔案：${filePath}`);
@@ -247,7 +263,7 @@ function processFile(filePath) {
     }
 
     const updatedRows = backfillRows(objects);
-    const updatedCSV = objectsToCSV(updatedRows);
+    const updatedCSV = bom + objectsToCSV(getOutputHeaders(headers), updatedRows);
 
     backupFile(filePath);
     fs.writeFileSync(filePath, updatedCSV, "utf8");

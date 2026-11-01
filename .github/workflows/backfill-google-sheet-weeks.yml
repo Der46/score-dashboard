@@ -32,12 +32,12 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.11"
 
@@ -47,6 +47,7 @@ jobs:
           python -m pip install pandas openpyxl requests
 
       - name: Download and convert weeks
+        id: backfill
         env:
           GOOGLE_SPREADSHEET_ID: ${{ secrets.GOOGLE_SPREADSHEET_ID }}
           GOOGLE_SHEETS_API_KEY: ${{ secrets.GOOGLE_SHEETS_API_KEY }}
@@ -88,6 +89,8 @@ jobs:
             echo "以下週別回補失敗：${FAILED}"
           fi
 
+          echo "failed=${FAILED}" >> "$GITHUB_OUTPUT"
+
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
@@ -97,7 +100,27 @@ jobs:
 
           if git diff --cached --quiet; then
             echo "沒有檔案需要提交"
-          else
-            git commit -m "Backfill weekly score CSV with invested / uninvested split"
-            git push
+            exit 0
           fi
+
+          git commit -m "Backfill weekly score CSV with invested / uninvested split"
+
+          for attempt in 1 2 3; do
+            if git pull --rebase origin "$GITHUB_REF_NAME" && git push origin "HEAD:$GITHUB_REF_NAME"; then
+              exit 0
+            fi
+
+            echo "推送失敗（第 ${attempt} 次），10 秒後重試"
+            sleep 10
+          done
+
+          exit 1
+
+      # 成功的週別已在上一步提交；這裡讓有失敗週別的執行顯示為失敗，避免被忽略。
+      - name: Fail if any week failed
+        if: steps.backfill.outputs.failed != ''
+        env:
+          FAILED: ${{ steps.backfill.outputs.failed }}
+        run: |
+          echo "::error::以下週別回補失敗：${FAILED}"
+          exit 1

@@ -568,7 +568,7 @@ def main():
         )
 
     if not has_split:
-        print("警告：找不到活動1/活動2 的投入、未投入欄位，投入總分與未投入總分將輸出空白")
+        print("::warning::找不到活動1/活動2 的投入、未投入欄位，投入總分與未投入總分將輸出空白")
 
     print(f"活動1貢獻度欄位：{activity1_contribution_col if activity1_contribution_col else '未找到，將輸出空白'}")
     print(f"活動2貢獻度欄位：{activity2_contribution_col if activity2_contribution_col else '未找到，將輸出空白'}")
@@ -684,14 +684,24 @@ def main():
             "整週貢獻度": weekly_contribution,
         })
 
+    # 轉出空表時直接失敗，避免把好的 CSV 覆蓋成只有表頭的檔案再被 commit。
+    person_rows = [row for row in output_rows if row["type"] == "person"]
+
+    if not person_rows:
+        raise SystemExit(f"轉換失敗：{OUTPUT_FILE.name} 沒有任何成員資料列，已保留原檔")
+
     output_df = pd.DataFrame(output_rows, columns=OUTPUT_COLUMNS)
 
+    temp_file = OUTPUT_FILE.with_name(f"{OUTPUT_FILE.name}.tmp")
+
     output_df.to_csv(
-        OUTPUT_FILE,
+        temp_file,
         index=False,
         encoding="utf-8-sig",
         quoting=csv.QUOTE_MINIMAL
     )
+
+    temp_file.replace(OUTPUT_FILE)
 
     print(f"轉換完成：{OUTPUT_FILE.name}")
 

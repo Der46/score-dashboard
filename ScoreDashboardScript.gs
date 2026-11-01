@@ -515,10 +515,22 @@ function onEdit(e) {
     return;
   }
 
-  SpreadsheetApp.flush();
+  // 多人同時編輯時避免排序互相重疊；拿不到鎖就略過這次排序，
+  // 下一次編輯或選單「重新排序」會再排。
+  const lock = LockService.getDocumentLock();
 
-  sortWeeklyScoreSheet_(sheet, layout);
-  reapplyAfterSortStyles_(sheet, layout);
+  if (!lock.tryLock(5000)) {
+    return;
+  }
+
+  try {
+    SpreadsheetApp.flush();
+
+    sortWeeklyScoreSheet_(sheet, layout);
+    reapplyAfterSortStyles_(sheet, layout);
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 

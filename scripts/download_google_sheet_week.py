@@ -1,12 +1,21 @@
 import os
 import re
+import sys
+import zipfile
 import requests
 from pathlib import Path
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 
-WEEK_ID_PATTERN = re.compile(r"^\d{4}-\d{2}-w\d+$")
+WEEK_ID_PATTERN = re.compile(r"\d{4}-\d{2}-w\d+")
+
+# 找不到週別分頁時的結束代碼，讓 workflow 能和其他錯誤區分、不需要重試。
+EXIT_TAB_NOT_FOUND = 3
+
+
+class TabNotFoundError(ValueError):
+    pass
 
 CONNECT_TIMEOUT_SECONDS = 10
 READ_TIMEOUT_SECONDS = 120
@@ -24,7 +33,7 @@ def require_env(name):
 
 
 def validate_week_id(week_id):
-    if not WEEK_ID_PATTERN.match(week_id):
+    if not WEEK_ID_PATTERN.fullmatch(week_id):
         raise ValueError(
             f"WEEK_ID 格式錯誤：{week_id}。"
             "正確格式應為 2026-06-w2"
@@ -66,9 +75,11 @@ def create_retry_session():
     return session
 
 
-def get_with_retry(session, url, *, description, timeout=None):
+def get_with_retry(session, url, *, description, timeout=None, headers=None):
     """
     統一處理 GET request。
+
+    例外不串接原始錯誤（from None），避免 requests 的錯誤訊息把完整網址印進 log。
     """
 
     request_timeout = timeout or (
@@ -77,29 +88,29 @@ def get_with_retry(session, url, *, description, timeout=None):
     )
 
     try:
-        response = session.get(url, timeout=request_timeout)
+        response = session.get(url, timeout=request_timeout, headers=headers)
         return response
 
-    except requests.exceptions.Timeout as exc:
+    except requests.exceptions.Timeout:
         raise RuntimeError(
             f"{description}逾時。"
             f"connect_timeout={request_timeout[0]} 秒，"
             f"read_timeout={request_timeout[1]} 秒。"
             "這通常是 Google API 或 GitHub Actions 網路暫時不穩，可透過 retry 改善。"
-        ) from exc
+        ) from None
 
     except requests.exceptions.RequestException as exc:
         raise RuntimeError(
-            f"{description}失敗。"
+            f"{description}失敗（{type(exc).__name__}）。"
             "請檢查網路、Google API 狀態、Spreadsheet ID、API key 或權限設定。"
-        ) from exc
+        ) from None
 
 
 def fetch_google_sheet_tabs(session, spreadsheet_id, api_key):
+    # API key 放在 header，不放在網址，避免出錯時隨網址出現在 log。
     url = (
         f"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}"
         f"?fields=sheets.properties(sheetId,title,index)"
-        f"&key={api_key}"
     )
 
     print("讀取 Google Sheet 分頁清單...")
@@ -108,6 +119,7 @@ def fetch_google_sheet_tabs(session, spreadsheet_id, api_key):
         session,
         url,
         description="讀取 Google Sheet 分頁清單",
+        headers={"x-goog-api-key": api_key},
     )
 
     if response.status_code != 200:
@@ -145,10 +157,10 @@ def find_gid_by_week_id(tabs, week_id):
         available_week_tabs = [
             tab.get("title")
             for tab in tabs
-            if WEEK_ID_PATTERN.match(tab.get("title", ""))
+            if WEEK_ID_PATTERN.fullmatch(tab.get("title", ""))
         ]
 
-        raise ValueError(
+        raise TabNotFoundError(
             f"找不到名稱為 {week_id} 的 Google Sheet 分頁。"
             f"目前符合週別格式的分頁有：{available_week_tabs}"
         )
@@ -175,6 +187,14 @@ def validate_xlsx_file(output_file):
     if file_size < MIN_XLSX_SIZE_BYTES:
         raise RuntimeError(
             f"下載的 xlsx 檔案過小，可能不是有效 Excel 檔案。"
+            f"file={output_file}, size={file_size} bytes"
+        )
+
+    # Google 權限失效時可能回 HTTP 200 的登入 HTML 頁，大小也會超過門檻。
+    if not zipfile.is_zipfile(output_file):
+        raise RuntimeError(
+            "下載的檔案不是有效的 xlsx（可能是 Google 登入或錯誤頁面），"
+            "請確認試算表的共用權限。"
             f"file={output_file}, size={file_size} bytes"
         )
 
@@ -237,7 +257,12 @@ def main():
     session = create_retry_session()
 
     tabs = fetch_google_sheet_tabs(session, spreadsheet_id, api_key)
-    gid = find_gid_by_week_id(tabs, week_id)
+
+    try:
+        gid = find_gid_by_week_id(tabs, week_id)
+    except TabNotFoundError as exc:
+        print(f"::warning::{exc}")
+        sys.exit(EXIT_TAB_NOT_FOUND)
 
     download_sheet_as_xlsx(session, spreadsheet_id, gid, week_id)
 

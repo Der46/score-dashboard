@@ -45,6 +45,9 @@ const SPECIAL_CM = {
     TOTAL: "總計"
 };
 
+/** 每週 CSV 必須有的欄位；缺少時這週視為讀取失敗。 */
+const REQUIRED_WEEK_HEADERS = ["CM", "LINE名稱", "一週總分"];
+
 const VIEW = {
     MONTH: "month",
     WEEK: "week"
@@ -147,7 +150,9 @@ function parseNumber(value) {
 
     if (!text) return 0;
 
-    return Number(text) || 0;
+    const number = Number(text);
+
+    return Number.isFinite(number) ? number : 0;
 }
 
 function parseOptionalNumber(value) {
@@ -449,10 +454,32 @@ function formatMonthShort(monthKey) {
  *
  * 貢獻度在這裡重新計算：分母 = 全隊（一般帳號 + 回歸帳號）總分，
  * 不使用 CSV 內舊的貢獻度欄位，因為舊週表分母沒有包含回歸帳號。
+ *
+ * 缺少必要欄位或沒有任何成員時直接丟錯，讓這週列入 failedWeeks，
+ * 而不是顯示成一張空表。
  */
 function buildWeekModel(week, rawRows) {
+    const missingHeaders = REQUIRED_WEEK_HEADERS.filter(header => !rawRows.length || !(header in rawRows[0]));
+
+    if (missingHeaders.length) {
+        throw new Error(`${week.file}: missing columns ${missingHeaders.join(", ")}`);
+    }
+
     const people = [];
+    const invalidCells = [];
     let inReturnSection = false;
+
+    // 非空白但無法解析的分數格仍以 0 / null 計算，但會記下來顯示在提示中。
+    const readNumber = (raw, header, optional) => {
+        const text = cleanText(raw[header]).replaceAll(",", "");
+        const number = Number(text);
+
+        if (text && !Number.isFinite(number)) {
+            invalidCells.push(`${cleanText(raw["CM"]) || cleanText(raw["LINE名稱"])} ${header}`);
+        }
+
+        return optional ? parseOptionalNumber(text) : parseNumber(text);
+    };
 
     rawRows.forEach(raw => {
         const type = cleanText(raw.type);
@@ -468,9 +495,9 @@ function buildWeekModel(week, rawRows) {
         if (!cm && !lineName) return;
 
         const status = cleanText(raw["狀態"]);
-        const score = parseNumber(raw["一週總分"]);
-        let invested = parseOptionalNumber(raw["投入總分"]);
-        let uninvested = parseOptionalNumber(raw["未投入總分"]);
+        const score = readNumber(raw, "一週總分");
+        let invested = readNumber(raw, "投入總分", true);
+        let uninvested = readNumber(raw, "未投入總分", true);
 
         if (invested !== null && uninvested === null) {
             uninvested = Math.max(score - invested, 0);
@@ -482,13 +509,13 @@ function buildWeekModel(week, rawRows) {
 
         const activities = [1, 2, 3].map(number => ({
             number,
-            total: parseNumber(raw[`活動${number}總分`]),
-            invested: parseOptionalNumber(raw[`活動${number}投入`]),
-            uninvested: parseOptionalNumber(raw[`活動${number}未投入`])
+            total: readNumber(raw, `活動${number}總分`),
+            invested: readNumber(raw, `活動${number}投入`, true),
+            uninvested: readNumber(raw, `活動${number}未投入`, true)
         }));
 
         people.push({
-            key: `cm:${cm.toLowerCase()}`,
+            key: cm ? `cm:${cm.toLowerCase()}` : `line:${lineName.toLowerCase()}`,
             cm: cm || lineName,
             lineName,
             status,
@@ -501,6 +528,40 @@ function buildWeekModel(week, rawRows) {
             elderDistanceRaw: cleanText(raw["距離長老分數"]),
             sheetOrder: people.length
         });
+    });
+
+    if (!people.length) {
+        throw new Error(`${week.file}: no member rows`);
+    }
+
+    // 同一人（CM 與 LINE 名稱都相同）在週表出現多次時，只保留分數最高的一列，其餘視為重複列忽略。
+    const bestRows = new Map();
+
+    people.forEach(person => {
+        const identity = `${person.cm.toLowerCase()}|${person.lineName.toLowerCase()}`;
+        const best = bestRows.get(identity);
+
+        if (!best || person.score > best.score) bestRows.set(identity, person);
+    });
+
+    const keptRows = new Set(bestRows.values());
+
+    for (let index = people.length - 1; index >= 0; index--) {
+        if (!keptRows.has(people[index])) people.splice(index, 1);
+    }
+
+    // 同一週 CM 重複、但 LINE 名稱不同時，改用 CM + LINE 名稱當 key，避免兩人的分數被合併成一人。
+    const keyCounts = new Map();
+
+    people.forEach(person => keyCounts.set(person.key, (keyCounts.get(person.key) || 0) + 1));
+
+    const duplicateNames = new Set();
+
+    people.forEach(person => {
+        if (keyCounts.get(person.key) > 1) {
+            duplicateNames.add(person.cm);
+            person.key = `${person.key}|line:${person.lineName.toLowerCase()}`;
+        }
     });
 
     const hasSplit = people.length > 0 && people.every(person => person.invested !== null);
@@ -522,7 +583,9 @@ function buildWeekModel(week, rawRows) {
         hasSplit,
         teamTotal,
         teamInvested,
-        teamUninvested
+        teamUninvested,
+        invalidCells,
+        duplicateNames: Array.from(duplicateNames)
     };
 
     model.bottomKeys = getBottomKeys(model);
@@ -1012,12 +1075,23 @@ function renderControls() {
    Render: Notice / Stats
 ================================ */
 
-function renderNotice(missingWeeks) {
+function renderNotice(missingWeeks, weekModels = []) {
     const messages = [];
 
     if (missingWeeks > 0) {
         messages.push(t("notice.missingSplit", { count: missingWeeks }));
     }
+
+    weekModels.forEach(model => {
+        const week = getWeekShortLabel(model.week);
+
+        if (model.invalidCells.length) {
+            messages.push(t("notice.invalidCells", { week, cells: model.invalidCells.join("、") }));
+        }
+
+        if (model.duplicateNames.length) {
+            messages.push(t("notice.duplicateMembers", { week, names: model.duplicateNames.join("、") }));
+        }    });
 
     if (state.failedWeeks.length) {
         messages.push(t("notice.failedWeeks", { weeks: state.failedWeeks.map(week => week.id).join("、") }));
@@ -1526,7 +1600,7 @@ function renderBody(columns, rows, maxScore) {
     }
 
     const regularHTML = regular
-        .map((row, index) => renderRow(columns, row, index + 1, maxScore))
+        .map(row => renderRow(columns, row, row.totalRank, maxScore))
         .join("");
 
     const returnHTML = returning.length
@@ -1783,7 +1857,7 @@ function renderAll() {
         rows = result.rows;
         scope = { ...result.month, rows };
         title = t("table.titleMonth", { month: formatMonthLabel(result.month.monthKey) });
-        renderNotice(result.month.missingSplitWeeks);
+        renderNotice(result.month.missingSplitWeeks, result.month.weekModels);
         renderPodium(result.month);
         renderWatchList(result.month);
     } else {
@@ -1792,7 +1866,7 @@ function renderAll() {
         rows = result.rows;
         scope = { ...result.model, rows };
         title = t("table.titleWeek", { week: result.model.week.label || result.model.week.id });
-        renderNotice(result.model.hasSplit ? 0 : 1);
+        renderNotice(result.model.hasSplit ? 0 : 1, [result.model]);
         renderPodium(null);
         renderWatchList(null);
     }
