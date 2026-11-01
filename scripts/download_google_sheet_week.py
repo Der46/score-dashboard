@@ -1,5 +1,4 @@
 import os
-import re
 import sys
 import zipfile
 import requests
@@ -7,8 +6,8 @@ from pathlib import Path
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+from week_utils import WEEK_ID_PATTERN, parse_week_id
 
-WEEK_ID_PATTERN = re.compile(r"\d{4}-\d{2}-w\d+")
 
 # 找不到週別分頁時的結束代碼，讓 workflow 能和其他錯誤區分、不需要重試。
 EXIT_TAB_NOT_FOUND = 3
@@ -16,6 +15,7 @@ EXIT_TAB_NOT_FOUND = 3
 
 class TabNotFoundError(ValueError):
     pass
+
 
 CONNECT_TIMEOUT_SECONDS = 10
 READ_TIMEOUT_SECONDS = 120
@@ -33,11 +33,8 @@ def require_env(name):
 
 
 def validate_week_id(week_id):
-    if not WEEK_ID_PATTERN.fullmatch(week_id):
-        raise ValueError(
-            f"WEEK_ID 格式錯誤：{week_id}。"
-            "正確格式應為 2026-06-w2"
-        )
+    """格式與月份 / 週數範圍檢查都由 week_utils.parse_week_id 負責。"""
+    parse_week_id(week_id)
 
 
 def create_retry_session():

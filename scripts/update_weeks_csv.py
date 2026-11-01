@@ -1,43 +1,13 @@
 import csv
 import os
-import re
 from datetime import date, timedelta
 from pathlib import Path
+
+from week_utils import get_start_date_from_week_id, parse_week_id
 
 
 WEEKS_CSV = Path("data/weeks.csv")
 DATA_FILE_PREFIX = "./data"
-
-
-def parse_week_id(week_id):
-    match = re.match(r"^(\d{4})-(\d{2})-w(\d+)$", week_id)
-
-    if not match:
-        raise ValueError(f"WEEK_ID 格式錯誤，應為 yyyy-MM-wN，例如 2026-06-w2，目前是：{week_id}")
-
-    return {
-        "year": int(match.group(1)),
-        "month": int(match.group(2)),
-        "week_index": int(match.group(3)),
-    }
-
-
-def first_monday_of_month(year, month):
-    first_day = date(year, month, 1)
-
-    # Python weekday:
-    # Monday = 0
-    # Sunday = 6
-    days_to_monday = (0 - first_day.weekday()) % 7
-
-    return first_day + timedelta(days=days_to_monday)
-
-
-def get_start_date_from_week_id(week_id):
-    parsed = parse_week_id(week_id)
-    first_monday = first_monday_of_month(parsed["year"], parsed["month"])
-
-    return first_monday + timedelta(days=(parsed["week_index"] - 1) * 7)
 
 
 def format_month_day(d):

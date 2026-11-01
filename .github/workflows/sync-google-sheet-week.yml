@@ -37,126 +37,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Resolve week id
-        id: resolve_week
-        env:
-          INPUT_WEEK_ID: ${{ github.event.inputs.week_id || '' }}
-        run: |
-          python - <<'PY'
-          import os
-          import re
-          from datetime import datetime, date, time, timedelta
-          from zoneinfo import ZoneInfo
-
-          input_week_id = os.environ.get("INPUT_WEEK_ID", "").strip()
-          week_id_pattern = re.compile(r"\d{4}-\d{2}-w\d+")
-
-          # 自動週別切換時間設定：
-          # Python weekday(): Monday=0, Tuesday=1, Wednesday=2
-          # 這裡設定為每週三 21:00，台灣時間。
-          SWITCH_WEEKDAY = 2
-          SWITCH_HOUR = 21
-          SWITCH_MINUTE = 0
-
-          def first_monday_of_month(year, month):
-              first_day = date(year, month, 1)
-              days_to_monday = (0 - first_day.weekday()) % 7
-              return first_day + timedelta(days=days_to_monday)
-
-          def get_week_id_from_date(current_date):
-              year = current_date.year
-              month = current_date.month
-
-              first_monday = first_monday_of_month(year, month)
-
-              if current_date < first_monday:
-                  if month == 1:
-                      year -= 1
-                      month = 12
-                  else:
-                      month -= 1
-
-                  first_monday = first_monday_of_month(year, month)
-
-              week_index = ((current_date - first_monday).days // 7) + 1
-
-              return f"{year:04d}-{month:02d}-w{week_index}"
-
-          def get_week_start_from_date(current_date):
-              year = current_date.year
-              month = current_date.month
-
-              first_monday = first_monday_of_month(year, month)
-
-              if current_date < first_monday:
-                  if month == 1:
-                      year -= 1
-                      month = 12
-                  else:
-                      month -= 1
-
-                  first_monday = first_monday_of_month(year, month)
-
-              week_index = ((current_date - first_monday).days // 7) + 1
-              week_start = first_monday + timedelta(days=(week_index - 1) * 7)
-
-              return week_start
-
-          def resolve_auto_week_id(now):
-              today = now.date()
-              current_week_start = get_week_start_from_date(today)
-
-              switch_date = current_week_start + timedelta(days=SWITCH_WEEKDAY)
-              switch_datetime = datetime.combine(
-                  switch_date,
-                  time(SWITCH_HOUR, SWITCH_MINUTE),
-                  tzinfo=now.tzinfo
-              )
-
-              # 切換到當週後，若當週分頁還沒建立，改同步上一週（fallback_week_id）。
-              fallback_week_id = ""
-
-              if now < switch_datetime:
-                  effective_date = current_week_start - timedelta(days=1)
-                  switch_status = "before weekly switch time, use previous week"
-              else:
-                  effective_date = today
-                  switch_status = "after weekly switch time, use current week"
-                  fallback_week_id = get_week_id_from_date(current_week_start - timedelta(days=1))
-
-              week_id = get_week_id_from_date(effective_date)
-
-              return week_id, fallback_week_id, effective_date, switch_datetime, switch_status
-
-          fallback_week_id = ""
-
-          if input_week_id:
-              if not week_id_pattern.fullmatch(input_week_id):
-                  raise ValueError(
-                      f"week_id 格式錯誤：{input_week_id}，應為 yyyy-MM-wN，例如 2026-06-w2"
-                  )
-
-              week_id = input_week_id
-              source = "manual input"
-          else:
-              now = datetime.now(ZoneInfo("Asia/Taipei"))
-
-              week_id, fallback_week_id, effective_date, switch_datetime, switch_status = resolve_auto_week_id(now)
-
-              source = (
-                  f"auto from Asia/Taipei datetime {now.isoformat()}, "
-                  f"effective week date {effective_date.isoformat()}, "
-                  f"weekly switch datetime {switch_datetime.isoformat()}, "
-                  f"{switch_status}"
-              )
-
-          print(f"Resolved WEEK_ID={week_id} fallback={fallback_week_id or '-'} ({source})")
-
-          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
-              output.write(f"week_id={week_id}\n")
-              output.write(f"fallback_week_id={fallback_week_id}\n")
-          PY
-
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
@@ -165,7 +45,15 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install pandas openpyxl requests
+          python -m pip install -r requirements.txt
+
+      # 週別判斷邏輯在 scripts/week_utils.py（有單元測試），與 update_weeks_csv.py 共用。
+      - name: Resolve week id
+        id: resolve_week
+        env:
+          INPUT_WEEK_ID: ${{ github.event.inputs.week_id || '' }}
+        run: |
+          python scripts/resolve_week.py
 
       # 結束代碼 3 = 找不到週別分頁、4 = 分頁還沒有成員資料（例如剛從範本建立）：
       # 這兩種是永久性狀態，不重試；自動模式下改同步上一週，避免新週分頁還沒準備好時整個同步失敗。
@@ -266,7 +154,11 @@ jobs:
         run: |
           python scripts/update_weeks_csv.py
 
-      - name: Write successful sync time
+      # 只有成績資料真的有變時才更新時間戳：分數沒變就不 commit，
+      # 避免每 3 小時都產生一筆 commit 並觸發 GitHub Pages 重新部署。
+      # 網頁上顯示的是「資料最後更新時間」；同步是否正常請看 Actions 執行紀錄。
+      - name: Write data updated time
+        if: steps.check_changes.outputs.need_update == 'true'
         run: |
           mkdir -p data
           echo "{\"updatedAt\":\"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\"}" > data/updated-at.json
@@ -292,7 +184,7 @@ jobs:
             exit 0
           fi
 
-          git commit -m "Update weekly score sync timestamp for ${WEEK_ID}"
+          git commit -m "Update weekly score data for ${WEEK_ID}"
 
           for attempt in 1 2 3; do
             if git pull --rebase -X theirs origin "$GITHUB_REF_NAME" && git push origin "HEAD:$GITHUB_REF_NAME"; then
@@ -314,5 +206,5 @@ jobs:
           if [ "$NEED_UPDATE" = "true" ]; then
             echo "本次同步成功，且成績資料或 weeks.csv 有更新：${WEEK_ID}"
           else
-            echo "本次同步成功，成績資料沒有變更，但已更新 data/updated-at.json。"
+            echo "本次同步成功，成績資料沒有變更，不需要提交。"
           fi

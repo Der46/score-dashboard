@@ -76,8 +76,10 @@ const i18nState = {
 };
 
 const state = {
-    weeks: [],              // weeks.csv，新到舊
+    weeks: [],              // weeks.csv，新到舊（只含讀取成功的週別）
+    allWeeks: [],           // weeks.csv，新到舊（含讀取失敗的週別）
     weekData: new Map(),    // weekId -> 週資料模型
+    rowsCache: new Map(),   // `${view}:${period}` -> 表格列（不含篩選 / 排序）
     failedWeeks: [],
     months: [],             // monthKey，新到舊
     monthCache: new Map(),
@@ -91,6 +93,7 @@ const state = {
 };
 
 const els = {
+    app: document.querySelector(".app"),
     languageSelect: document.getElementById("languageSelect"),
     viewTabs: document.getElementById("viewTabs"),
     periodSelect: document.getElementById("periodSelect"),
@@ -280,8 +283,21 @@ function statusLabel(status) {
     return map[status] ? t(map[status]) : status;
 }
 
+/**
+ * 所有資料都用 no-cache：每次都向伺服器確認，但沒變的檔案只回 304，不必重新下載整份內容
+ * （GitHub Pages 會提供 ETag）。
+ */
+const FETCH_OPTIONS = { cache: "no-cache" };
+
+/** i18n.json 讀取失敗時錯誤畫面使用的內建文字，避免畫面顯示 key。 */
+const FALLBACK_ERROR_TEXT = {
+    "zh-Hant": { title: "資料讀取失敗", body: "資料讀取失敗，請稍後重新整理頁面。" },
+    en: { title: "Failed to load data", body: "Failed to load data. Please refresh the page later." },
+    vi: { title: "Không tải được dữ liệu", body: "Không tải được dữ liệu. Vui lòng tải lại trang sau." }
+};
+
 async function loadI18n() {
-    const response = await fetch(CONFIG.I18N_URL, { cache: "no-store" });
+    const response = await fetch(CONFIG.I18N_URL, FETCH_OPTIONS);
 
     if (!response.ok) {
         throw new Error(`Failed to read ${CONFIG.I18N_URL}`);
@@ -341,34 +357,49 @@ async function setLocale(locale) {
    CSV
 ================================ */
 
+/**
+ * RFC 4180 風格的 CSV 解析：只有在儲存格開頭的 `"` 才進入引號模式，
+ * 未加引號的儲存格中間出現的 `"`（例如 Joe "Boss"）視為一般字元，不會打亂後面的欄位。
+ * 檔案結束時引號仍未關閉代表檔案毀損，直接丟錯讓這週列入讀取失敗。
+ */
 function parseCSV(text) {
     const rows = [];
     let row = [];
     let cell = "";
     let inQuotes = false;
+    let cellStarted = false;
 
     for (let i = 0; i < text.length; i++) {
         const char = text[i];
         const next = text[i + 1];
 
-        if (char === '"' && inQuotes && next === '"') {
-            cell += '"';
-            i++;
+        if (inQuotes) {
+            if (char === '"' && next === '"') {
+                cell += '"';
+                i++;
+            } else if (char === '"') {
+                inQuotes = false;
+            } else {
+                cell += char;
+            }
+
             continue;
         }
 
-        if (char === '"') {
-            inQuotes = !inQuotes;
+        if (char === '"' && !cellStarted) {
+            inQuotes = true;
+            cellStarted = true;
             continue;
         }
 
-        if (char === "," && !inQuotes) {
+        if (char === ",") {
             row.push(cell);
             cell = "";
+            cellStarted = false;
             continue;
         }
 
-        if ((char === "\n" || char === "\r") && !inQuotes) {
+        if (char === "\n" || char === "\r") {
             if (char === "\r" && next === "\n") i++;
 
             row.push(cell);
@@ -377,10 +408,16 @@ function parseCSV(text) {
 
             row = [];
             cell = "";
+            cellStarted = false;
             continue;
         }
 
         cell += char;
+        cellStarted = true;
+    }
+
+    if (inQuotes) {
+        throw new Error("CSV has an unterminated quoted field");
     }
 
     row.push(cell);
@@ -409,7 +446,7 @@ function csvToObjects(text) {
 }
 
 async function fetchText(url) {
-    const response = await fetch(url, { cache: "no-store" });
+    const response = await fetch(url, FETCH_OPTIONS);
 
     if (!response.ok) {
         throw new Error(t("error.fetchFailed", { url }));
@@ -681,6 +718,8 @@ async function loadWeeks() {
 
     applyStableMemberKeys(Array.from(state.weekData.values()));
 
+    // 保留含讀取失敗週別的完整順序，計算「上週」時才不會跳過中間缺的那週。
+    state.allWeeks = state.weeks.slice();
     state.weeks = state.weeks.filter(week => state.weekData.has(week.id));
     state.months = Array.from(new Set(state.weeks.map(getWeekMonthKey).filter(Boolean)));
 
@@ -691,7 +730,7 @@ async function loadWeeks() {
 
 async function loadUpdatedAt() {
     try {
-        const response = await fetch(CONFIG.UPDATED_AT_URL, { cache: "no-store" });
+        const response = await fetch(CONFIG.UPDATED_AT_URL, FETCH_OPTIONS);
 
         if (!response.ok) return;
 
@@ -821,7 +860,6 @@ function buildMonthModel(monthKey, uptoWeekId = null) {
         member.isReturn = latest.isReturn;
         member.weeksSeen = member.weeks.length;
         member.contribution = ratio(member.score, teamTotal);
-        member.investedContribution = member.invested === null ? null : ratio(member.invested, teamInvested);
         member.investedShare = member.invested === null ? null : ratio(member.invested, member.score);
         member.uninvestedShare = member.uninvested === null ? null : ratio(member.uninvested, member.score);
         member.isHeavy = isUninvestedHeavy(member);
@@ -888,6 +926,7 @@ function getMonthRows() {
         rows: month.members.map(member => ({
             ...member,
             name: member.cm,
+            monthWeeks: month.totalWeeks,
             rankShift:
                 Number.isFinite(member.totalRank) && Number.isFinite(member.investedRank)
                     ? member.totalRank - member.investedRank
@@ -896,11 +935,19 @@ function getMonthRows() {
     };
 }
 
+/**
+ * 前一週的資料模型。前一週讀取失敗時回傳 { missing: true }，
+ * 讓畫面顯示「—」而不是拿更早一週來比較。
+ */
 function getPreviousWeekModel(weekId) {
-    const index = state.weeks.findIndex(week => week.id === weekId);
-    const previous = state.weeks[index + 1];
+    const index = state.allWeeks.findIndex(week => week.id === weekId);
+    const previous = state.allWeeks[index + 1];
 
-    return previous ? state.weekData.get(previous.id) : null;
+    if (!previous) return { model: null, missing: false };
+
+    const model = state.weekData.get(previous.id) || null;
+
+    return { model, missing: !model };
 }
 
 function getWeekRows() {
@@ -909,13 +956,14 @@ function getWeekRows() {
     const monthToDate = buildMonthModel(model.monthKey, model.week.id);
 
     const rows = model.people.map(person => {
-        const previousPerson = previous?.byKey.get(person.key) || null;
+        const previousPerson = previous.model?.byKey.get(person.key) || null;
         const monthMember = monthToDate.byKey.get(person.key);
 
         return {
             ...person,
             name: person.cm,
             weekModel: model,
+            previousMissing: previous.missing,
             delta: previousPerson ? person.score - previousPerson.score : null,
             previousScore: previousPerson ? previousPerson.score : null,
             isHeavy: isUninvestedHeavy(person),
@@ -1066,10 +1114,11 @@ function ensureValidPeriod() {
 ================================ */
 
 function renderControls() {
+    // 檢視切換是一組切換按鈕（不是 tab 元件），用 aria-pressed 表示目前選取的檢視。
     document.querySelectorAll("#viewTabs [data-view], #railNav [data-view]").forEach(button => {
         const active = button.dataset.view === state.view;
 
-        button.setAttribute("aria-selected", String(active));
+        button.setAttribute("aria-pressed", String(active));
         button.classList.toggle("is-active", active);
     });
 
@@ -1142,9 +1191,17 @@ function renderNotice(missingWeeks, weekModels = []) {
         messages.push(t("notice.failedWeeks", { weeks: state.failedWeeks.map(week => week.id).join("、") }));
     }
 
-    els.notice.hidden = !messages.length;
-    els.notice.innerHTML = messages.map(message => `<p>${escapeHTML(message)}</p>`).join("");
+    // 提示區一直留在頁面上（空的時候由 CSS 隱藏），內容真的變了才重寫，
+    // 螢幕閱讀器才會正確念出新提示，也不會在每次重畫時重複播報。
+    const html = messages.map(message => `<p>${escapeHTML(message)}</p>`).join("");
+
+    if (lastNoticeHTML !== html) {
+        lastNoticeHTML = html;
+        els.notice.innerHTML = html;
+    }
 }
+
+let lastNoticeHTML = "";
 
 function renderStats(scope) {
     const people = scope.rows;
@@ -1380,7 +1437,7 @@ function renderPodium(month) {
             <span class="section-note">${escapeHTML(t(useInvested ? "achievement.noteInvested" : "achievement.noteScore"))}</span>
         </div>
         <div class="podium-row" role="list">
-            ${ACHIEVEMENTS.map(config => renderAchievementCard(config, results[config.key])).join("")}
+            ${ACHIEVEMENTS.map(config => `<div class="podium-item" role="listitem">${renderAchievementCard(config, results[config.key])}</div>`).join("")}
         </div>
     `;
 }
@@ -1392,7 +1449,7 @@ function renderAchievementCard(config, result) {
 
     if (!result) {
         return `
-            <article class="podium-card ${accentClass} is-empty" role="listitem">
+            <article class="podium-card ${accentClass} is-empty">
                 <div class="mini-top">
                     <span class="icon-chip icon-chip-sm" aria-hidden="true">${icon(config.icon)}</span>
                 </div>
@@ -1404,9 +1461,8 @@ function renderAchievementCard(config, result) {
     }
 
     return `
-        <button class="podium-card ${accentClass}" type="button" role="listitem"
-            data-profile-key="${escapeHTML(result.item.member.key)}"
-            title="${escapeHTML(t("profile.open", { name: result.item.member.cm }))}">
+        <button class="podium-card ${accentClass}" type="button"
+            data-profile-key="${escapeHTML(result.item.member.key)}">
             <div class="mini-top">
                 <span class="icon-chip icon-chip-sm" aria-hidden="true">${icon(config.icon)}</span>
                 <span class="mini-arrow" aria-hidden="true">${icon("arrowUpRight")}</span>
@@ -1486,7 +1542,7 @@ function calculateWatchList(month) {
         .sort((a, b) => b.weight - a.weight || a.avg - b.avg || a.member.cm.localeCompare(b.member.cm))
         .slice(0, CONFIG.WATCH_N);
 
-    return { list, useInvested, poolSize: candidates.length };
+    return { list, useInvested };
 }
 
 function buildWatchReasons(item, { weeks, isLastDrop, total, useInvested }) {
@@ -1562,7 +1618,7 @@ function renderWatchCard(item, index) {
     return `
         <li class="watch-card">
             <button class="watch-name" type="button" data-profile-key="${escapeHTML(member.key)}"
-                title="${escapeHTML(t("profile.open", { name: member.cm }))}">
+                aria-label="${escapeHTML(t("profile.open", { name: member.cm }))}">
                 <span class="watch-index">${index + 1}</span>
                 <span class="watch-cm">${escapeHTML(member.cm)}</span>
                 <span class="mini-arrow" aria-hidden="true">${icon("arrowUpRight")}</span>
@@ -1715,7 +1771,7 @@ function renderCell(column, row, rank, maxScore) {
             return cell(column, renderRankShift(row), "num");
 
         case "weeks":
-            return cell(column, escapeHTML(t("common.weeksOf", { seen: row.weeksSeen, total: buildMonthModel(state.period).totalWeeks })), "num");
+            return cell(column, escapeHTML(t("common.weeksOf", { seen: row.weeksSeen, total: row.monthWeeks })), "num");
 
         case "delta":
             return cell(column, renderDelta(row), "num");
@@ -1745,6 +1801,7 @@ function renderMemberCell(row) {
         badges.push(`
             <span class="badge badge-heavy" title="${escapeHTML(t("flag.heavyTitle", { pct: formatPercent(row.uninvestedShare) }))}">
                 ${icon("alert")}${escapeHTML(t("flag.heavy"))}
+                <span class="sr-only">${escapeHTML(t("flag.heavyTitle", { pct: formatPercent(row.uninvestedShare) }))}</span>
             </span>
         `);
     }
@@ -1753,8 +1810,7 @@ function renderMemberCell(row) {
         <div class="member">
             <span class="avatar avatar-sm" aria-hidden="true">${escapeHTML(getInitial(row.name))}</span>
             <div class="member-text">
-                <button class="member-link" type="button" data-profile-key="${escapeHTML(row.key)}"
-                    title="${escapeHTML(t("profile.open", { name: row.name }))}">
+                <button class="member-link" type="button" data-profile-key="${escapeHTML(row.key)}">
                     <span class="member-name">${escapeHTML(row.name || "-")}</span>
                     ${row.lineName && row.lineName !== row.name ? `<span class="member-line">${escapeHTML(row.lineName)}</span>` : ""}
                 </button>
@@ -1816,6 +1872,7 @@ function renderMixBar(row, maxScore) {
                 ${uninvestedWidth > 0 ? `<span class="mix-seg mix-uninvested" style="width:${uninvestedWidth}%"></span>` : ""}
             </div>
             <span class="mix-label">${escapeHTML(t("tip.investedShort", { pct: formatPercent(row.investedShare, 0) }))}</span>
+            <span class="sr-only">${escapeHTML(tip)}</span>
         </div>
     `;
 }
@@ -1831,11 +1888,16 @@ function renderRankShift(row) {
     if (shift > 0) shiftHTML = `<span class="shift shift-up">${icon("arrowUp")}${shift}</span>`;
     if (shift < 0) shiftHTML = `<span class="shift shift-down">${icon("arrowDown")}${Math.abs(shift)}</span>`;
 
-    return `<span class="rank-shift" title="${escapeHTML(title)}">#${row.investedRank} ${shiftHTML}</span>`;
+    return `<span class="rank-shift" title="${escapeHTML(title)}">#${row.investedRank} ${shiftHTML}<span class="sr-only">${escapeHTML(title)}</span></span>`;
 }
 
 function renderDelta(row) {
     if (row.isReturn) return `<span class="muted">${escapeHTML(t("common.notCalculated"))}</span>`;
+
+    // 上週資料讀取失敗：不跟更早的週比較，也不誤標成新成員。
+    if (row.previousMissing) {
+        return `<span class="muted" title="${escapeHTML(t("trend.previousMissing"))}">—<span class="sr-only">${escapeHTML(t("trend.previousMissing"))}</span></span>`;
+    }
 
     if (!Number.isFinite(row.delta)) {
         return `<span class="trend trend-new">${escapeHTML(t("trend.new"))}</span>`;
@@ -1847,7 +1909,7 @@ function renderDelta(row) {
 
     return `
         <span class="trend ${trendClass}" title="${escapeHTML(title)}">
-            ${icon(iconName)}${escapeHTML(formatNumber(Math.abs(row.delta)))}
+            ${icon(iconName)}${escapeHTML(formatNumber(Math.abs(row.delta)))}<span class="sr-only">${escapeHTML(title)}</span>
         </span>
     `;
 }
@@ -1888,35 +1950,57 @@ function renderBottom(row) {
    Render: All
 ================================ */
 
+/**
+ * 目前期間的資料（月或週）。週資料載入後不會再變，所以依 view + period 快取，
+ * 搜尋、篩選、排序時不必重算整個月份模型。
+ */
+function getCurrentScope() {
+    const cacheKey = `${state.view}:${state.period}`;
+
+    if (!state.rowsCache.has(cacheKey)) {
+        if (state.view === VIEW.MONTH) {
+            const { month, rows } = getMonthRows();
+
+            state.rowsCache.set(cacheKey, { month, model: null, rows, scope: { ...month, rows } });
+        } else {
+            const { model, rows } = getWeekRows();
+
+            state.rowsCache.set(cacheKey, { month: null, model, rows, scope: { ...model, rows } });
+        }
+    }
+
+    return state.rowsCache.get(cacheKey);
+}
+
+/** 期間或檢視方式改變時：重畫提示、頒獎台、關注名單、統計卡與表格。 */
 function renderAll() {
     ensureValidPeriod();
     writeHash();
 
-    let scope;
-    let rows;
-    let title;
+    const current = getCurrentScope();
 
-    if (state.view === VIEW.MONTH) {
-        const result = getMonthRows();
-
-        rows = result.rows;
-        scope = { ...result.month, rows };
-        title = t("table.titleMonth", { month: formatMonthLabel(result.month.monthKey) });
-        renderNotice(result.month.missingSplitWeeks, result.month.weekModels);
-        renderPodium(result.month);
-        renderWatchList(result.month);
+    if (current.month) {
+        renderNotice(current.month.missingSplitWeeks, current.month.weekModels);
+        renderPodium(current.month);
+        renderWatchList(current.month);
     } else {
-        const result = getWeekRows();
-
-        rows = result.rows;
-        scope = { ...result.model, rows };
-        title = t("table.titleWeek", { week: result.model.week.label || result.model.week.id });
-        renderNotice(result.model.hasSplit ? 0 : 1, [result.model]);
+        renderNotice(current.model.hasSplit ? 0 : 1, [current.model]);
         renderPodium(null);
         renderWatchList(null);
     }
 
-    renderStats(scope);
+    renderStats(current.scope);
+    renderTable();
+}
+
+/** 搜尋、篩選、排序只影響表格，不必重畫上方的統計區塊。 */
+function renderTable() {
+    const current = getCurrentScope();
+    const { rows } = current;
+
+    const title = current.month
+        ? t("table.titleMonth", { month: formatMonthLabel(current.month.monthKey) })
+        : t("table.titleWeek", { week: current.model.week.label || current.model.week.id });
 
     const columns = getColumns();
     const visible = sortRows(rows.filter(row => matchesFilter(row) && matchesKeyword(row)));
@@ -1936,13 +2020,19 @@ function renderAll() {
 function renderError(error) {
     console.error(error);
 
+    // i18n 本身讀取失敗時 t() 只會回傳 key，改用內建文字。
+    const hasMessages = Object.keys(i18nState.messages).length > 0;
+    const fallback = FALLBACK_ERROR_TEXT[i18nState.locale] || FALLBACK_ERROR_TEXT[CONFIG.DEFAULT_LOCALE];
+    const title = hasMessages ? t("error.dataReadFailed") : fallback.title;
+    const body = hasMessages ? t("error.dataReadFailedBody") : fallback.body;
+
     els.stats.innerHTML = "";
     els.podium.innerHTML = "";
     els.watchList.innerHTML = "";
     els.tableHead.innerHTML = "";
-    els.resultHint.textContent = t("error.dataReadFailed");
+    els.resultHint.textContent = title;
     els.tableBody.innerHTML = `
-        <tr><td class="empty-state">${escapeHTML(t("error.dataReadFailedBody"))}</td></tr>
+        <tr><td class="empty-state">${escapeHTML(body)}</td></tr>
     `;
 }
 
@@ -2103,7 +2193,7 @@ function renderProfileMonthTiles(member, month) {
 
 function chartLegend() {
     return `
-        <div class="legend" aria-hidden="true">
+        <div class="legend">
             <span class="legend-item"><i class="swatch swatch-invested"></i>${escapeHTML(t("metric.invested"))}</span>
             <span class="legend-item"><i class="swatch swatch-uninvested"></i>${escapeHTML(t("metric.uninvested"))}</span>
         </div>
@@ -2120,7 +2210,6 @@ function niceMax(value) {
     return nice * exponent;
 }
 
-/** 圓角頂端、平底的長條路徑。 */
 /** 圓角膠囊（兩端全圓）路徑，與參考圖的膠囊直條一致。 */
 function capsulePath(x, y, width, height) {
     if (height <= 0) return "";
@@ -2185,7 +2274,7 @@ function renderStackedColumns(series, ariaLabel) {
                 <g class="bar-group">
                     <rect class="bar-missing" x="${x}" y="${pad.top + plotHeight * 0.1}" width="${barWidth}" height="${plotHeight * 0.9}" rx="${barWidth / 2}"></rect>
                     <rect class="bar-hit" x="${pad.left + band * index}" y="${pad.top}" width="${band}" height="${plotHeight}"
-                        tabindex="0" data-tip="${escapeHTML(`${item.fullLabel}\n${t("common.noRecord")}`)}" aria-label="${escapeHTML(`${item.fullLabel} ${t("common.noRecord")}`)}"></rect>
+                        tabindex="0" role="img" data-tip="${escapeHTML(`${item.fullLabel}\n${t("common.noRecord")}`)}" aria-label="${escapeHTML(`${item.fullLabel} ${t("common.noRecord")}`)}"></rect>
                     ${label}
                 </g>
             `;
@@ -2226,14 +2315,14 @@ function renderStackedColumns(series, ariaLabel) {
             <g class="bar-group">
                 ${shapes}
                 <rect class="bar-hit" x="${pad.left + band * index}" y="${pad.top}" width="${band}" height="${plotHeight}"
-                    tabindex="0" data-tip="${escapeHTML(tipLines.join("\n"))}" aria-label="${escapeHTML(tipLines.join("，"))}"></rect>
+                    tabindex="0" role="img" data-tip="${escapeHTML(tipLines.join("\n"))}" aria-label="${escapeHTML(tipLines.join("，"))}"></rect>
                 ${label}
             </g>
         `;
     }).join("");
 
     return `
-        <svg class="chart" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="${escapeHTML(ariaLabel)}">
+        <svg class="chart" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="group" aria-label="${escapeHTML(ariaLabel)}">
             ${ticks}
             ${bars}
         </svg>
@@ -2292,6 +2381,26 @@ function renderProfileTimeline(history) {
     `;
 }
 
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+/** 捲動到頁面區塊並把焦點移過去，鍵盤使用者按 Tab 才會從該區塊繼續；尊重「減少動態效果」設定。 */
+function scrollToSection(id) {
+    const target = document.getElementById(id);
+
+    if (!target) return;
+
+    target.scrollIntoView({ behavior: reducedMotion.matches ? "auto" : "smooth", block: "start" });
+
+    // 錨點本身是空的 span 時，焦點改放到 data-focus 指定的區塊（例如表格標題）。
+    const focusTarget = (target.dataset.focus && document.getElementById(target.dataset.focus)) || target;
+
+    if (!focusTarget.hasAttribute("tabindex")) focusTarget.setAttribute("tabindex", "-1");
+
+    focusTarget.focus({ preventScroll: true });
+}
+
+const FOCUSABLE_SELECTOR = "button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex='-1'])";
+
 let lastFocusedElement = null;
 
 function openProfile(key) {
@@ -2303,6 +2412,9 @@ function openProfile(key) {
     els.profileModal.hidden = false;
     document.body.classList.add("modal-open");
 
+    // 背景設為 inert：鍵盤與螢幕閱讀器都無法離開對話框。
+    els.app.inert = true;
+
     renderProfile(key);
 
     els.profileDialog.scrollTop = 0;
@@ -2312,11 +2424,39 @@ function openProfile(key) {
 function closeProfile() {
     els.profileModal.hidden = true;
     document.body.classList.remove("modal-open");
+    els.app.inert = false;
+
+    const key = state.profileKey;
+
     state.profileKey = null;
     hideTooltip();
 
-    if (lastFocusedElement && typeof lastFocusedElement.focus === "function") {
-        lastFocusedElement.focus();
+    // 開啟對話框的按鈕可能已被重畫取代，改找同一位成員的按鈕。
+    const opener = lastFocusedElement?.isConnected
+        ? lastFocusedElement
+        : document.querySelector(`[data-profile-key="${CSS.escape(key || "")}"]`);
+
+    opener?.focus?.();
+}
+
+/** 不支援 inert 的舊瀏覽器：Tab 在對話框內循環。 */
+function trapFocusInDialog(event) {
+    if (event.key !== "Tab" || els.profileModal.hidden) return;
+
+    const focusable = Array.from(els.profileDialog.querySelectorAll(FOCUSABLE_SELECTOR));
+
+    if (!focusable.length) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const active = document.activeElement;
+
+    if (event.shiftKey && (active === first || active === els.profileDialog)) {
+        event.preventDefault();
+        last.focus();
+    } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
     }
 }
 
@@ -2368,10 +2508,11 @@ function bindEvents() {
         renderAll();
     });
 
+    // 不改網址 hash（hash 用來記錄檢視與期間），改為手動捲動並移動焦點。
     document.querySelectorAll("[data-scroll]").forEach(link => {
         link.addEventListener("click", event => {
             event.preventDefault();
-            document.getElementById(link.getAttribute("href").slice(1))?.scrollIntoView({ behavior: "smooth", block: "start" });
+            scrollToSection(link.getAttribute("href").slice(1));
         });
     });
 
@@ -2382,8 +2523,8 @@ function bindEvents() {
 
         state.filter = shortcut.dataset.filterShortcut;
         renderControls();
-        renderAll();
-        document.getElementById("tableAnchor").scrollIntoView({ behavior: "smooth", block: "start" });
+        renderTable();
+        scrollToSection("tableAnchor");
     });
 
     els.periodSelect.addEventListener("change", event => {
@@ -2394,17 +2535,17 @@ function bindEvents() {
 
     els.filterSelect.addEventListener("change", event => {
         state.filter = event.target.value;
-        renderAll();
+        renderTable();
     });
 
     els.sortSelect.addEventListener("change", event => {
         state.sort = { key: event.target.value, dir: event.target.value === "sheetOrder" ? "asc" : "desc" };
-        renderAll();
+        renderTable();
     });
 
     els.searchInput.addEventListener("input", debounce(event => {
         state.keyword = event.target.value;
-        renderAll();
+        renderTable();
     }));
 
     els.tableHead.addEventListener("click", event => {
@@ -2419,7 +2560,10 @@ function bindEvents() {
             : { key, dir: "desc" };
 
         els.sortSelect.value = key;
-        renderAll();
+        renderTable();
+
+        // 表頭整個重畫後，把焦點放回剛按的排序按鈕，鍵盤使用者才不會失去位置。
+        els.tableHead.querySelector(`[data-sort="${key}"]`)?.focus();
     });
 
     document.addEventListener("click", event => {
@@ -2436,10 +2580,18 @@ function bindEvents() {
     });
 
     document.addEventListener("keydown", event => {
-        if (event.key === "Escape" && !els.profileModal.hidden) {
-            closeProfile();
+        if (event.key !== "Escape" || els.profileModal.hidden) return;
+
+        // 第一次 Esc 先關閉圖表提示，第二次才關閉對話框。
+        if (!els.tooltip.hidden) {
+            hideTooltip();
+            return;
         }
+
+        closeProfile();
     });
+
+    els.profileDialog.addEventListener("keydown", trapFocusInDialog);
 
     els.profileBody.addEventListener("pointermove", event => {
         const target = event.target.closest("[data-tip]");
@@ -2474,15 +2626,32 @@ function bindEvents() {
    Init
 ================================ */
 
+/** 註冊 service worker：讓已安裝的 App 可離線開啟，並沿用快取加快重複造訪。 */
+function registerServiceWorker() {
+    if (!("serviceWorker" in navigator)) return;
+
+    navigator.serviceWorker.register("./sw.js").catch(error => {
+        console.warn("Service worker registration failed", error);
+    });
+}
+
 async function initApp() {
     hydrateIcons();
     bindEvents();
 
+    registerServiceWorker();
+
     try {
+        // i18n 與資料同時開始下載，不必等語系檔載完才抓 CSV。
+        const dataLoaded = Promise.all([loadUpdatedAt(), loadWeeks()]);
+
+        // 避免 i18n 先失敗時資料的 Promise 變成未處理的 rejection
+        dataLoaded.catch(() => {});
+
         await loadI18n();
         renderLoading();
 
-        await Promise.all([loadUpdatedAt(), loadWeeks()]);
+        await dataLoaded;
 
         renderUpdatedAt();
         readHash();

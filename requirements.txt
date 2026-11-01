@@ -1,0 +1,4 @@
+# 同步腳本（scripts/）的相依套件；GitHub Actions 依此安裝，版本固定以確保每次結果一致。
+pandas==3.0.2
+openpyxl==3.1.5
+requests==2.33.1

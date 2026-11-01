@@ -14,8 +14,11 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700&display=swap" />
+    <!-- 字型以非阻塞方式載入：先用系統字型顯示畫面，字型下載完再套用 -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" media="print" onload="this.media='all'" />
+    <noscript>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" />
+    </noscript>
     <link rel="stylesheet" href="./css/styles.css" />
     <script src="./js/icons.js" defer></script>
     <script src="./js/app.js" defer></script>
@@ -54,7 +57,7 @@
                 <h1 class="hero-title" data-i18n="hero.title">Coin999-長長久久 隊伍成績總覽</h1>
 
                 <div class="hero-actions">
-                    <label class="icon-select" title="Language">
+                    <label class="icon-select" data-i18n-attr="title:controls.language">
                         <span class="sr-only" data-i18n="controls.language">語言</span>
                         <span class="icon-select-icon" aria-hidden="true" data-icon="globe"></span>
                         <select id="languageSelect">
@@ -64,7 +67,7 @@
                         </select>
                     </label>
 
-                    <div class="sync-pill" id="updatedAtText" aria-live="polite"></div>
+                    <div class="sync-pill" id="updatedAtText"></div>
                 </div>
 
                 <p class="hero-subtitle" data-i18n="hero.subtitle">
@@ -73,9 +76,9 @@
             </header>
 
             <nav class="controls" aria-label="檢視設定" data-i18n-attr="aria-label:controls.bar">
-                <div class="tabs" role="tablist" id="viewTabs">
-                    <button type="button" role="tab" class="tab" data-view="month" data-i18n="controls.viewMonth">月度總覽</button>
-                    <button type="button" role="tab" class="tab" data-view="week" data-i18n="controls.viewWeek">單週明細</button>
+                <div class="tabs" id="viewTabs" role="group" data-i18n-attr="aria-label:controls.viewGroup">
+                    <button type="button" class="tab" data-view="month" aria-pressed="false" data-i18n="controls.viewMonth">月度總覽</button>
+                    <button type="button" class="tab" data-view="week" aria-pressed="false" data-i18n="controls.viewWeek">單週明細</button>
                 </div>
 
                 <label class="pill-select">
@@ -97,22 +100,22 @@
                 </label>
             </nav>
 
-            <div id="notice" class="notice" hidden role="status"></div>
+            <div id="notice" class="notice" role="status" aria-atomic="true"></div>
 
-            <span id="statsAnchor" class="anchor"></span>
-            <section class="stats" id="stats" aria-live="polite"></section>
+            <span id="statsAnchor" class="anchor" data-focus="stats"></span>
+            <section class="stats" id="stats" tabindex="-1" aria-label="團隊統計" data-i18n-attr="aria-label:nav.stats"></section>
 
             <section class="podium" id="podium"></section>
 
             <section class="podium watch" id="watchList" hidden></section>
 
-            <span id="tableAnchor" class="anchor"></span>
+            <span id="tableAnchor" class="anchor" data-focus="tableTitle"></span>
             <section class="panel" aria-labelledby="tableTitle">
                 <div class="panel-head">
                     <div class="panel-heading">
                         <span class="icon-chip" aria-hidden="true" data-icon="list"></span>
                         <div>
-                            <h2 id="tableTitle" class="panel-title"></h2>
+                            <h2 id="tableTitle" class="panel-title" tabindex="-1"></h2>
                             <p class="panel-hint" id="resultHint" aria-live="polite" data-i18n="common.loading">載入中...</p>
                         </div>
                     </div>
@@ -124,7 +127,7 @@
                             data-i18n-attr="placeholder:controls.searchPlaceholder" />
                     </label>
 
-                    <div class="legend" aria-hidden="true">
+                    <div class="legend">
                         <span class="legend-item"><i class="swatch swatch-invested"></i><span data-i18n="metric.invested">實際投入</span></span>
                         <span class="legend-item"><i class="swatch swatch-uninvested"></i><span data-i18n="metric.uninvested">未投入</span></span>
                     </div>
@@ -138,7 +141,7 @@
                 </div>
             </section>
 
-            <ul class="footnotes" id="footnotes">
+            <ul class="footnotes" id="footnotes" tabindex="-1" aria-label="說明" data-i18n-attr="aria-label:nav.help">
                 <li data-i18n="footnote.invested">實際投入：週表「投入」欄位的分數。</li>
                 <li data-i18n="footnote.uninvested">未投入：週表「未投入」欄位的分數。</li>
                 <li data-i18n="footnote.contribution">貢獻度 = 個人分數 ÷ 全隊總分（含回歸帳號）。</li>

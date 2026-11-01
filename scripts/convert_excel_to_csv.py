@@ -10,35 +10,43 @@ EXIT_NO_MEMBER_ROWS = 4
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 
-INPUT_FILE_ENV = os.environ.get("INPUT_XLSX", "").strip()
-OUTPUT_FILE_ENV = os.environ.get("OUTPUT_CSV", "").strip()
 
-if INPUT_FILE_ENV:
-    INPUT_FILE = Path(INPUT_FILE_ENV)
-else:
-    EXCEL_FILES = [
-        file for file in SCRIPT_DIR.glob("*.xlsx")
-        if not file.name.startswith("~$")
-    ]
+def resolve_paths():
+    """
+    決定輸入 / 輸出檔案路徑。
 
-    if len(EXCEL_FILES) == 0:
-        raise FileNotFoundError(f"找不到 xlsx 檔案，請確認資料夾內有 .xlsx：{SCRIPT_DIR}")
+    - 有 INPUT_XLSX / OUTPUT_CSV 環境變數時直接使用（GitHub Actions）。
+    - 本機手動執行時，讀取 scripts/ 資料夾內唯一的 xlsx，輸出同名 csv。
 
-    if len(EXCEL_FILES) > 1:
-        file_list = "\n".join(f"- {file.name}" for file in EXCEL_FILES)
-        raise ValueError(
-            "同一個資料夾內找到多個 xlsx，請只保留一個要轉換的檔案：\n"
-            f"{file_list}"
-        )
+    放在函式內執行，模組被 import（例如測試）時不會去找檔案或建立資料夾。
+    """
+    input_env = os.environ.get("INPUT_XLSX", "").strip()
+    output_env = os.environ.get("OUTPUT_CSV", "").strip()
 
-    INPUT_FILE = EXCEL_FILES[0]
+    if input_env:
+        input_file = Path(input_env)
+    else:
+        excel_files = [
+            file for file in SCRIPT_DIR.glob("*.xlsx")
+            if not file.name.startswith("~$")
+        ]
 
-if OUTPUT_FILE_ENV:
-    OUTPUT_FILE = Path(OUTPUT_FILE_ENV)
-else:
-    OUTPUT_FILE = INPUT_FILE.with_suffix(".csv")
+        if len(excel_files) == 0:
+            raise FileNotFoundError(f"找不到 xlsx 檔案，請確認資料夾內有 .xlsx：{SCRIPT_DIR}")
 
-OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+        if len(excel_files) > 1:
+            file_list = "\n".join(f"- {file.name}" for file in excel_files)
+            raise ValueError(
+                "同一個資料夾內找到多個 xlsx，請只保留一個要轉換的檔案：\n"
+                f"{file_list}"
+            )
+
+        input_file = excel_files[0]
+
+    output_file = Path(output_env) if output_env else input_file.with_suffix(".csv")
+
+    return input_file, output_file
+
 
 OUTPUT_COLUMNS = [
     "type",
@@ -123,7 +131,8 @@ def format_number_like_excel(value):
         if number.is_integer():
             return f"{int(number):,}"
 
-        return str(number)
+        # 去掉浮點誤差，例如 0.30000000000000004 -> 0.3
+        return str(round(number, 6))
 
     except ValueError:
         return text
@@ -229,26 +238,18 @@ def read_excel_auto(input_file):
     - 若表頭前面有空白列，也會自動尋找表頭。
     - 工作表不指定，直接讀第一個 sheet。
     """
-    excel_file = pd.ExcelFile(input_file)
-    sheet_name = excel_file.sheet_names[0]
+    with pd.ExcelFile(input_file) as excel_file:
+        sheet_name = excel_file.sheet_names[0]
 
-    print(f"讀取工作表：{sheet_name}")
+        print(f"讀取工作表：{sheet_name}")
 
-    raw_df = pd.read_excel(
-        input_file,
-        sheet_name=sheet_name,
-        header=None,
-        dtype=object
-    )
+        # 只讀一次工作表，找到表頭列後直接從同一份資料切出內容。
+        raw_df = excel_file.parse(sheet_name, header=None, dtype=object)
 
     header_row = find_header_row(raw_df)
 
-    df = pd.read_excel(
-        input_file,
-        sheet_name=sheet_name,
-        header=header_row,
-        dtype=object
-    )
+    df = raw_df.iloc[header_row + 1:].reset_index(drop=True)
+    df.columns = dedupe_column_names(raw_df.iloc[header_row].tolist())
 
     df = normalize_columns(df)
     df = df.dropna(how="all")
@@ -257,6 +258,28 @@ def read_excel_auto(input_file):
     print(f"目前讀到的欄位：{list(df.columns)}")
 
     return df
+
+
+def dedupe_column_names(values):
+    """
+    與 pandas 讀表頭時相同：重複的欄位名稱加上 .1、.2…，
+    避免同名欄位讓 df[欄位] 回傳多欄。空白欄位維持空白（清理後原本就會是空字串）。
+    """
+    seen = {}
+    names = []
+
+    for value in values:
+        name = clean_column_name(value)
+
+        if name and name in seen:
+            seen[name] += 1
+            name = f"{name}.{seen[name]}"
+        elif name:
+            seen[name] = 0
+
+        names.append(name)
+
+    return names
 
 
 def find_column(df, possible_names):
@@ -512,10 +535,12 @@ def make_return_section_row():
 
 
 def main():
-    input_path = Path(INPUT_FILE)
+    input_path, output_file = resolve_paths()
 
     if not input_path.exists():
-        raise FileNotFoundError(f"找不到檔案：{INPUT_FILE}")
+        raise FileNotFoundError(f"找不到檔案：{input_path}")
+
+    output_file.parent.mkdir(parents=True, exist_ok=True)
 
     print(f"讀取 Excel：{input_path.name}")
 
@@ -693,12 +718,12 @@ def main():
     person_rows = [row for row in output_rows if row["type"] == "person"]
 
     if not person_rows:
-        print(f"::warning::轉換失敗：{OUTPUT_FILE.name} 沒有任何成員資料列，已保留原檔")
+        print(f"::warning::轉換失敗：{output_file.name} 沒有任何成員資料列，已保留原檔")
         sys.exit(EXIT_NO_MEMBER_ROWS)
 
     output_df = pd.DataFrame(output_rows, columns=OUTPUT_COLUMNS)
 
-    temp_file = OUTPUT_FILE.with_name(f"{OUTPUT_FILE.name}.tmp")
+    temp_file = output_file.with_name(f"{output_file.name}.tmp")
 
     try:
         output_df.to_csv(
@@ -708,11 +733,11 @@ def main():
             quoting=csv.QUOTE_MINIMAL
         )
 
-        temp_file.replace(OUTPUT_FILE)
+        temp_file.replace(output_file)
     finally:
         temp_file.unlink(missing_ok=True)
 
-    print(f"轉換完成：{OUTPUT_FILE.name}")
+    print(f"轉換完成：{output_file.name}")
 
 
 if __name__ == "__main__":

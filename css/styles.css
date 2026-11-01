@@ -15,7 +15,8 @@
 
     --ink: #161614;
     --ink-2: #55584f;
-    --ink-3: #868a80;
+    /* 次要文字：#5f635a 在 --card / --frame 上約 5.2:1 / 5.8:1，符合 WCAG AA 4.5:1 */
+    --ink-3: #5f635a;
     --on-dark: #f4f5ef;
     --on-dark-2: #a3a69c;
 
@@ -1906,5 +1907,84 @@ td.is-heavy {
         animation: none !important;
         transition: none !important;
         scroll-behavior: auto !important;
+    }
+}
+
+/* ================================
+   Accessibility
+================================ */
+
+/* 深色底（導覽列、選取中的分頁、深色卡片）上的焦點框改用萊姆色，約 14:1 */
+.rail :focus-visible,
+.tab.is-active:focus-visible,
+.stat-dark :focus-visible,
+.stat-dark:focus-visible {
+    outline: 3px solid var(--lime);
+    outline-offset: 2px;
+}
+
+/* 程式移動焦點用的區塊（tabindex="-1"）不需要焦點框 */
+[tabindex="-1"]:focus {
+    outline: none;
+}
+
+/* 提示區一直存在於頁面上，讓 role="status" 能播報新內容；沒有內容時才隱藏 */
+.notice:empty {
+    display: none;
+}
+
+/* 頒獎台卡片外層的 listitem 包裝，維持原本卡片撐滿格子的版面 */
+.podium-item {
+    display: flex;
+    min-width: 0;
+}
+
+.podium-item > .podium-card {
+    flex: 1;
+    width: 100%;
+}
+
+/* 未投入色塊是淺萊姆色，加深色描邊讓它在淺色底上可辨識（非文字對比 3:1），不只靠顏色區分 */
+.mix-uninvested,
+.swatch-uninvested {
+    box-shadow: inset 0 0 0 1.5px var(--ink);
+}
+
+.bar-uninvested {
+    stroke: var(--ink);
+    stroke-width: 1.5px;
+}
+
+/* 圖表長條的鍵盤焦點：用深色外框標示，取代原本在淺色底上看不出來的白色半透明填色 */
+.bar-hit:focus-visible {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 2px;
+}
+
+/* 可點擊目標至少 24px（WCAG 2.5.8） */
+.th-sort {
+    min-height: 32px;
+    padding: 4px 0;
+}
+
+.member-link,
+.watch-name {
+    min-height: 24px;
+}
+
+/* 對話框的標題列是固定的，捲動時保留空間，避免焦點被標題列擋住 */
+.modal-dialog {
+    scroll-padding-top: 88px;
+}
+
+@media (max-width: 760px) {
+    .modal-dialog {
+        scroll-padding-top: 76px;
+    }
+
+    /* 手機底部導覽列固定在畫面下方，保留空間避免焦點被擋住 */
+    html {
+        scroll-padding-bottom: 96px;
     }
 }

@@ -8,11 +8,12 @@
       "eyebrow": "Team Contribution Dashboard",
       "title": "Coin999-長長久久 隊伍成績總覽",
       "subtitle": "以月為單位檢視每位成員的總分、實際投入與未投入分數，看清楚誰的貢獻是真正投入出來的。",
-      "updatedAt": "資料最後同步：{time}"
+      "updatedAt": "資料最後更新：{time}"
     },
     "controls": {
       "bar": "檢視設定",
       "language": "語言",
+      "viewGroup": "檢視方式",
       "viewMonth": "月度總覽",
       "viewWeek": "單週明細",
       "period": "期間",
@@ -120,7 +121,8 @@
     },
     "trend": {
       "new": "新 / 無資料",
-      "lastWeek": "上週：{score}"
+      "lastWeek": "上週：{score}",
+      "previousMissing": "上週資料讀取失敗，無法比較"
     },
     "target": {
       "elderReached": "已達長老",
@@ -217,11 +219,12 @@
       "eyebrow": "Team Contribution Dashboard",
       "title": "Coin999 Team Score Overview",
       "subtitle": "See each member's monthly total, actual invested score and non-invested score — and who really earned their contribution.",
-      "updatedAt": "Last synced: {time}"
+      "updatedAt": "Data last updated: {time}"
     },
     "controls": {
       "bar": "View settings",
       "language": "Language",
+      "viewGroup": "View",
       "viewMonth": "Monthly",
       "viewWeek": "Weekly",
       "period": "Period",
@@ -329,7 +332,8 @@
     },
     "trend": {
       "new": "New / no data",
-      "lastWeek": "Last week: {score}"
+      "lastWeek": "Last week: {score}",
+      "previousMissing": "Last week's data failed to load, so there is nothing to compare"
     },
     "target": {
       "elderReached": "Elder reached",
@@ -426,11 +430,12 @@
       "eyebrow": "Team Contribution Dashboard",
       "title": "Coin999 – Tổng quan thành tích đội",
       "subtitle": "Xem tổng điểm theo tháng, điểm đầu tư thực tế và điểm không đầu tư của từng thành viên.",
-      "updatedAt": "Đồng bộ lần cuối: {time}"
+      "updatedAt": "Dữ liệu cập nhật lần cuối: {time}"
     },
     "controls": {
       "bar": "Thiết lập hiển thị",
       "language": "Ngôn ngữ",
+      "viewGroup": "Chế độ xem",
       "viewMonth": "Theo tháng",
       "viewWeek": "Theo tuần",
       "period": "Kỳ",
@@ -538,7 +543,8 @@
     },
     "trend": {
       "new": "Mới / không có dữ liệu",
-      "lastWeek": "Tuần trước: {score}"
+      "lastWeek": "Tuần trước: {score}",
+      "previousMissing": "Không tải được dữ liệu tuần trước nên không thể so sánh"
     },
     "target": {
       "elderReached": "Đã đạt Trưởng lão",

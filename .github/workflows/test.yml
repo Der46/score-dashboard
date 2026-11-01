@@ -1,0 +1,50 @@
+name: Tests
+
+# 推送或開 PR 時執行：週別計算的單元測試、跨檔案一致性檢查、JS 語法檢查。
+# 排程同步的 bot commit 只改 data/，不需要跑測試。
+
+on:
+  push:
+    paths-ignore:
+      - "data/**"
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Python unit tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Python syntax check
+        run: python -m py_compile scripts/*.py
+
+      # ubuntu-latest 內建 Node.js，Apps Script 也用同樣的 JS 語法檢查。
+      - name: JavaScript syntax check
+        run: |
+          node --check js/app.js
+          node --check js/icons.js
+          node --check sw.js
+          node --check tools/backfill-contribution.js
+          cp ScoreDashboardScript.gs "$RUNNER_TEMP/ScoreDashboardScript.js"
+          node --check "$RUNNER_TEMP/ScoreDashboardScript.js"

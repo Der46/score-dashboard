@@ -880,9 +880,25 @@ function cleanupTempWeeklySheets() {
  * ===================================================== */
 
 function readFormalMembers_(sheet) {
-  return parseMemberRows_(
-    sheet.getRange(MEMBER_FORMAL_FIRST_ROW, 1, MEMBER_FORMAL_MAX_COUNT, 4).getValues()
+  const range = sheet.getRange(MEMBER_FORMAL_FIRST_ROW, 1, MEMBER_FORMAL_MAX_COUNT, 4);
+  const values = range.getValues();
+  const members = parseMemberRows_(values, range.getFormulasR1C1());
+
+  // 一般帳號區塊中間有空白列時，空白列以下的成員會被略過，
+  // 之後排序寫回整個區塊時就會被清掉，因此直接停止並提示。
+  const strayRow = values.findIndex((row, index) =>
+    index > members.length && (String(row[0] || "").trim() || String(row[1] || "").trim())
   );
+
+  if (strayRow >= 0) {
+    throw new Error(
+      `成員名單一般帳號區塊第 ${MEMBER_FORMAL_FIRST_ROW + members.length} 列是空白，` +
+      `但第 ${MEMBER_FORMAL_FIRST_ROW + strayRow} 列還有成員資料。` +
+      "請先刪除中間的空白列再執行，避免空白列以下的成員被清除。"
+    );
+  }
+
+  return members;
 }
 
 function readReturnMembers_(sheet) {
@@ -892,17 +908,22 @@ function readReturnMembers_(sheet) {
     return [];
   }
 
-  return parseMemberRows_(
-    sheet.getRange(MEMBER_RETURN_FIRST_ROW, 1, lastRow - MEMBER_RETURN_FIRST_ROW + 1, 4).getValues()
-  );
+  const range = sheet.getRange(MEMBER_RETURN_FIRST_ROW, 1, lastRow - MEMBER_RETURN_FIRST_ROW + 1, 4);
+
+  return parseMemberRows_(range.getValues(), range.getFormulasR1C1());
 }
 
-function parseMemberRows_(values) {
+/**
+ * formulas 為同一範圍的 getFormulasR1C1()：D 欄（保留欄位）若是公式，
+ * 以 R1C1 形式保留，寫回時才不會被攤平成數值，搬到其他列後相對參照也仍正確。
+ */
+function parseMemberRows_(values, formulas) {
   const members = values.map((row, originalIndex) => ({
     cm: String(row[0] || "").trim(),
     line: String(row[1] || "").trim(),
     role: normalizeRole_(row[2]),
     colD: row[3],
+    colDFormula: formulas ? formulas[originalIndex][3] : "",
     originalIndex
   }));
 
@@ -1004,10 +1025,6 @@ function sortMemberListByCurrentMembersAndWeeklyScore_(memberSheet, weeklySheet)
     returnMembers,
     buildWeeklyScoreMap_(weeklySheet, blocks.returning)
   );
-
-  if (sortedFormal.length > MEMBER_FORMAL_MAX_COUNT) {
-    throw new Error(`一般帳號數量 ${sortedFormal.length} 超過上限 ${MEMBER_FORMAL_MAX_COUNT}。`);
-  }
 
   writeMemberRows_(memberSheet, MEMBER_FORMAL_FIRST_ROW, MEMBER_FORMAL_MAX_COUNT, sortedFormal);
 
@@ -1120,11 +1137,33 @@ function sortMembersByWeeklyScore_(members, scoreMap) {
 function writeMemberRows_(memberSheet, firstRow, rowCount, members) {
   const values = Array.from({ length: rowCount }, (_, i) =>
     members[i]
-      ? [members[i].cm, members[i].line, members[i].role, members[i].colD]
+      ? [
+        asPlainText_(members[i].cm),
+        asPlainText_(members[i].line),
+        members[i].role,
+        members[i].colDFormula ? "" : members[i].colD
+      ]
       : ["", "", "", ""]
   );
 
   memberSheet.getRange(firstRow, 1, rowCount, 4).setValues(values);
+
+  // D 欄原本是公式的列，逐格以 R1C1 寫回公式（數量很少，不影響效能）。
+  members.slice(0, rowCount).forEach((member, i) => {
+    if (member.colDFormula) {
+      memberSheet.getRange(firstRow + i, 4).setFormulaR1C1(member.colDFormula);
+    }
+  });
+}
+
+/**
+ * 以 = + - @ 開頭的文字（例如 CM 名稱）寫回時會被試算表當成公式，
+ * 前面加上 ' 讓它維持為純文字。
+ */
+function asPlainText_(value) {
+  const text = String(value || "");
+
+  return /^[=+\-@]/.test(text) ? `'${text}` : text;
 }
 
 
