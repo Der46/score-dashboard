@@ -1,8 +1,12 @@
 import pandas as pd
 import csv
 import re
+import sys
 from pathlib import Path
 import os
+
+# 週分頁沒有任何成員資料列時的結束代碼（與下載腳本的 3 = 找不到分頁區分）。
+EXIT_NO_MEMBER_ROWS = 4
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 
@@ -685,23 +689,28 @@ def main():
         })
 
     # 轉出空表時直接失敗，避免把好的 CSV 覆蓋成只有表頭的檔案再被 commit。
+    # 使用專屬結束代碼，讓 workflow 能判斷是「分頁還沒有成員資料」並改同步上一週。
     person_rows = [row for row in output_rows if row["type"] == "person"]
 
     if not person_rows:
-        raise SystemExit(f"轉換失敗：{OUTPUT_FILE.name} 沒有任何成員資料列，已保留原檔")
+        print(f"::warning::轉換失敗：{OUTPUT_FILE.name} 沒有任何成員資料列，已保留原檔")
+        sys.exit(EXIT_NO_MEMBER_ROWS)
 
     output_df = pd.DataFrame(output_rows, columns=OUTPUT_COLUMNS)
 
     temp_file = OUTPUT_FILE.with_name(f"{OUTPUT_FILE.name}.tmp")
 
-    output_df.to_csv(
-        temp_file,
-        index=False,
-        encoding="utf-8-sig",
-        quoting=csv.QUOTE_MINIMAL
-    )
+    try:
+        output_df.to_csv(
+            temp_file,
+            index=False,
+            encoding="utf-8-sig",
+            quoting=csv.QUOTE_MINIMAL
+        )
 
-    temp_file.replace(OUTPUT_FILE)
+        temp_file.replace(OUTPUT_FILE)
+    finally:
+        temp_file.unlink(missing_ok=True)
 
     print(f"轉換完成：{OUTPUT_FILE.name}")
 

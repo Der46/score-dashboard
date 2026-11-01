@@ -161,7 +161,7 @@ function getOutputHeaders(originalHeaders) {
     return headers;
 }
 
-function objectsToCSV(headers, objects) {
+function objectsToCSV(headers, objects, eol = "\n") {
     const lines = [];
 
     lines.push(headers.map(escapeCSVCell).join(","));
@@ -174,7 +174,7 @@ function objectsToCSV(headers, objects) {
         lines.push(line);
     });
 
-    return lines.join("\n") + "\n";
+    return lines.join(eol) + eol;
 }
 
 function findTotalRow(rows) {
@@ -252,8 +252,9 @@ function backupFile(filePath) {
 
 function processFile(filePath) {
     const rawText = fs.readFileSync(filePath, "utf8");
-    // 保留原檔是否有 BOM，避免回補後整個檔案出現不必要的差異。
+    // 保留原檔的 BOM 與換行格式，避免回補後整個檔案出現不必要的差異。
     const bom = rawText.startsWith(BOM) ? BOM : "";
+    const eol = rawText.includes("\r\n") ? "\r\n" : "\n";
     const originalText = rawText.slice(bom.length);
     const { headers, objects } = csvToObjects(originalText);
 
@@ -263,10 +264,15 @@ function processFile(filePath) {
     }
 
     const updatedRows = backfillRows(objects);
-    const updatedCSV = bom + objectsToCSV(getOutputHeaders(headers), updatedRows);
+    const updatedCSV = bom + objectsToCSV(getOutputHeaders(headers), updatedRows, eol);
 
     backupFile(filePath);
-    fs.writeFileSync(filePath, updatedCSV, "utf8");
+
+    // 先寫暫存檔再改名，避免寫到一半中斷時留下不完整的 CSV。
+    const tempPath = `${filePath}.tmp`;
+
+    fs.writeFileSync(tempPath, updatedCSV, "utf8");
+    fs.renameSync(tempPath, filePath);
 
     console.log(`已補貢獻度：${filePath}`);
 }

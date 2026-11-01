@@ -48,6 +48,9 @@ const SPECIAL_CM = {
 /** 每週 CSV 必須有的欄位；缺少時這週視為讀取失敗。 */
 const REQUIRED_WEEK_HEADERS = ["CM", "LINE名稱", "一週總分"];
 
+/** 無法解析分數的提示最多列出幾格。 */
+const NOTICE_MAX_CELLS = 5;
+
 const VIEW = {
     MONTH: "month",
     WEEK: "week"
@@ -459,29 +462,35 @@ function formatMonthShort(monthKey) {
  * 而不是顯示成一張空表。
  */
 function buildWeekModel(week, rawRows) {
-    const missingHeaders = REQUIRED_WEEK_HEADERS.filter(header => !rawRows.length || !(header in rawRows[0]));
+    if (!rawRows.length) {
+        throw new Error(`${week.file}: no data rows`);
+    }
+
+    const missingHeaders = REQUIRED_WEEK_HEADERS.filter(header => !(header in rawRows[0]));
 
     if (missingHeaders.length) {
         throw new Error(`${week.file}: missing columns ${missingHeaders.join(", ")}`);
     }
 
     const people = [];
-    const invalidCells = [];
+    let rowInvalidCells = [];
     let inReturnSection = false;
 
-    // 非空白但無法解析的分數格仍以 0 / null 計算，但會記下來顯示在提示中。
+    // 非空白但無法解析的分數格：總分以 0 計、投入 / 未投入為 null（顯示「—」），並記下來顯示在提示中。
     const readNumber = (raw, header, optional) => {
         const text = cleanText(raw[header]).replaceAll(",", "");
         const number = Number(text);
 
         if (text && !Number.isFinite(number)) {
-            invalidCells.push(`${cleanText(raw["CM"]) || cleanText(raw["LINE名稱"])} ${header}`);
+            rowInvalidCells.push(header);
         }
 
         return optional ? parseOptionalNumber(text) : parseNumber(text);
     };
 
     rawRows.forEach(raw => {
+        rowInvalidCells = [];
+
         const type = cleanText(raw.type);
         const cm = cleanText(raw["CM"]);
         const lineName = cleanText(raw["LINE名稱"]);
@@ -526,7 +535,8 @@ function buildWeekModel(week, rawRows) {
             activities,
             passDistanceRaw: cleanText(raw["距離合格分數"]),
             elderDistanceRaw: cleanText(raw["距離長老分數"]),
-            sheetOrder: people.length
+            sheetOrder: people.length,
+            invalidCells: rowInvalidCells
         });
     });
 
@@ -534,14 +544,21 @@ function buildWeekModel(week, rawRows) {
         throw new Error(`${week.file}: no member rows`);
     }
 
-    // 同一人（CM 與 LINE 名稱都相同）在週表出現多次時，只保留分數最高的一列，其餘視為重複列忽略。
+    // 同一人（CM 與 LINE 名稱都相同）在週表出現多次時只保留一列，其餘視為重複列忽略：
+    // 優先保留一般區（非回歸）的列，同區時保留分數較高的列。
+    const isBetterRow = (person, best) => {
+        if (person.isReturn !== best.isReturn) return !person.isReturn;
+
+        return person.score > best.score;
+    };
+
     const bestRows = new Map();
 
     people.forEach(person => {
         const identity = `${person.cm.toLowerCase()}|${person.lineName.toLowerCase()}`;
         const best = bestRows.get(identity);
 
-        if (!best || person.score > best.score) bestRows.set(identity, person);
+        if (!best || isBetterRow(person, best)) bestRows.set(identity, person);
     });
 
     const keptRows = new Set(bestRows.values());
@@ -550,19 +567,18 @@ function buildWeekModel(week, rawRows) {
         if (!keptRows.has(people[index])) people.splice(index, 1);
     }
 
-    // 同一週 CM 重複、但 LINE 名稱不同時，改用 CM + LINE 名稱當 key，避免兩人的分數被合併成一人。
+    // 同一週 CM 重複、但 LINE 名稱不同：先記下來，key 由 applyStableMemberKeys 跨週統一處理。
     const keyCounts = new Map();
 
     people.forEach(person => keyCounts.set(person.key, (keyCounts.get(person.key) || 0) + 1));
 
-    const duplicateNames = new Set();
+    const duplicateKeys = new Set(people.filter(person => keyCounts.get(person.key) > 1).map(person => person.key));
+    const duplicateNames = new Set(people.filter(person => duplicateKeys.has(person.key)).map(person => person.cm));
 
-    people.forEach(person => {
-        if (keyCounts.get(person.key) > 1) {
-            duplicateNames.add(person.cm);
-            person.key = `${person.key}|line:${person.lineName.toLowerCase()}`;
-        }
-    });
+    // 只收集保留下來的列，同一格只列一次。
+    const invalidCells = Array.from(new Set(
+        people.flatMap(person => person.invalidCells.map(header => `${person.cm} ${header}`))
+    ));
 
     const hasSplit = people.length > 0 && people.every(person => person.invested !== null);
     const teamTotal = sum(people.map(person => person.score));
@@ -585,12 +601,34 @@ function buildWeekModel(week, rawRows) {
         teamInvested,
         teamUninvested,
         invalidCells,
+        duplicateKeys,
         duplicateNames: Array.from(duplicateNames)
     };
 
     model.bottomKeys = getBottomKeys(model);
 
     return model;
+}
+
+/**
+ * CM 在任一週與不同 LINE 名稱重複時，所有週都改用 CM + LINE 名稱當 key，
+ * 讓同一人跨週的 key 一致，月統計、上週差距與個人頁歷史才不會被拆開。
+ */
+function applyStableMemberKeys(models) {
+    const splitKeys = new Set(models.flatMap(model => Array.from(model.duplicateKeys)));
+
+    if (!splitKeys.size) return;
+
+    models.forEach(model => {
+        model.people.forEach(person => {
+            if (splitKeys.has(person.key)) {
+                person.key = `${person.key}|line:${person.lineName.toLowerCase()}`;
+            }
+        });
+
+        model.byKey = new Map(model.people.map(person => [person.key, person]));
+        model.bottomKeys = getBottomKeys(model);
+    });
 }
 
 function isBottomEligible(person) {
@@ -640,6 +678,8 @@ async function loadWeeks() {
             console.warn("Failed to load week", week.file, result.reason);
         }
     });
+
+    applyStableMemberKeys(Array.from(state.weekData.values()));
 
     state.weeks = state.weeks.filter(week => state.weekData.has(week.id));
     state.months = Array.from(new Set(state.weeks.map(getWeekMonthKey).filter(Boolean)));
@@ -1086,12 +1126,17 @@ function renderNotice(missingWeeks, weekModels = []) {
         const week = getWeekShortLabel(model.week);
 
         if (model.invalidCells.length) {
-            messages.push(t("notice.invalidCells", { week, cells: model.invalidCells.join("、") }));
+            // 最多列出前幾格，避免整片提示洗版。
+            const shown = model.invalidCells.slice(0, NOTICE_MAX_CELLS).join("、");
+            const cells = model.invalidCells.length > NOTICE_MAX_CELLS ? `${shown}…` : shown;
+
+            messages.push(t("notice.invalidCells", { week, count: model.invalidCells.length, cells }));
         }
 
         if (model.duplicateNames.length) {
             messages.push(t("notice.duplicateMembers", { week, names: model.duplicateNames.join("、") }));
-        }    });
+        }
+    });
 
     if (state.failedWeeks.length) {
         messages.push(t("notice.failedWeeks", { weeks: state.failedWeeks.map(week => week.id).join("、") }));

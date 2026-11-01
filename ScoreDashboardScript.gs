@@ -504,32 +504,41 @@ function onEdit(e) {
     return;
   }
 
-  const layout = readLayoutInfo_(sheet);
-  const row = e.range.getRow();
+  // 多人同時編輯時避免排序互相重疊；拿不到鎖就略過這次排序並提示，
+  // 下一次編輯或選單「重新排序」會再排。
+  // 若簡易觸發器環境無法使用 LockService，就退回不加鎖的排序，確保自動排序不會整個失效。
+  let lock = null;
 
-  const isMemberRow = listScoreBlocks_(layout).some(block =>
-    row >= block.firstRow && row <= block.lastRow
-  );
-
-  if (!isMemberRow) {
-    return;
+  try {
+    lock = LockService.getDocumentLock();
+  } catch (err) {
+    Logger.log(`onEdit 無法取得 LockService，改為不加鎖排序：${err.message || err}`);
   }
 
-  // 多人同時編輯時避免排序互相重疊；拿不到鎖就略過這次排序，
-  // 下一次編輯或選單「重新排序」會再排。
-  const lock = LockService.getDocumentLock();
-
-  if (!lock.tryLock(5000)) {
+  if (lock && !lock.tryLock(5000)) {
+    SpreadsheetApp.getActive().toast("另一個排序正在進行，這次編輯暫不重新排序。", "積分工具", 5);
     return;
   }
 
   try {
+    // 在鎖內讀版面，避免等待鎖期間版面已被其他排序改動。
+    const layout = readLayoutInfo_(sheet);
+    const row = e.range.getRow();
+
+    const isMemberRow = listScoreBlocks_(layout).some(block =>
+      row >= block.firstRow && row <= block.lastRow
+    );
+
+    if (!isMemberRow) {
+      return;
+    }
+
     SpreadsheetApp.flush();
 
     sortWeeklyScoreSheet_(sheet, layout);
     reapplyAfterSortStyles_(sheet, layout);
   } finally {
-    lock.releaseLock();
+    if (lock) lock.releaseLock();
   }
 }
 

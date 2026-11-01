@@ -236,11 +236,14 @@ def download_sheet_as_xlsx(session, spreadsheet_id, gid, week_id):
     ):
         print(f"警告：回應 content-type 不是典型 xlsx：{content_type}")
 
-    temp_file.write_bytes(response.content)
+    try:
+        temp_file.write_bytes(response.content)
 
-    validate_xlsx_file(temp_file)
+        validate_xlsx_file(temp_file)
 
-    temp_file.replace(output_file)
+        temp_file.replace(output_file)
+    finally:
+        temp_file.unlink(missing_ok=True)
 
     validate_xlsx_file(output_file)
 
@@ -261,7 +264,8 @@ def main():
     try:
         gid = find_gid_by_week_id(tabs, week_id)
     except TabNotFoundError as exc:
-        print(f"::warning::{exc}")
+        # 不加 ::warning::，由 workflow 決定是否改同步上一週並統一顯示警告。
+        print(exc)
         sys.exit(EXIT_TAB_NOT_FOUND)
 
     download_sheet_as_xlsx(session, spreadsheet_id, gid, week_id)

@@ -29,7 +29,7 @@ concurrency:
 jobs:
   sync-week:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
 
     steps:
       - name: Checkout repository
@@ -167,46 +167,53 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install pandas openpyxl requests
 
-      # 下載腳本結束代碼 3 = 找不到週別分頁：這是永久性錯誤，不重試；
-      # 自動模式下改同步上一週，避免新週分頁還沒建立時整個同步失敗。
-      - name: Download Google Sheet week as XLSX
+      # 結束代碼 3 = 找不到週別分頁、4 = 分頁還沒有成員資料（例如剛從範本建立）：
+      # 這兩種是永久性狀態，不重試；自動模式下改同步上一週，避免新週分頁還沒準備好時整個同步失敗。
+      # 下載腳本本身已有 HTTP 層的重試，這裡只再重試整個下載 2 次。
+      - name: Download and convert Google Sheet week
         id: download
-        timeout-minutes: 15
+        timeout-minutes: 25
         env:
           GOOGLE_SPREADSHEET_ID: ${{ secrets.GOOGLE_SPREADSHEET_ID }}
           GOOGLE_SHEETS_API_KEY: ${{ secrets.GOOGLE_SHEETS_API_KEY }}
           RESOLVED_WEEK_ID: ${{ steps.resolve_week.outputs.week_id }}
           FALLBACK_WEEK_ID: ${{ steps.resolve_week.outputs.fallback_week_id }}
         run: |
-          download() {
+          sync_week() {
             local code=0
 
-            for attempt in 1 2 3; do
+            for attempt in 1 2; do
               code=0
               WEEK_ID="$1" python scripts/download_google_sheet_week.py || code=$?
 
               if [ "$code" -eq 0 ] || [ "$code" -eq 3 ]; then
-                return "$code"
+                break
               fi
 
-              if [ "$attempt" -lt 3 ]; then
+              if [ "$attempt" -lt 2 ]; then
                 echo "下載失敗（第 ${attempt} 次，exit ${code}），60 秒後重試"
                 sleep 60
               fi
             done
+
+            if [ "$code" -ne 0 ]; then
+              return "$code"
+            fi
+
+            INPUT_XLSX="work/$1.xlsx" OUTPUT_CSV="data/$1.csv" python scripts/convert_excel_to_csv.py || code=$?
 
             return "$code"
           }
 
           WEEK_ID="$RESOLVED_WEEK_ID"
           code=0
-          download "$WEEK_ID" || code=$?
+          sync_week "$WEEK_ID" || code=$?
 
-          if [ "$code" -eq 3 ] && [ -n "$FALLBACK_WEEK_ID" ]; then
-            echo "::warning::找不到 ${WEEK_ID} 分頁，改同步上一週 ${FALLBACK_WEEK_ID}"
+          if { [ "$code" -eq 3 ] || [ "$code" -eq 4 ]; } && [ -n "$FALLBACK_WEEK_ID" ]; then
+            echo "::warning::${WEEK_ID} 分頁尚未建立或還沒有成員資料，改同步上一週 ${FALLBACK_WEEK_ID}"
             WEEK_ID="$FALLBACK_WEEK_ID"
             code=0
-            download "$WEEK_ID" || code=$?
+            sync_week "$WEEK_ID" || code=$?
           fi
 
           if [ "$code" -ne 0 ]; then
@@ -214,13 +221,6 @@ jobs:
           fi
 
           echo "week_id=${WEEK_ID}" >> "$GITHUB_OUTPUT"
-
-      - name: Convert XLSX to dashboard CSV
-        env:
-          INPUT_XLSX: work/${{ steps.download.outputs.week_id }}.xlsx
-          OUTPUT_CSV: data/${{ steps.download.outputs.week_id }}.csv
-        run: |
-          python scripts/convert_excel_to_csv.py
 
       - name: Check whether score data needs update
         id: check_changes
@@ -276,6 +276,8 @@ jobs:
           git status --short
 
       # 推送前先 rebase 到最新的遠端分支，避免同一時間有人推送時被拒絕而遺失這次同步。
+      # 衝突時以這次同步的資料為準（-X theirs 在 rebase 中指的是正在重放的本次 commit）；
+      # rebase 失敗時先中止，避免下一次重試卡在 rebase 進行中的狀態。
       - name: Commit and push changes
         env:
           WEEK_ID: ${{ steps.download.outputs.week_id }}
@@ -293,10 +295,11 @@ jobs:
           git commit -m "Update weekly score sync timestamp for ${WEEK_ID}"
 
           for attempt in 1 2 3; do
-            if git pull --rebase origin "$GITHUB_REF_NAME" && git push origin "HEAD:$GITHUB_REF_NAME"; then
+            if git pull --rebase -X theirs origin "$GITHUB_REF_NAME" && git push origin "HEAD:$GITHUB_REF_NAME"; then
               exit 0
             fi
 
+            git rebase --abort 2>/dev/null || true
             echo "推送失敗（第 ${attempt} 次），10 秒後重試"
             sleep 10
           done

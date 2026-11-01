@@ -98,7 +98,7 @@
     "notice": {
       "missingSplit": "此期間有 {count} 個週別的資料尚未包含投入 / 未投入拆分，相關數字會顯示為「—」。需重新同步該週資料後才會顯示。",
       "failedWeeks": "以下週別資料讀取失敗：{weeks}",
-      "invalidCells": "{week} 有無法解析的分數，已以 0 計算：{cells}",
+      "invalidCells": "{week} 有 {count} 格分數無法解析（總分以 0 計，投入 / 未投入顯示為「—」）：{cells}",
       "duplicateMembers": "{week} 有重複的 CM，已改用 CM + LINE 名稱區分：{names}"
     },
     "table": {
@@ -307,7 +307,7 @@
     "notice": {
       "missingSplit": "{count} week(s) in this period have no invested / non-invested split yet; those values show as “—” until the week is re-synced.",
       "failedWeeks": "Failed to load: {weeks}",
-      "invalidCells": "{week} has scores that could not be read and were counted as 0: {cells}",
+      "invalidCells": "{week} has {count} score cell(s) that could not be read (totals counted as 0, invested / non-invested shown as “—”): {cells}",
       "duplicateMembers": "{week} has duplicate CM names, now told apart by CM + LINE name: {names}"
     },
     "table": {
@@ -516,7 +516,7 @@
     "notice": {
       "missingSplit": "Có {count} tuần trong kỳ này chưa có dữ liệu tách đầu tư / không đầu tư; các giá trị đó hiển thị “—” cho đến khi đồng bộ lại.",
       "failedWeeks": "Không tải được: {weeks}",
-      "invalidCells": "{week} có điểm không đọc được, đã tính là 0: {cells}",
+      "invalidCells": "{week} có {count} ô điểm không đọc được (tổng điểm tính là 0, đầu tư / không đầu tư hiển thị “—”): {cells}",
       "duplicateMembers": "{week} có CM bị trùng, đã phân biệt bằng CM + tên LINE: {names}"
     },
     "table": {

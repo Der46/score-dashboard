@@ -53,7 +53,8 @@ jobs:
           GOOGLE_SHEETS_API_KEY: ${{ secrets.GOOGLE_SHEETS_API_KEY }}
           INPUT_WEEK_IDS: ${{ github.event.inputs.week_ids }}
         run: |
-          set -u
+          # -f：週別清單以空白分割時不做萬用字元展開
+          set -uf
 
           if [ "$(echo "$INPUT_WEEK_IDS" | tr -d '[:space:]')" = "all" ]; then
             WEEK_IDS=$(python - <<'PY'
@@ -105,11 +106,13 @@ jobs:
 
           git commit -m "Backfill weekly score CSV with invested / uninvested split"
 
+          # 衝突時以本次回補的資料為準；rebase 失敗時先中止，避免下一次重試卡住。
           for attempt in 1 2 3; do
-            if git pull --rebase origin "$GITHUB_REF_NAME" && git push origin "HEAD:$GITHUB_REF_NAME"; then
+            if git pull --rebase -X theirs origin "$GITHUB_REF_NAME" && git push origin "HEAD:$GITHUB_REF_NAME"; then
               exit 0
             fi
 
+            git rebase --abort 2>/dev/null || true
             echo "推送失敗（第 ${attempt} 次），10 秒後重試"
             sleep 10
           done
