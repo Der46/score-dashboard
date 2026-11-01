@@ -19,7 +19,6 @@ const CONFIG = {
     UNINVESTED_HEAVY_SHARE: 0.5,
 
     BOTTOM_N: 5,
-    HISTORY_MIN_WEEKS: 2,
 
     // 成員關注參考：列出人數、最少需有幾週資料（避免剛加入的成員被列入）
     WATCH_N: 5,
@@ -55,6 +54,9 @@ const VIEW = {
     MONTH: "month",
     WEEK: "week"
 };
+
+/** 切換月 / 週檢視的按鈕：上方切換列與側邊導覽列各一組。 */
+const VIEW_BUTTON_SELECTOR = "#viewTabs [data-view], #railNav [data-view]";
 
 const FILTER = {
     ALL: "all",
@@ -94,7 +96,6 @@ const state = {
 const els = {
     app: document.querySelector(".app"),
     languageSelect: document.getElementById("languageSelect"),
-    viewTabs: document.getElementById("viewTabs"),
     periodSelect: document.getElementById("periodSelect"),
     searchInput: document.getElementById("searchInput"),
     filterSelect: document.getElementById("filterSelect"),
@@ -677,7 +678,7 @@ function isBottomEligible(person) {
  * 舊資料沒有拆分時才退回一週總分。
  */
 function getBottomKeys(model) {
-    const metric = person => (model.hasSplit ? person.invested : person.score);
+    const metric = rankingMetric(model.hasSplit);
     const candidates = model.people
         .filter(isBottomEligible)
         .map(person => ({ key: person.key, value: metric(person) }))
@@ -896,6 +897,20 @@ function isUninvestedHeavy(item) {
     );
 }
 
+/**
+ * 排名與合格判定用的分數：有投入 / 未投入拆分時用實際投入，舊資料沒有拆分時退回總分。
+ */
+function rankingMetric(useInvested) {
+    return person => (useInvested ? person.invested : person.score);
+}
+
+/** 總分名次與投入名次的差（正數 = 依投入排名較前）；任一名次不存在時為 null。 */
+function getRankShift(item) {
+    return Number.isFinite(item.totalRank) && Number.isFinite(item.investedRank)
+        ? item.totalRank - item.investedRank
+        : null;
+}
+
 /** 排名：回歸帳號不列入，同分同名次。 */
 function assignRanks(items, field, rankField) {
     const ranked = items
@@ -927,10 +942,7 @@ function getMonthRows() {
             ...member,
             name: member.cm,
             monthWeeks: month.totalWeeks,
-            rankShift:
-                Number.isFinite(member.totalRank) && Number.isFinite(member.investedRank)
-                    ? member.totalRank - member.investedRank
-                    : null
+            rankShift: getRankShift(member)
         }))
     };
 }
@@ -977,10 +989,7 @@ function getWeekRows() {
     assignRanks(rows.filter(row => row.invested !== null), "invested", "investedRank");
 
     rows.forEach(row => {
-        row.rankShift =
-            Number.isFinite(row.totalRank) && Number.isFinite(row.investedRank)
-                ? row.totalRank - row.investedRank
-                : null;
+        row.rankShift = getRankShift(row);
     });
 
     return { model, rows };
@@ -1112,7 +1121,7 @@ function ensureValidPeriod() {
 
 function renderControls() {
     // 檢視切換是一組切換按鈕（不是 tab 元件），用 aria-pressed 表示目前選取的檢視。
-    document.querySelectorAll("#viewTabs [data-view], #railNav [data-view]").forEach(button => {
+    document.querySelectorAll(VIEW_BUTTON_SELECTOR).forEach(button => {
         const active = button.dataset.view === state.view;
 
         button.setAttribute("aria-pressed", String(active));
@@ -1339,7 +1348,7 @@ const ACHIEVEMENTS = [
 
 function calculateAchievements(month) {
     const useInvested = month.hasSplit;
-    const metric = person => (useInvested ? person.invested : person.score);
+    const metric = rankingMetric(useInvested);
 
     const members = month.members
         .filter(member => !member.isReturn)
@@ -1486,7 +1495,7 @@ function renderAchievementCard(config, result) {
  */
 function calculateWatchList(month) {
     const useInvested = month.hasSplit;
-    const metric = person => (useInvested ? person.invested : person.score);
+    const metric = rankingMetric(useInvested);
     const minWeeks = Math.min(CONFIG.WATCH_MIN_WEEKS, month.totalWeeks);
 
     // 只看本月最新一週仍在週表上的成員（月中已離隊者不列入）
@@ -2542,7 +2551,7 @@ function bindEvents() {
     els.languageSelect.addEventListener("change", event => setLocale(event.target.value));
 
     document.addEventListener("click", event => {
-        const button = event.target.closest("#viewTabs [data-view], #railNav [data-view]");
+        const button = event.target.closest(VIEW_BUTTON_SELECTOR);
 
         if (!button || button.dataset.view === state.view) return;
 

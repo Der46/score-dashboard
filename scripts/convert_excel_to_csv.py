@@ -312,26 +312,15 @@ def find_activity_columns(df):
     - 活動2總分
     - 活動3總分
     """
-    activity1_col = find_column(df, [
-        "活動1小計",
-        "活動1小記",
-        "活動1總分",
-        "活動1投分",
-    ])
-
-    activity2_col = find_column(df, [
-        "活動2小計",
-        "活動2小記",
-        "活動2總分",
-        "活動2投分",
-    ])
-
-    activity3_col = find_column(df, [
-        "活動3小計",
-        "活動3小記",
-        "活動3總分",
-        "活動3投分",
-    ])
+    activity1_col, activity2_col, activity3_col = (
+        find_column(df, [
+            f"活動{number}小計",
+            f"活動{number}小記",
+            f"活動{number}總分",
+            f"活動{number}投分",
+        ])
+        for number in (1, 2, 3)
+    )
 
     return activity1_col, activity2_col, activity3_col
 
@@ -397,6 +386,23 @@ def format_int(number):
     return f"{number:,}"
 
 
+def find_score_column_after(columns, anchor, default):
+    """
+    表頭被拆成兩格時（例如「距離合格」右邊一格寫「分數」），
+    取 anchor 之後第一個「分數」欄；找不到就回傳 default。
+    """
+    if anchor not in columns:
+        return default
+
+    for col in columns[columns.index(anchor) + 1:]:
+        col_text = clean_column_name(col)
+
+        if col_text == "分數" or col_text.startswith("分數."):
+            return col
+
+    return default
+
+
 def find_distance_columns(df):
     """
     找出「距離合格分數」與「距離長老分數」欄位。
@@ -413,32 +419,24 @@ def find_distance_columns(df):
         "距離長老",
     ])
 
-    if "距離合格" in columns:
-        idx = columns.index("距離合格")
-
-        for col in columns[idx + 1:]:
-            col_text = clean_column_name(col)
-
-            if col_text == "分數" or col_text.startswith("分數."):
-                qualify_col = col
-                break
-
-    if "距離長老" in columns:
-        idx = columns.index("距離長老")
-
-        for col in columns[idx + 1:]:
-            col_text = clean_column_name(col)
-
-            if col_text == "分數" or col_text.startswith("分數."):
-                elder_col = col
-                break
+    qualify_col = find_score_column_after(columns, "距離合格", qualify_col)
+    elder_col = find_score_column_after(columns, "距離長老", elder_col)
 
     return qualify_col, elder_col
 
 
+# 輸出的貢獻度欄位 → 週表中可能的來源欄位名稱（依序嘗試）
+CONTRIBUTION_SOURCE_COLUMNS = {
+    "活動1貢獻度": ["活動1貢獻度", "活動1貢獻"],
+    "活動2貢獻度": ["活動2貢獻度", "活動2貢獻"],
+    "活動3貢獻度": ["活動3貢獻度", "活動3貢獻"],
+    "整週貢獻度": ["整週貢獻度", "一週貢獻度", "週貢獻度"],
+}
+
+
 def find_contribution_columns(df):
     """
-    找出貢獻度欄位。
+    找出貢獻度欄位，回傳 {輸出欄位名稱: 來源欄位或 None}。
 
     支援目前新版欄位：
     - 活動1貢獻度
@@ -450,33 +448,10 @@ def find_contribution_columns(df):
     - 一週貢獻度
     - 週貢獻度
     """
-    activity1_contribution_col = find_column(df, [
-        "活動1貢獻度",
-        "活動1貢獻",
-    ])
-
-    activity2_contribution_col = find_column(df, [
-        "活動2貢獻度",
-        "活動2貢獻",
-    ])
-
-    activity3_contribution_col = find_column(df, [
-        "活動3貢獻度",
-        "活動3貢獻",
-    ])
-
-    weekly_contribution_col = find_column(df, [
-        "整週貢獻度",
-        "一週貢獻度",
-        "週貢獻度",
-    ])
-
-    return (
-        activity1_contribution_col,
-        activity2_contribution_col,
-        activity3_contribution_col,
-        weekly_contribution_col,
-    )
+    return {
+        output_name: find_column(df, candidates)
+        for output_name, candidates in CONTRIBUTION_SOURCE_COLUMNS.items()
+    }
 
 
 def is_return_section_row(row):
@@ -554,12 +529,7 @@ def main():
         for number in (1, 2)
     )
 
-    (
-        activity1_contribution_col,
-        activity2_contribution_col,
-        activity3_contribution_col,
-        weekly_contribution_col,
-    ) = find_contribution_columns(df)
+    contribution_columns = find_contribution_columns(df)
 
     required_columns = [
         "CM",
@@ -599,10 +569,8 @@ def main():
     if not has_split:
         print("::warning::找不到活動1/活動2 的投入、未投入欄位，投入總分與未投入總分將輸出空白")
 
-    print(f"活動1貢獻度欄位：{activity1_contribution_col if activity1_contribution_col else '未找到，將輸出空白'}")
-    print(f"活動2貢獻度欄位：{activity2_contribution_col if activity2_contribution_col else '未找到，將輸出空白'}")
-    print(f"活動3貢獻度欄位：{activity3_contribution_col if activity3_contribution_col else '未找到，將輸出空白'}")
-    print(f"整週貢獻度欄位：{weekly_contribution_col if weekly_contribution_col else '未找到，將輸出空白'}")
+    for output_name, source_col in contribution_columns.items():
+        print(f"{output_name}欄位：{source_col if source_col else '未找到，將輸出空白'}")
 
     output_rows = []
     inserted_return_section = False
@@ -651,30 +619,10 @@ def main():
                 row.get(elder_distance_col)
             )
 
-        activity1_contribution = ""
-        activity2_contribution = ""
-        activity3_contribution = ""
-        weekly_contribution = ""
-
-        if activity1_contribution_col:
-            activity1_contribution = format_percent_like_excel(
-                row.get(activity1_contribution_col)
-            )
-
-        if activity2_contribution_col:
-            activity2_contribution = format_percent_like_excel(
-                row.get(activity2_contribution_col)
-            )
-
-        if activity3_contribution_col:
-            activity3_contribution = format_percent_like_excel(
-                row.get(activity3_contribution_col)
-            )
-
-        if weekly_contribution_col:
-            weekly_contribution = format_percent_like_excel(
-                row.get(weekly_contribution_col)
-            )
+        contributions = {
+            output_name: format_percent_like_excel(row.get(source_col)) if source_col else ""
+            for output_name, source_col in contribution_columns.items()
+        }
 
         split_values = {}
         invested_total = 0
@@ -707,10 +655,7 @@ def main():
             "距離合格分數": "" if row_type == "total" else qualify_distance,
             "距離長老分數": "" if row_type == "total" else elder_distance,
             "狀態": "" if row_type == "total" else status,
-            "活動1貢獻度": activity1_contribution,
-            "活動2貢獻度": activity2_contribution,
-            "活動3貢獻度": activity3_contribution,
-            "整週貢獻度": weekly_contribution,
+            **contributions,
         })
 
     # 轉出空表時直接失敗，避免把好的 CSV 覆蓋成只有表頭的檔案再被 commit。

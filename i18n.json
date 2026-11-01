@@ -5,7 +5,6 @@
       "htmlLang": "zh-Hant"
     },
     "hero": {
-      "eyebrow": "Team Contribution Dashboard",
       "title": "Coin999-長長久久 隊伍成績總覽",
       "subtitle": "以月為單位檢視每位成員的總分、實際投入與未投入分數，看清楚誰的貢獻是真正投入出來的。",
       "updatedAt": "資料最後更新：{time}"
@@ -158,7 +157,6 @@
       "potentialEmpty": "暫無連續上升"
     },
     "profile": {
-      "kicker": "Member Analytics",
       "close": "關閉",
       "open": "查看 {name} 的個人資料",
       "meta": "LINE：{line}｜共出現 {weeks} 週｜最新狀態：{status}",
@@ -215,7 +213,6 @@
       "htmlLang": "en"
     },
     "hero": {
-      "eyebrow": "Team Contribution Dashboard",
       "title": "Coin999 Team Score Overview",
       "subtitle": "See each member's monthly total, actual invested score and non-invested score — and who really earned their contribution.",
       "updatedAt": "Data last updated: {time}"
@@ -368,7 +365,6 @@
       "potentialEmpty": "No streak yet"
     },
     "profile": {
-      "kicker": "Member Analytics",
       "close": "Close",
       "open": "View {name}'s profile",
       "meta": "LINE: {line} | {weeks} weeks | Latest status: {status}",
@@ -425,7 +421,6 @@
       "htmlLang": "vi"
     },
     "hero": {
-      "eyebrow": "Team Contribution Dashboard",
       "title": "Coin999 – Tổng quan thành tích đội",
       "subtitle": "Xem tổng điểm theo tháng, điểm đầu tư thực tế và điểm không đầu tư của từng thành viên.",
       "updatedAt": "Dữ liệu cập nhật lần cuối: {time}"
@@ -578,7 +573,6 @@
       "potentialEmpty": "Chưa có chuỗi tăng"
     },
     "profile": {
-      "kicker": "Member Analytics",
       "close": "Đóng",
       "open": "Xem hồ sơ của {name}",
       "meta": "LINE: {line} | {weeks} tuần | Trạng thái mới nhất: {status}",
