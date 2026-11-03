@@ -1514,7 +1514,8 @@ td.is-heavy {
         scrollbar-width: thin;
     }
 
-    .podium-card {
+    /* 捲動列的子元素是 .podium-item（listitem 包裝），寬度要設在它身上 */
+    .podium-item {
         flex: 0 0 min(230px, 70vw);
         scroll-snap-align: start;
     }
